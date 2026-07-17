@@ -57,23 +57,15 @@ export default function ContactPage() {
               <div className="bg-green-50 border border-green-200 rounded-2xl p-8 text-center">
                 <div className="text-4xl mb-4">✅</div>
                 <h3 className="text-xl font-bold text-green-900 mb-2">Message Sent!</h3>
-                <p className="text-green-700 mb-2">We&apos;ll get back to you within 24 hours.</p>
-                <p className="text-green-600 text-sm mb-6">If you don&apos;t receive a confirmation email, message us directly:</p>
-                <a 
-                  href="https://wa.me/2347033702874" 
-                  target="_blank"
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-green-500 text-white font-medium rounded-full hover:bg-green-600 transition-colors"
-                >
-                  <span>💬</span> Chat on WhatsApp
-                </a>
+                <p className="text-green-700 mb-4">We&apos;ll get back to you within 24 hours. Check your email for confirmation.</p>
                 <button 
                   onClick={() => {
                     setSubmitted(false)
                     setFormData({ name: '', email: '', service: '', message: '' })
                   }}
-                  className="block mx-auto mt-4 text-indigo-600 hover:text-indigo-700 font-medium text-sm"
+                  className="text-indigo-600 hover:text-indigo-700 font-medium"
                 >
-                  ← Send another message
+                  Send another message
                 </button>
               </div>
             ) : (
@@ -178,20 +170,6 @@ export default function ContactPage() {
               <p className="text-gray-500 text-sm">Monday — Friday</p>
               <p className="text-gray-500 text-sm">9:00 AM — 6:00 PM WAT</p>
             </div>
-
-            <a 
-              href="https://wa.me/2347033702874?text=Hello%20Omnix%20Lab,%20I'm%20interested%20in%20your%20services" 
-              target="_blank"
-              className="block w-full p-5 rounded-2xl bg-green-500 hover:bg-green-600 transition-colors text-center group"
-            >
-              <div className="flex items-center justify-center gap-3">
-                <span className="text-2xl">💬</span>
-                <div className="text-left">
-                  <p className="text-white font-bold">Chat on WhatsApp</p>
-                  <p className="text-green-100 text-sm">Instant response</p>
-                </div>
-              </div>
-            </a>
           </div>
         </div>
       </div>
