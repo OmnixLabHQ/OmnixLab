@@ -3,6 +3,9 @@
 import { useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
+import TrustBadges from '@/components/TrustBadges'
+import Testimonials from '@/components/Testimonials'
+import WhatsAppBubble from '@/components/WhatsAppBubble'
 
 export default function Home() {
   const orbRef = useRef<HTMLDivElement>(null)
@@ -26,13 +29,6 @@ export default function Home() {
     transition: { duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }
   }
 
-  const stagger = {
-    initial: { opacity: 0, y: 20 },
-    whileInView: { opacity: 1, y: 0 },
-    viewport: { once: true },
-    transition: { duration: 0.5 }
-  }
-
   return (
     <div className="bg-white text-gray-900 overflow-hidden">
       
@@ -46,7 +42,7 @@ export default function Home() {
         ></div>
 
         <div className="absolute top-20 left-10 w-3 h-3 bg-indigo-300 rounded-full opacity-50 animate-pulse"></div>
-        <div className="absolute top-40 right-20 w-2 h-2 bg-purple-300 rounded-full opacity-50 animate-pulse delay-300"></div>
+        <div className="absolute top-40 right-20 w-2 h-2 bg-purple-300 rounded-full opacity-50 animate-pulse"></div>
         <div className="absolute bottom-20 left-1/4 w-4 h-4 bg-indigo-200 rounded-full opacity-40 animate-bounce"></div>
 
         <div className="max-w-7xl mx-auto relative z-10">
@@ -228,6 +224,9 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ========== TRUST BADGES ========== */}
+      <TrustBadges />
+
       {/* ========== CLIENTS ========== */}
       <motion.section 
         {...fadeInUp}
@@ -291,6 +290,9 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* ========== TESTIMONIALS ========== */}
+      <Testimonials />
 
       {/* ========== PROCESS ========== */}
       <section className="py-24 lg:py-32 px-6 lg:px-8 bg-gray-50">
@@ -361,7 +363,7 @@ export default function Home() {
             ))}
           </div>
         </div>
-      </motion.section>
+      </section>
 
       {/* ========== CTA ========== */}
       <section className="py-24 lg:py-32 px-6 lg:px-8">
@@ -403,6 +405,9 @@ export default function Home() {
           </div>
         </motion.div>
       </section>
+
+      {/* ========== WHATSAPP BUBBLE ========== */}
+      <WhatsAppBubble />
 
     </div>
   )
