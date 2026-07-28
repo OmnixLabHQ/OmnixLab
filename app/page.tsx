@@ -14,6 +14,7 @@ import Pricing from '@/components/Pricing'
 import CaseStudies from '@/components/CaseStudies'
 import Insights from '@/components/Insights'
 import Newsletter from '@/components/Newsletter'
+
 export default function Home() {
   const fadeInUp = {
     initial: { opacity: 0, y: 30 },
@@ -24,20 +25,6 @@ export default function Home() {
 
   return (
     <div className="bg-white text-gray-900 overflow-hidden">
-            {/* ========== CASE STUDIES ========== */}
-      <CaseStudies />
-
-      {/* ========== PRICING ========== */}
-      <Pricing />
-
-      {/* ========== FAQ ========== */}
-      <FAQ />
-
-      {/* ========== INSIGHTS ========== */}
-      <Insights />
-
-      {/* ========== NEWSLETTER ========== */}
-      <Newsletter />
       
       {/* ========== ADVANCED HERO ========== */}
       <AdvancedHero />
@@ -114,11 +101,17 @@ export default function Home() {
       {/* ========== COUNTER SECTION ========== */}
       <CounterSection />
 
+      {/* ========== CASE STUDIES ========== */}
+      <CaseStudies />
+
       {/* ========== TESTIMONIALS ========== */}
       <Testimonials />
 
+      {/* ========== PRICING ========== */}
+      <Pricing />
+
       {/* ========== PROCESS ========== */}
-      <section className="py-24 lg:py-32 px-6 lg:px-8 bg-white">
+      <section className="py-24 lg:py-32 px-6 lg:px-8 bg-gray-50">
         <div className="max-w-7xl mx-auto">
           <motion.div {...fadeInUp} className="text-center mb-16 lg:mb-20">
             <p className="text-sm font-medium text-indigo-600 uppercase tracking-wider mb-3">How we work</p>
@@ -141,7 +134,7 @@ export default function Home() {
                 whileHover={{ scale: 1.03 }}
                 className="relative cursor-pointer group"
               >
-                <div className="absolute -left-4 top-0 text-8xl font-bold text-gray-50 group-hover:text-indigo-50 transition-colors select-none">{item.step}</div>
+                <div className="absolute -left-4 top-0 text-8xl font-bold text-gray-100 group-hover:text-indigo-50 transition-colors select-none">{item.step}</div>
                 <div className="relative z-10">
                   <h3 className="text-xl font-bold text-gray-900 mb-2">{item.title}</h3>
                   <p className="text-gray-500 leading-relaxed">{item.desc}</p>
@@ -151,6 +144,15 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* ========== FAQ ========== */}
+      <FAQ />
+
+      {/* ========== INSIGHTS ========== */}
+      <Insights />
+
+      {/* ========== NEWSLETTER ========== */}
+      <Newsletter />
 
       {/* ========== CTA ========== */}
       <section className="py-24 lg:py-32 px-6 lg:px-8 bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 relative overflow-hidden">
