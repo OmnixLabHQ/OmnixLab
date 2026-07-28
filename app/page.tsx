@@ -9,7 +9,11 @@ import WhatsAppBubble from '@/components/WhatsAppBubble'
 import CounterSection from '@/components/CounterSection'
 import SkillsMarquee from '@/components/SkillsMarquee'
 import AdvancedHero from '@/components/AdvancedHero'
-
+import FAQ from '@/components/FAQ'
+import Pricing from '@/components/Pricing'
+import CaseStudies from '@/components/CaseStudies'
+import Insights from '@/components/Insights'
+import Newsletter from '@/components/Newsletter'
 export default function Home() {
   const fadeInUp = {
     initial: { opacity: 0, y: 30 },
@@ -20,6 +24,20 @@ export default function Home() {
 
   return (
     <div className="bg-white text-gray-900 overflow-hidden">
+            {/* ========== CASE STUDIES ========== */}
+      <CaseStudies />
+
+      {/* ========== PRICING ========== */}
+      <Pricing />
+
+      {/* ========== FAQ ========== */}
+      <FAQ />
+
+      {/* ========== INSIGHTS ========== */}
+      <Insights />
+
+      {/* ========== NEWSLETTER ========== */}
+      <Newsletter />
       
       {/* ========== ADVANCED HERO ========== */}
       <AdvancedHero />
