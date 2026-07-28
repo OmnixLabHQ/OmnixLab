@@ -1,102 +1,33 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 
 export default function AdvancedHero() {
-  const canvasRef = useRef<HTMLCanvasElement>(null)
-
-  useEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return
-
-    let animationId: number
-
-    const resize = () => {
-      canvas.width = window.innerWidth
-      canvas.height = window.innerHeight
-    }
-
-    resize()
-
-    interface Particle {
-      x: number
-      y: number
-      size: number
-      speedX: number
-      speedY: number
-      opacity: number
-    }
-
-    const particles: Particle[] = []
-    for (let i = 0; i < 50; i++) {
-      particles.push({
-        x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height,
-        size: Math.random() * 2,
-        speedX: (Math.random() - 0.5) * 0.5,
-        speedY: (Math.random() - 0.5) * 0.5,
-        opacity: Math.random() * 0.5 + 0.1
-      })
-    }
-
-    function animate() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height)
-      
-      particles.forEach((p, i) => {
-        p.x += p.speedX
-        p.y += p.speedY
-        if (p.x < 0 || p.x > canvas.width) p.speedX *= -1
-        if (p.y < 0 || p.y > canvas.height) p.speedY *= -1
-        
-        ctx.beginPath()
-        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2)
-        ctx.fillStyle = `rgba(99, 102, 241, ${p.opacity})`
-        ctx.fill()
-
-        particles.forEach((p2, j) => {
-          if (i === j) return
-          const dx = p.x - p2.x
-          const dy = p.y - p2.y
-          const dist = Math.sqrt(dx * dx + dy * dy)
-          if (dist < 120) {
-            ctx.beginPath()
-            ctx.moveTo(p.x, p.y)
-            ctx.lineTo(p2.x, p2.y)
-            ctx.strokeStyle = `rgba(139, 92, 246, ${0.08 * (1 - dist / 120)})`
-            ctx.lineWidth = 0.5
-            ctx.stroke()
-          }
-        })
-      })
-      animationId = requestAnimationFrame(animate)
-    }
-    animate()
-
-    window.addEventListener('resize', resize)
-
-    return () => {
-      cancelAnimationFrame(animationId)
-      window.removeEventListener('resize', resize)
-    }
-  }, [])
-
   return (
     <section className="relative min-h-screen flex items-center overflow-hidden bg-gray-900">
-      <canvas ref={canvasRef} className="absolute inset-0 z-0" />
       
+      {/* Gradient overlay */}
       <div className="absolute inset-0 z-10 bg-gradient-to-br from-indigo-900/40 via-gray-900/60 to-purple-900/40" />
       
+      {/* Glowing orbs */}
       <div className="absolute inset-0 z-10">
         <div className="absolute top-20 left-10 w-96 h-96 bg-indigo-500/20 rounded-full blur-[128px] animate-pulse" />
         <div className="absolute bottom-20 right-10 w-80 h-80 bg-purple-500/20 rounded-full blur-[100px] animate-pulse" />
       </div>
 
+      {/* Grid pattern */}
+      <div className="absolute inset-0 z-0 opacity-[0.03]">
+        <div className="absolute inset-0" style={{
+          backgroundImage: 'linear-gradient(#ffffff 1px, transparent 1px), linear-gradient(90deg, #ffffff 1px, transparent 1px)',
+          backgroundSize: '60px 60px'
+        }}></div>
+      </div>
+
       <div className="container mx-auto px-6 relative z-20 py-20">
         <div className="max-w-4xl">
+          
+          {/* Status badge */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
@@ -110,10 +41,11 @@ export default function AdvancedHero() {
             <span className="text-sm text-gray-300">Available for New Projects</span>
           </motion.div>
 
+          {/* Main heading */}
           <motion.h1
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, delay: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }}
+            transition={{ duration: 1, delay: 0.5 }}
             className="text-5xl md:text-7xl lg:text-8xl font-bold leading-[0.95] mb-8"
           >
             <span className="text-white">We Build</span>
@@ -123,6 +55,7 @@ export default function AdvancedHero() {
             </span>
           </motion.h1>
 
+          {/* Subtitle */}
           <motion.p
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
@@ -134,6 +67,7 @@ export default function AdvancedHero() {
             cutting-edge solutions that drive measurable growth.
           </motion.p>
 
+          {/* CTA buttons */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -159,6 +93,7 @@ export default function AdvancedHero() {
         </div>
       </div>
 
+      {/* Scroll indicator */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -173,6 +108,7 @@ export default function AdvancedHero() {
           <div className="w-1.5 h-3 bg-white/50 rounded-full" />
         </motion.div>
       </motion.div>
+
     </section>
   )
 }
