@@ -14,6 +14,10 @@ import Pricing from '@/components/Pricing'
 import CaseStudies from '@/components/CaseStudies'
 import Insights from '@/components/Insights'
 import Newsletter from '@/components/Newsletter'
+import TechStack from '@/components/TechStack'
+import EnterpriseTrust from '@/components/EnterpriseTrust'
+import ComparisonTable from '@/components/ComparisonTable'
+import IndustryExperience from '@/components/IndustryExperience'
 
 export default function Home() {
   const fadeInUp = {
@@ -98,8 +102,14 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ========== TECH STACK ========== */}
+      <TechStack />
+
       {/* ========== COUNTER SECTION ========== */}
       <CounterSection />
+
+      {/* ========== ENTERPRISE TRUST ========== */}
+      <EnterpriseTrust />
 
       {/* ========== CASE STUDIES ========== */}
       <CaseStudies />
@@ -107,8 +117,14 @@ export default function Home() {
       {/* ========== TESTIMONIALS ========== */}
       <Testimonials />
 
+      {/* ========== COMPARISON TABLE ========== */}
+      <ComparisonTable />
+
       {/* ========== PRICING ========== */}
       <Pricing />
+
+      {/* ========== INDUSTRY EXPERIENCE ========== */}
+      <IndustryExperience />
 
       {/* ========== PROCESS ========== */}
       <section className="py-24 lg:py-32 px-6 lg:px-8 bg-gray-50">
