@@ -4,6 +4,9 @@ import "./globals.css";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import VisitorTracker from "@/components/VisitorTracker";
+import ScrollProgress from "@/components/ScrollProgress";
+import BackToTop from "@/components/BackToTop";
+import Preloader from "@/components/Preloader";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -34,11 +37,14 @@ export default function RootLayout({
   return (
     <html lang="en" className="scroll-smooth">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        <Preloader />
+        <ScrollProgress />
         <VisitorTracker />
         <Navbar />
         <main className="min-h-screen">
           {children}
         </main>
+        <BackToTop />
         <Footer />
       </body>
     </html>

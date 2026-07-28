@@ -17,8 +17,11 @@
     "gsap": "^3.13.0",
     "next": "^16.2.10",
     "react": "^19.0.0",
+    "react-countup": "^6.5.3",
     "react-dom": "^19.0.0",
-    "resend": "^4.2.0"
+    "react-parallax-tilt": "^1.7.335",
+    "resend": "^4.2.0",
+    "swiper": "^14.0.6"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.0.0",
