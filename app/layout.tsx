@@ -19,14 +19,52 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Omnix Lab | Premium Development Studio",
-  description: "Elite software development, trading bots, web applications & digital solutions. Founded by Akomolafe Nathaniel.",
-  keywords: "web development, trading bots, software development, Omnix Lab, Akomolafe Nathaniel, Nigeria",
+  title: "Omnix Lab | Premium Web Development & Trading Bot Development Company",
+  description: "Omnix Lab is a premium development studio specializing in web development, trading bot development, software engineering, mobile apps, and AI solutions. Founded by Akomolafe Nathaniel. Available worldwide.",
+  keywords: [
+    "web development",
+    "trading bot development",
+    "software development",
+    "mobile app development",
+    "AI solutions",
+    "Omnix Lab",
+    "Akomolafe Nathaniel",
+    "Nigeria developer",
+    "crypto trading bot",
+    "forex trading bot",
+    "Next.js developer",
+    "React developer",
+    "SaaS development",
+    "enterprise software",
+    "cloud infrastructure",
+  ],
+  authors: [{ name: "Akomolafe Nathaniel" }],
+  creator: "Omnix Lab",
+  publisher: "Omnix Lab",
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
   openGraph: {
+    title: "Omnix Lab | Premium Web Development & Trading Bot Development",
+    description: "Elite software development & digital solutions for forward-thinking businesses worldwide. Web apps, trading bots, SaaS, and AI.",
+    url: "https://omnixlab.com",
+    siteName: "Omnix Lab",
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
     title: "Omnix Lab | Premium Development Studio",
     description: "Elite software development & digital solutions for forward-thinking businesses worldwide.",
-    type: "website",
-  }
+  },
 };
 
 export default function RootLayout({
@@ -36,6 +74,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="scroll-smooth">
+      <head>
+        <link rel="canonical" href="https://omnixlab.com" />
+        <meta name="google-site-verification" content="mvuvpEIjBg35Cq2CAAWC_SJyaT-Z0ixQPcF35UJ5dWk" />
+      </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <Preloader />
         <ScrollProgress />
