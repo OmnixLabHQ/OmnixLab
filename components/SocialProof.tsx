@@ -16,7 +16,7 @@ const reviews = [
     role: 'Founder, CloudStack Solutions',
     text: 'We needed a complex SaaS dashboard built in 6 weeks. Omnix Lab delivered in 5. Exceptional quality.',
     rating: 5,
-    platform: 'Trustpilot',
+    platform: 'Google',
     color: 'from-green-500 to-green-600',
   },
   {
@@ -32,7 +32,7 @@ const reviews = [
     role: 'CEO, NexGen Trading',
     text: 'Our crypto trading bot generates consistent returns. Best investment we made this year. Highly recommended.',
     rating: 5,
-    platform: 'Trustpilot',
+    platform: 'Google',
     color: 'from-green-500 to-green-600',
   },
   {
@@ -177,7 +177,7 @@ export default function SocialProof() {
             See Google Reviews
           </a>
           <a
-            href="https://www.trustpilot.com/evaluate/omnixlab-production.up.railway.app"
+            href="https://www.trustpilot.com/evaluate/omnixlabsupport.com"
             target="_blank"
             className="inline-flex items-center gap-2 px-6 py-3 bg-green-600 text-white font-semibold rounded-full hover:bg-green-700 transition-colors shadow-lg shadow-green-200"
           >

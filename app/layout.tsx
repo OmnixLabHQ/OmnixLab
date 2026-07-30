@@ -41,7 +41,7 @@ export const metadata: Metadata = {
   authors: [{ name: "Akomolafe Nathaniel" }],
   creator: "Omnix Lab",
   publisher: "Omnix Lab",
-  metadataBase: new URL("https://omnixlab-production.up.railway.app"),
+  metadataBase: new URL("https://omnixlabsupport.com"),
   robots: {
     index: true,
     follow: true,
@@ -56,7 +56,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Omnix Lab | Premium Web Development & Trading Bot Development",
     description: "Elite software development & digital solutions for forward-thinking businesses worldwide. Web apps, trading bots, SaaS, and AI.",
-    url: "https://omnixlab-production.up.railway.app",
+    url: "https://omnixlabsupport.com",
     siteName: "Omnix Lab",
     locale: "en_US",
     type: "website",
@@ -79,7 +79,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="scroll-smooth">
       <head>
-        <link rel="canonical" href="https://omnixlab-production.up.railway.app" />
+        <link rel="canonical" href="https://omnixlabsupport.com" />
         <meta name="google-site-verification" content="mvuvpEIjBg35Cq2CAAWC_SJyaT-Z0ixQPcF35UJ5dWk" />
         <meta name="trustpilot-one-time-domain-verification-id" content="448eaaee-e205-4764-9e8b-87aa185e7448"/>
       </head>
