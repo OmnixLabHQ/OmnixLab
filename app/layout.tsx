@@ -82,6 +82,7 @@ export default function RootLayout({
         <link rel="canonical" href="https://omnixlabsupport.com" />
         <meta name="google-site-verification" content="mvuvpEIjBg35Cq2CAAWC_SJyaT-Z0ixQPcF35UJ5dWk" />
         <meta name="trustpilot-one-time-domain-verification-id" content="448eaaee-e205-4764-9e8b-87aa185e7448"/>
+        <meta name="google-site-verification" content="f2z1UulRNHkkLu7y-Aclth-LoOiGSRzqp9jFca2cCMc" />
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <Preloader />
