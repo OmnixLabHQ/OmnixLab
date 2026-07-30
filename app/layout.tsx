@@ -77,6 +77,7 @@ export default function RootLayout({
       <head>
         <link rel="canonical" href="https://omnixlab.com" />
         <meta name="google-site-verification" content="mvuvpEIjBg35Cq2CAAWC_SJyaT-Z0ixQPcF35UJ5dWk" />
+        <meta name="trustpilot-one-time-domain-verification-id" content="448eaaee-e205-4764-9e8b-87aa185e7448"/>
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <Preloader />
