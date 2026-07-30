@@ -18,6 +18,7 @@ import TechStack from '@/components/TechStack'
 import EnterpriseTrust from '@/components/EnterpriseTrust'
 import ComparisonTable from '@/components/ComparisonTable'
 import IndustryExperience from '@/components/IndustryExperience'
+import SocialProof from '@/components/SocialProof'
 
 export default function Home() {
   const fadeInUp = {
@@ -116,6 +117,9 @@ export default function Home() {
 
       {/* ========== TESTIMONIALS ========== */}
       <Testimonials />
+
+      {/* ========== SOCIAL PROOF ========== */}
+      <SocialProof />
 
       {/* ========== COMPARISON TABLE ========== */}
       <ComparisonTable />

@@ -35,7 +35,7 @@ export default function AboutPage() {
             "name": "Omnix Lab",
             "description": "Nigeria's most trusted software development company founded by Akomolafe Nathaniel. Building trading bots, web applications, SaaS platforms, and AI solutions for businesses worldwide.",
             "url": "https://omnixlab-production.up.railway.app",
-            "logo": "https://omnixlab-production.up.railway.app/images/akomolafe-nathaniel.jpg",
+            "logo": "https://i.ibb.co/jXsT2ZB/image.jpg",
             "foundingDate": "2022",
             "founder": {
               "@type": "Person",
@@ -94,19 +94,11 @@ export default function AboutPage() {
               <div className="relative flex-shrink-0">
                 <div className="absolute inset-0 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full blur-xl opacity-30 animate-pulse"></div>
                 <div className="relative w-48 h-48 md:w-56 md:h-56 lg:w-64 lg:h-64 rounded-full border-4 border-white shadow-2xl overflow-hidden bg-gradient-to-br from-indigo-100 to-purple-100">
-                  {/* Replace with your actual photo */}
-                  <div className="w-full h-full bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center">
-                    <span className="text-white text-7xl font-bold">AN</span>
-                  </div>
-                  {/* If using real photo: */}
-                  {/* <Image 
-                    src="https://ibb.co/zvDrYHj" 
+                  <img 
+                    src="https://i.ibb.co/jXsT2ZB/image.jpg" 
                     alt="Akomolafe Nathaniel - Founder & CEO of Omnix Lab"
-                    width={300}
-                    height={300}
                     className="w-full h-full object-cover"
-                    priority
-                  /> */}
+                  />
                 </div>
                 <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-white rounded-full px-4 py-1.5 shadow-lg border border-gray-100">
                   <span className="text-xs font-bold text-indigo-600 flex items-center gap-1">
