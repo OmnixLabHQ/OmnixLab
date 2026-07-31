@@ -4,7 +4,6 @@ import { useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import TrustBadges from '@/components/TrustBadges'
-import Testimonials from '@/components/Testimonials'
 import WhatsAppBubble from '@/components/WhatsAppBubble'
 import CounterSection from '@/components/CounterSection'
 import SkillsMarquee from '@/components/SkillsMarquee'
@@ -114,9 +113,6 @@ export default function Home() {
 
       {/* ========== CASE STUDIES ========== */}
       <CaseStudies />
-
-      {/* ========== TESTIMONIALS ========== */}
-      <Testimonials />
 
       {/* ========== SOCIAL PROOF ========== */}
       <SocialProof />
