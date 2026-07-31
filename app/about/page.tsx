@@ -281,7 +281,7 @@ export default function AboutPage() {
               <Link href="/contact" className="inline-flex px-8 py-4 bg-white text-indigo-600 font-semibold rounded-full hover:bg-gray-100 transition-colors shadow-xl">
                 Start Your Project →
               </Link>
-              <a href="mailto:Akomolafenathaniel123@gmail.com" className="inline-flex px-8 py-4 border-2 border-white/30 text-white font-semibold rounded-full hover:bg-white/10 transition-colors">
+              <a href="mailto:helloafrica@omnixlabsupport.com" className="inline-flex px-8 py-4 border-2 border-white/30 text-white font-semibold rounded-full hover:bg-white/10 transition-colors">
                 Email the Founder
               </a>
             </div>
