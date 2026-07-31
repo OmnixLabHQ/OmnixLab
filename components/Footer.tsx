@@ -39,8 +39,8 @@ export default function Footer() {
             <h4 className="font-semibold text-gray-900 mb-4">Contact</h4>
             <ul className="space-y-2 text-sm text-gray-500">
               <li>
-                <a href="mailto:Akomolafenathaniel123@gmail.com" className="hover:text-gray-900 transition-colors">
-                  Akomolafenathaniel123@gmail.com
+                <a href="mailto:helloafrica@omnixlabsupport.com" className="hover:text-gray-900 transition-colors">
+                  helloafrica@omnixlabsupport.com
                 </a>
               </li>
               <li>
