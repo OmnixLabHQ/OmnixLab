@@ -41,17 +41,17 @@ export default function AdvancedHero() {
             <span className="text-sm text-gray-300">Available for New Projects</span>
           </motion.div>
 
-          {/* Main heading */}
+          {/* Main heading with keywords */}
           <motion.h1
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1, delay: 0.5 }}
             className="text-5xl md:text-7xl lg:text-8xl font-bold leading-[0.95] mb-8"
           >
-            <span className="text-white">We Build</span>
+            <span className="text-white">Trading Bot & Web</span>
             <br />
             <span className="bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-              Digital Excellence
+              Development Company
             </span>
           </motion.h1>
 
@@ -62,9 +62,9 @@ export default function AdvancedHero() {
             transition={{ duration: 0.8, delay: 0.7 }}
             className="text-xl md:text-2xl text-gray-400 max-w-2xl mb-12 leading-relaxed"
           >
-            From enterprise web platforms to algorithmic trading systems — 
+            Nigeria&apos;s most trusted software development company — 
             <span className="text-white font-semibold"> Omnix Lab</span> delivers 
-            cutting-edge solutions that drive measurable growth.
+            enterprise web apps, crypto trading bots, SaaS platforms, and AI solutions.
           </motion.p>
 
           {/* CTA buttons */}
