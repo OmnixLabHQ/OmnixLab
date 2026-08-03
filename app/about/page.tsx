@@ -3,7 +3,7 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'About Omnix Lab | Founder Akomolafe Nathaniel | Nigeria Software Company',
+  title: 'About Omnix Lab | Nigeria Software Company',
   description: 'Omnix Lab is Nigeria\'s most trusted software development company, founded by Akomolafe Nathaniel. We build trading bots, web apps, SaaS, AI solutions for clients worldwide. 50+ projects, 99% satisfaction.',
   keywords: [
     'Omnix Lab',

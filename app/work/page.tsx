@@ -1,5 +1,10 @@
+import type { Metadata } from 'next'
 import Link from 'next/link'
 
+export const metadata: Metadata = {
+  title: 'Our Work | Omnix Lab Portfolio',
+  description: 'See Omnix Lab projects - trading bots, web apps, SaaS, and mobile apps built for clients worldwide.',
+}
 const projects = [
   {
     title: 'Crypto Trading Platform',
