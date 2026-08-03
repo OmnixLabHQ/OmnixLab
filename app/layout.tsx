@@ -81,6 +81,21 @@ export default function RootLayout({
         <meta name="google-site-verification" content="f2z1UulRNHkkLu7y-Aclth-LoOiGSRzqp9jFca2cCMc" />
         <meta name="msvalidate.01" content="AD5FF21A900C5F4F1767A33F15A832FC" />
         <meta name="trustpilot-one-time-domain-verification-id" content="448eaaee-e205-4764-9e8b-87aa185e7448"/>
+        
+        {/* Google Analytics */}
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-Q7BZ825DS6"></script>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', 'G-Q7BZ825DS6');
+            `,
+          }}
+        />
+
+        {/* Structured Data */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
