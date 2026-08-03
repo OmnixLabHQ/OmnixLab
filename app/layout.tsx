@@ -19,24 +19,34 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Omnix Lab | Premium Web Development & Trading Bot Development Company",
-  description: "Omnix Lab is a premium development studio specializing in web development, trading bot development, software engineering, mobile apps, and AI solutions. Founded by Akomolafe Nathaniel. Available worldwide.",
+  title: "Omnix Lab | Trading Bot Development & Web Development Company Nigeria | Software Development Services",
+  description: "Omnix Lab is Nigeria's most trusted trading bot development company and web development company. We build crypto trading bots, forex bots, custom software, SaaS platforms, mobile apps, and AI solutions. Founded by Akomolafe Nathaniel. Hire us today.",
   keywords: [
-    "web development",
-    "trading bot development",
-    "software development",
-    "mobile app development",
-    "AI solutions",
+    "trading bot development company Nigeria",
+    "web development company Nigeria",
+    "software development company Nigeria",
+    "crypto trading bot developer",
+    "forex trading bot development",
+    "custom software development services",
+    "AI development company Nigeria",
+    "Next.js developer for hire",
+    "SaaS development company",
+    "mobile app development Nigeria",
+    "hire software developer Nigeria",
+    "algorithmic trading bot services",
+    "automated trading system development",
+    "binance trading bot developer",
+    "enterprise software development",
+    "full stack developer Nigeria",
+    "React developer for hire",
+    "ecommerce website development",
+    "AI chatbot development",
+    "machine learning solutions",
     "Omnix Lab",
     "Akomolafe Nathaniel",
-    "Nigeria developer",
-    "crypto trading bot",
-    "forex trading bot",
-    "Next.js developer",
-    "React developer",
-    "SaaS development",
-    "enterprise software",
-    "cloud infrastructure",
+    "best web developers Nigeria",
+    "professional website development",
+    "custom SaaS platform development",
   ],
   authors: [{ name: "Akomolafe Nathaniel" }],
   creator: "Omnix Lab",
@@ -54,8 +64,8 @@ export const metadata: Metadata = {
     },
   },
   openGraph: {
-    title: "Omnix Lab | Premium Web Development & Trading Bot Development",
-    description: "Elite software development & digital solutions for forward-thinking businesses worldwide. Web apps, trading bots, SaaS, and AI.",
+    title: "Omnix Lab | Trading Bot & Web Development Company Nigeria",
+    description: "Nigeria's most trusted trading bot development company and web development company. Crypto bots, forex bots, SaaS, AI solutions. 50+ projects delivered.",
     url: "https://omnixlabsupport.com",
     siteName: "Omnix Lab",
     locale: "en_US",
@@ -63,8 +73,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Omnix Lab | Premium Development Studio",
-    description: "Elite software development & digital solutions for forward-thinking businesses worldwide.",
+    title: "Omnix Lab | Trading Bot & Web Development Nigeria",
+    description: "Nigeria's most trusted software development company. Trading bots, web apps, SaaS, AI.",
   },
   icons: {
     icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%234F46E5'/><text x='50' y='68' text-anchor='middle' fill='white' font-size='50' font-weight='bold'>O</text></svg>",
@@ -81,9 +91,9 @@ export default function RootLayout({
       <head>
         <link rel="canonical" href="https://omnixlabsupport.com" />
         <meta name="google-site-verification" content="mvuvpEIjBg35Cq2CAAWC_SJyaT-Z0ixQPcF35UJ5dWk" />
-        <meta name="trustpilot-one-time-domain-verification-id" content="448eaaee-e205-4764-9e8b-87aa185e7448"/>
         <meta name="google-site-verification" content="f2z1UulRNHkkLu7y-Aclth-LoOiGSRzqp9jFca2cCMc" />
         <meta name="msvalidate.01" content="AD5FF21A900C5F4F1767A33F15A832FC" />
+        <meta name="trustpilot-one-time-domain-verification-id" content="448eaaee-e205-4764-9e8b-87aa185e7448"/>
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <Preloader />
