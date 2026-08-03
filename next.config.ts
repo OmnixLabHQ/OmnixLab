@@ -8,12 +8,13 @@ const nextConfig: NextConfig = {
     return [
       {
         source: '/:path*',
-        has: [
-          {
-            type: 'host',
-            value: 'omnixlab-production.up.railway.app',
-          },
-        ],
+        has: [{ type: 'host', value: 'omnixlab-production.up.railway.app' }],
+        destination: 'https://omnixlabsupport.com/:path*',
+        permanent: true,
+      },
+      {
+        source: '/:path*',
+        has: [{ type: 'host', value: 'www.omnixlabsupport.com' }],
         destination: 'https://omnixlabsupport.com/:path*',
         permanent: true,
       },
@@ -21,6 +22,27 @@ const nextConfig: NextConfig = {
   },
   async headers() {
     return [
+      {
+        source: '/:path*',
+        headers: [
+          {
+            key: 'Strict-Transport-Security',
+            value: 'max-age=31536000; includeSubDomains',
+          },
+          {
+            key: 'X-Frame-Options',
+            value: 'DENY',
+          },
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff',
+          },
+          {
+            key: 'Referrer-Policy',
+            value: 'strict-origin-when-cross-origin',
+          },
+        ],
+      },
       {
         source: '/:all*(svg|jpg|png|webp|avif)',
         headers: [

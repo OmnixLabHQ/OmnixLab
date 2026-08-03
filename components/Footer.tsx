@@ -17,7 +17,7 @@ export default function Footer() {
               </span>
             </Link>
             <p className="text-gray-500 text-sm leading-relaxed max-w-xs">
-              Premium development studio crafting digital solutions for forward-thinking businesses worldwide.
+              Nigeria&apos;s most trusted trading bot development and web development company. Building crypto bots, forex bots, SaaS, and AI solutions worldwide.
             </p>
           </div>
 
@@ -44,11 +44,16 @@ export default function Footer() {
                 </a>
               </li>
               <li>
-                <a href="https://wa.me/2347033702874" target="_blank" className="hover:text-gray-900 transition-colors">
+                <a href="https://wa.me/2347033702874" target="_blank" rel="noopener noreferrer" className="hover:text-gray-900 transition-colors">
                   +234 703 370 2874
                 </a>
               </li>
               <li>Available Worldwide</li>
+              <li className="pt-2">
+                <a href="https://www.trustpilot.com/evaluate/omnixlabsupport.com" target="_blank" rel="noopener noreferrer" className="hover:text-gray-900 transition-colors">
+                  ⭐ Leave a Review
+                </a>
+              </li>
             </ul>
           </div>
         </div>

@@ -51,7 +51,7 @@ export default function AboutPage() {
             "contactPoint": {
               "@type": "ContactPoint",
               "telephone": "+2347033702874",
-              "email": "Akomolafenathaniel123@gmail.com",
+              "email": "helloafrica@omnixlabsupport.com",
               "contactType": "customer service",
               "availableLanguage": ["English"]
             },

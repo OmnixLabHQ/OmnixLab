@@ -166,6 +166,7 @@ export default function SocialProof() {
           <a
             href="https://www.google.com/search?q=Omnix+Lab+reviews"
             target="_blank"
+            rel="noopener noreferrer"
             className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-semibold rounded-full hover:bg-blue-700 transition-colors shadow-lg shadow-blue-200"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
@@ -179,6 +180,7 @@ export default function SocialProof() {
           <a
             href="https://www.trustpilot.com/evaluate/omnixlabsupport.com"
             target="_blank"
+            rel="noopener noreferrer"
             className="inline-flex items-center gap-2 px-6 py-3 bg-green-600 text-white font-semibold rounded-full hover:bg-green-700 transition-colors shadow-lg shadow-green-200"
           >
             <span>⭐</span>

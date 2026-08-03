@@ -20,6 +20,7 @@ export default function WhatsAppBubble() {
         <motion.a
           href="https://t.me/OmnixLab"
           target="_blank"
+          rel="noopener noreferrer"
           whileHover={{ scale: 1.05 }}
           className="flex items-center gap-3 bg-white rounded-2xl shadow-xl px-4 py-3 border border-gray-100"
         >
@@ -35,6 +36,7 @@ export default function WhatsAppBubble() {
         <motion.a
           href="https://wa.me/2347033702874?text=Hello%20Omnix%20Lab!%20I'm%20interested%20in%20your%20services"
           target="_blank"
+          rel="noopener noreferrer"
           whileHover={{ scale: 1.05 }}
           className="flex items-center gap-3 bg-white rounded-2xl shadow-xl px-4 py-3 border border-gray-100"
         >

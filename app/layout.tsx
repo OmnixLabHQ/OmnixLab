@@ -19,8 +19,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Omnix Lab | Trading Bot Development & Web Development Company Nigeria | Software Development Services",
-  description: "Omnix Lab is Nigeria's most trusted trading bot development company and web development company. We build crypto trading bots, forex bots, custom software, SaaS platforms, mobile apps, and AI solutions. Founded by Akomolafe Nathaniel. Hire us today.",
+  title: "Omnix Lab | Trading Bot & Web Development Company Nigeria",
+  description: "Nigeria's most trusted trading bot and web development company. Crypto bots, forex bots, SaaS, AI solutions. 50+ projects delivered. Founded by Akomolafe Nathaniel.",
   keywords: [
     "trading bot development company Nigeria",
     "web development company Nigeria",
@@ -29,24 +29,11 @@ export const metadata: Metadata = {
     "forex trading bot development",
     "custom software development services",
     "AI development company Nigeria",
-    "Next.js developer for hire",
     "SaaS development company",
     "mobile app development Nigeria",
     "hire software developer Nigeria",
-    "algorithmic trading bot services",
-    "automated trading system development",
-    "binance trading bot developer",
-    "enterprise software development",
-    "full stack developer Nigeria",
-    "React developer for hire",
-    "ecommerce website development",
-    "AI chatbot development",
-    "machine learning solutions",
     "Omnix Lab",
     "Akomolafe Nathaniel",
-    "best web developers Nigeria",
-    "professional website development",
-    "custom SaaS platform development",
   ],
   authors: [{ name: "Akomolafe Nathaniel" }],
   creator: "Omnix Lab",
@@ -64,8 +51,8 @@ export const metadata: Metadata = {
     },
   },
   openGraph: {
-    title: "Omnix Lab | Trading Bot & Web Development Company Nigeria",
-    description: "Nigeria's most trusted trading bot development company and web development company. Crypto bots, forex bots, SaaS, AI solutions. 50+ projects delivered.",
+    title: "Omnix Lab | Trading Bot & Web Development Nigeria",
+    description: "Nigeria's most trusted trading bot and web development company. Crypto bots, forex bots, SaaS, AI. 50+ projects.",
     url: "https://omnixlabsupport.com",
     siteName: "Omnix Lab",
     locale: "en_US",
@@ -94,6 +81,37 @@ export default function RootLayout({
         <meta name="google-site-verification" content="f2z1UulRNHkkLu7y-Aclth-LoOiGSRzqp9jFca2cCMc" />
         <meta name="msvalidate.01" content="AD5FF21A900C5F4F1767A33F15A832FC" />
         <meta name="trustpilot-one-time-domain-verification-id" content="448eaaee-e205-4764-9e8b-87aa185e7448"/>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "Organization",
+              "name": "Omnix Lab",
+              "url": "https://omnixlabsupport.com",
+              "description": "Nigeria's most trusted trading bot development and web development company.",
+              "foundingDate": "2022",
+              "founder": {
+                "@type": "Person",
+                "name": "Akomolafe Nathaniel",
+                "jobTitle": "Founder & CEO"
+              },
+              "contactPoint": {
+                "@type": "ContactPoint",
+                "telephone": "+2347033702874",
+                "email": "helloafrica@omnixlabsupport.com",
+                "contactType": "customer service"
+              },
+              "aggregateRating": {
+                "@type": "AggregateRating",
+                "ratingValue": "4.9",
+                "reviewCount": "30",
+                "bestRating": "5"
+              },
+              "areaServed": "Worldwide"
+            })
+          }}
+        />
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <Preloader />
