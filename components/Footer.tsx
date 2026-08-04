@@ -79,6 +79,11 @@ export default function Footer() {
     💻 GitHub
   </a>
 </li>
+<li>
+  <a href="https://youtube.com/@omnixlab-c9y" target="_blank" rel="noopener noreferrer" className="hover:text-gray-900 transition-colors">
+    🎥 YouTube
+  </a>
+</li>
               </li>
               <li className="pt-2">
                 <a href="https://www.trustpilot.com/evaluate/omnixlabsupport.com" target="_blank" rel="noopener noreferrer" className="text-green-600 hover:text-green-700 transition-colors font-medium">
