@@ -74,6 +74,11 @@ export default function Footer() {
                 <a href="https://medium.com/@OmnixLab" target="_blank" rel="noopener noreferrer" className="hover:text-gray-900 transition-colors">
                   ✍️ Medium Blog
                 </a>
+                <li>
+  <a href="https://github.com/OmnixLabHQ" target="_blank" rel="noopener noreferrer" className="hover:text-gray-900 transition-colors">
+    💻 GitHub
+  </a>
+</li>
               </li>
               <li className="pt-2">
                 <a href="https://www.trustpilot.com/evaluate/omnixlabsupport.com" target="_blank" rel="noopener noreferrer" className="text-green-600 hover:text-green-700 transition-colors font-medium">
