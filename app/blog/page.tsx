@@ -1,7 +1,6 @@
-import { getAllPosts } from '@/lib/blog'
 import { BlogClient } from './BlogClient'
-
-export const dynamic = 'force-dynamic'
+import { getAllPosts } from '@/lib/blog'
+import { unstable_noStore as noStore } from 'next/cache'
 
 export const metadata = {
   title: 'Blog | Omnix Lab - Development Insights & Tech Trends',
@@ -9,6 +8,7 @@ export const metadata = {
 }
 
 export default function BlogPage() {
+  noStore()
   const posts = getAllPosts()
   return <BlogClient posts={posts} />
 }
