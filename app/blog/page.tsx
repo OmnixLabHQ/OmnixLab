@@ -1,14 +1,27 @@
 import { BlogClient } from './BlogClient'
-import { getAllPosts } from '@/lib/blog'
-import { unstable_noStore as noStore } from 'next/cache'
+import { supabase } from '@/lib/supabase'
+
+export const dynamic = 'force-dynamic'
 
 export const metadata = {
   title: 'Blog | Omnix Lab - Development Insights & Tech Trends',
   description: 'Expert insights on web development, trading bots, AI, and technology trends from Omnix Lab.',
 }
 
-export default function BlogPage() {
-  noStore()
-  const posts = getAllPosts()
-  return <BlogClient posts={posts} />
+export default async function BlogPage() {
+  // Get auto-generated posts from Supabase
+  const { data: autoPosts } = await supabase
+    .from('blog_posts')
+    .select('*')
+    .order('date', { ascending: false })
+
+  // Get manual posts from blog.ts
+  const { getAllPosts } = await import('@/lib/blog')
+  const manualPosts = getAllPosts()
+
+  const allPosts = [...(autoPosts || []), ...manualPosts].sort(
+    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+  )
+
+  return <BlogClient posts={allPosts} />
 }

@@ -1,46 +1,44 @@
 import { NextResponse } from 'next/server'
 import { generatePostForDate } from '@/lib/post-generator'
-import fs from 'fs'
-import path from 'path'
+import { supabase } from '@/lib/supabase'
 
 export async function GET() {
   try {
     const today = new Date().toISOString().split('T')[0]
     const post = generatePostForDate(today)
-    
-    const postsFile = path.join(process.cwd(), 'lib', 'auto-posts.json')
-    let existingPosts: any[] = []
-    
-    try {
-      const raw = fs.readFileSync(postsFile, 'utf-8')
-      existingPosts = JSON.parse(raw)
-    } catch (e) {
-      existingPosts = []
-    }
-    
-    const exists = existingPosts.find((p: any) => p.date === today)
-    if (!exists) {
-      existingPosts.unshift({
+
+    // Check if today's post already exists
+    const { data: existing } = await supabase
+      .from('blog_posts')
+      .select('slug')
+      .eq('date', today)
+      .limit(1)
+
+    if (!existing || existing.length === 0) {
+      // Insert new post
+      const { error } = await supabase.from('blog_posts').insert({
         slug: post.slug,
         title: post.title,
         excerpt: post.body.substring(0, 150) + '...',
         content: post.body,
         category: post.category,
         date: post.date,
-        readTime: post.readTime,
+        read_time: post.readTime,
         author: 'Akomolafe Nathaniel',
         image: post.image,
       })
-      
-      fs.writeFileSync(postsFile, JSON.stringify(existingPosts, null, 2))
+
+      if (error) {
+        return NextResponse.json({ success: false, error: error.message })
+      }
     }
 
     return NextResponse.json({
       success: true,
       post: { title: post.title, slug: post.slug, date: post.date },
-      totalAutoPosts: existingPosts.length,
+      saved: !existing || existing.length === 0,
     })
   } catch (error) {
-    return NextResponse.json({ success: false, error: String(error) }, { status: 500 })
+    return NextResponse.json({ success: false, error: String(error) })
   }
 }
