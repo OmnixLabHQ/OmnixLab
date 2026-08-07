@@ -17,6 +17,7 @@ export async function GET() {
         date: post.date,
       },
       blogUpdated,
+      note: 'Visit /blog to see the new post. If not visible, Railway auto-redeploys shortly.'
     })
   } catch (error) {
     return NextResponse.json({ success: false, error: String(error) }, { status: 500 })
