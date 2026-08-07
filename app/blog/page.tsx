@@ -1,6 +1,5 @@
 import { getAllPosts } from '@/lib/blog'
 import { BlogClient } from './BlogClient'
-import autoPosts from '@/lib/auto-posts.json'
 
 export const revalidate = 60
 
@@ -11,6 +10,16 @@ export const metadata = {
 
 export default function BlogPage() {
   const manualPosts = getAllPosts()
+  
+  // Try to load auto posts, but don't crash if file is missing or invalid
+  let autoPosts: any[] = []
+  try {
+    const data = require('@/lib/auto-posts.json')
+    autoPosts = Array.isArray(data) ? data : []
+  } catch (e) {
+    autoPosts = []
+  }
+
   const allPosts = [...autoPosts, ...manualPosts].sort(
     (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
   )
