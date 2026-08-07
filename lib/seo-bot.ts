@@ -1,6 +1,5 @@
 // ============================================
 // OMNIX LAB - SEO AUTO-POSTING BOT
-// Posts daily to: Website Blog, Medium, X, Facebook, Instagram
 // ============================================
 
 import fs from 'fs'
@@ -151,7 +150,7 @@ export const hashtagSets = [
   '#NigerianBusiness #GlobalTech #Innovation #FutureOfWork #CodeNewbie',
 ]
 
-// ============ GENERATE POST ============
+// ============ GENERATE RANDOM POST (FALLBACK) ============
 export function generatePost() {
   const template = contentTemplates[Math.floor(Math.random() * contentTemplates.length)]
   const titleTemplate = template.titles[Math.floor(Math.random() * template.titles.length)]
@@ -176,36 +175,50 @@ export function generatePost() {
 }
 
 // ============ UPDATE WEBSITE BLOG ============
-export function updateWebsiteBlog(post: ReturnType<typeof generatePost>) {
+interface PostData {
+  title: string
+  body: string
+  category: string
+  image: string
+  slug: string
+  date: string
+  readTime: string
+  tags: string[]
+  keyword?: string
+  hashtags?: string
+}
+
+export function updateWebsiteBlog(post: PostData): boolean {
   const blogFilePath = path.join(process.cwd(), 'lib', 'blog.ts')
-  
+
+  const safeTitle = post.title.replace(/'/g, "\\'").replace(/`/g, '\\`')
+  const safeBody = post.body.replace(/`/g, '\\`').replace(/\$/g, '\\$').replace(/\\/g, '\\\\')
+  const safeExcerpt = post.body.substring(0, 150).replace(/'/g, "\\'").replace(/`/g, '\\`')
+
   const newPost = `
   {
     slug: '${post.slug}',
-    title: '${post.title.replace(/'/g, "\\'")}',
-    excerpt: '${post.body.substring(0, 150).replace(/'/g, "\\'")}...',
-    content: \`${post.body.replace(/`/g, '\\`').replace(/\$/g, '\\$')}\`,
+    title: '${safeTitle}',
+    excerpt: '${safeExcerpt}...',
+    content: \`${safeBody}\`,
     category: '${post.category}',
     date: '${post.date}',
     readTime: '${post.readTime}',
     author: 'Akomolafe Nathaniel',
     image: '${post.image}'
   }`
-  
+
   try {
     let blogContent = fs.readFileSync(blogFilePath, 'utf-8')
-    
-    // Insert new post after the opening array bracket
     blogContent = blogContent.replace(
       'export const blogPosts: BlogPost[] = [',
       `export const blogPosts: BlogPost[] = [\n  ${newPost},`
     )
-    
     fs.writeFileSync(blogFilePath, blogContent)
-    console.log('✅ Website blog updated with new post')
+    console.log('✅ Blog updated with:', post.title)
     return true
   } catch (error) {
-    console.error('❌ Failed to update blog:', error)
+    console.error('❌ Blog update failed:', error)
     return false
   }
 }
