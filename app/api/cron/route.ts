@@ -1,22 +1,24 @@
 import { NextResponse } from 'next/server'
 import { generatePostForDate } from '@/lib/post-generator'
-import { supabase } from '@/lib/supabase'
+
+const SUPABASE_URL = 'https://tmvsxsbiowhcufbyqfan.supabase.co'
+const SUPABASE_KEY = 'sb_publishable_jXu7YbDrz26BbNxg7N33FA_vATtHG2U'
 
 export async function GET() {
   try {
     const today = new Date().toISOString().split('T')[0]
     const post = generatePostForDate(today)
 
-    // Check if today's post already exists
-    const { data: existing } = await supabase
-      .from('blog_posts')
-      .select('slug')
-      .eq('date', today)
-      .limit(1)
-
-    if (!existing || existing.length === 0) {
-      // Insert new post
-      const { error } = await supabase.from('blog_posts').insert({
+    // Insert using direct fetch
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/blog_posts`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${SUPABASE_KEY}`,
+        'Prefer': 'return=minimal',
+      },
+      body: JSON.stringify({
         slug: post.slug,
         title: post.title,
         excerpt: post.body.substring(0, 150) + '...',
@@ -26,17 +28,17 @@ export async function GET() {
         read_time: post.readTime,
         author: 'Akomolafe Nathaniel',
         image: post.image,
-      })
+      }),
+    })
 
-      if (error) {
-        return NextResponse.json({ success: false, error: error.message })
-      }
+    if (!response.ok) {
+      const errorText = await response.text()
+      return NextResponse.json({ success: false, error: errorText })
     }
 
     return NextResponse.json({
       success: true,
       post: { title: post.title, slug: post.slug, date: post.date },
-      saved: !existing || existing.length === 0,
     })
   } catch (error) {
     return NextResponse.json({ success: false, error: String(error) })
