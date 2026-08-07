@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { generatePostForDate } from '@/lib/post-generator'
 
-const SUPABASE_URL = 'https://tmvsxsbiowhcufbyqfan.supabase.co'
+const SUPABASE_URL = 'https://fqeyrtjlfnsxgwczcrvx.supabase.co'
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZxZXlydGpsZm5zeGd3Y3pjcnZ4Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NjEwNjEwMCwiZXhwIjoyMTAxNjgyMTAwfQ.qjwiq3DM689T1mEjzwredtN7NLv88QrOdddq-RWZANc'
 
 export async function GET() {

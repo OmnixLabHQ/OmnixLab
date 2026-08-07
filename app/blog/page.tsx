@@ -9,13 +9,11 @@ export const metadata = {
 }
 
 export default async function BlogPage() {
-  // Get auto-generated posts from Supabase
   const { data: autoPosts } = await supabase
     .from('blog_posts')
     .select('*')
     .order('date', { ascending: false })
 
-  // Get manual posts from blog.ts
   const { getAllPosts } = await import('@/lib/blog')
   const manualPosts = getAllPosts()
 
