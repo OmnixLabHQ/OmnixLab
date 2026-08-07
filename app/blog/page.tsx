@@ -7,6 +7,7 @@ export const metadata = {
   title: 'Blog | Omnix Lab - Development Insights & Tech Trends',
   description: 'Expert insights on web development, trading bots, AI, and technology trends from Omnix Lab.',
 }
+export const dynamic = 'force-dynamic'
 
 export default function BlogPage() {
   const manualPosts = getAllPosts()
