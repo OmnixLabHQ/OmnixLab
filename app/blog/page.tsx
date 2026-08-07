@@ -1,5 +1,6 @@
 import { getAllPosts } from '@/lib/blog'
 import { BlogClient } from './BlogClient'
+import autoPosts from '@/lib/auto-posts.json'
 
 export const revalidate = 60
 
@@ -9,6 +10,9 @@ export const metadata = {
 }
 
 export default function BlogPage() {
-  const posts = getAllPosts()
-  return <BlogClient posts={posts} />
+  const manualPosts = getAllPosts()
+  const allPosts = [...autoPosts, ...manualPosts].sort(
+    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+  )
+  return <BlogClient posts={allPosts} />
 }
