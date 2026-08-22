@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { sendEmail } from '@/lib/email'
 import { randomBytes } from 'crypto'
 
-const supabaseUrl = 'https://tmvsxsbiowhcufbyqfan.supabase.co'
+const supabaseUrl = 'https://fqeyrtjlfnsxgwczcrvx.supabase.co'
 const supabaseSecretKey = 'YOUR_ENV_VARIABLE_HERE'
 const supabaseAdmin = createClient(supabaseUrl, supabaseSecretKey)
 

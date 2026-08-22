@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { createHmac } from 'crypto'
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = 'https://tmvsxsbiowhcufbyqfan.supabase.co'
+const supabaseUrl = 'https://fqeyrtjlfnsxgwczcrvx.supabase.co'
 const supabaseServiceKey = 'YOUR_ENV_VARIABLE_HERE'
 const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey)
 

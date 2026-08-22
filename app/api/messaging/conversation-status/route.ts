@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
 const supabaseAdmin = createClient(
-  'https://tmvsxsbiowhcufbyqfan.supabase.co',
+  'https://fqeyrtjlfnsxgwczcrvx.supabase.co',
   'YOUR_ENV_VARIABLE_HERE'
 )
 

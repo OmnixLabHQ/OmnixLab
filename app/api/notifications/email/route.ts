@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { sendEmail } from '@/lib/email/service'
 
-const supabaseUrl = 'https://tmvsxsbiowhcufbyqfan.supabase.co'
+const supabaseUrl = 'https://fqeyrtjlfnsxgwczcrvx.supabase.co'
 const supabaseSecretKey = 'YOUR_ENV_VARIABLE_HERE'
 const supabaseAdmin = createClient(supabaseUrl, supabaseSecretKey)
 

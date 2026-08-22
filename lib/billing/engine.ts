@@ -12,7 +12,7 @@ import type {
 } from './types'
 
 // These are safe to have at module level for server-side use
-const supabaseUrl = 'https://tmvsxsbiowhcufbyqfan.supabase.co'
+const supabaseUrl = 'https://fqeyrtjlfnsxgwczcrvx.supabase.co'
 
 function getSupabaseAdmin() {
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
