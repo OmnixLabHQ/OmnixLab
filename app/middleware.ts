@@ -3,7 +3,7 @@ import type { NextRequest } from 'next/server'
 
 export async function middleware(req: NextRequest) {
   // Simple check: if user has a session cookie
-const hasSession = req.cookies.has('sb-tmvsxsbiowhcufbyqfan-auth-token')
+const hasSession = req.cookies.has('sb-fqeyrtjlfnsxgwczcrvx-auth-token')
   
   // Protect /portal routes except login
   if (req.nextUrl.pathname.startsWith('/portal') && !req.nextUrl.pathname.startsWith('/portal/login')) {
