@@ -1,0 +1,164 @@
+'use client'
+import { useEffect, useState } from 'react'
+import { usePathname, useRouter } from 'next/navigation'
+import Link from 'next/link'
+import { supabase } from '@/lib/supabase'
+import NotificationBell from '@/components/NotificationBell'
+
+export default function PortalShell({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname()
+  const router = useRouter()
+  const [user, setUser] = useState<any>(null)
+  const [clientName, setClientName] = useState('Client')
+  const [loading, setLoading] = useState(true)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+
+  const publicPaths = ['/portal', '/portal/login', '/portal/register']
+  const isPublic = publicPaths.includes(pathname)
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { user: authUser } } = await supabase.auth.getUser()
+      if (!authUser) {
+        if (!isPublic) router.push('/portal/login')
+        setLoading(false)
+        return
+      }
+      setUser(authUser)
+      const { data: client } = await supabase
+        .from('clients')
+        .select('full_name')
+        .eq('id', authUser.id)
+        .single()
+      if (client) setClientName(client.full_name || 'Client')
+      setLoading(false)
+    }
+    checkAuth()
+  }, [pathname, isPublic, router])
+
+  // Close mobile menu on route change
+  useEffect(() => {
+    setMobileMenuOpen(false)
+  }, [pathname])
+
+  if (!isPublic && loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-spin h-8 w-8 border-4 border-indigo-600 border-t-transparent rounded-full"></div>
+      </div>
+    )
+  }
+
+  if (isPublic) {
+    return <>{children}</>
+  }
+
+  const navItems = [
+    { href: '/portal/dashboard', label: 'Dashboard', icon: '📊' },
+    { href: '/portal/projects', label: 'Projects', icon: '🗂️' },
+    { href: '/portal/payments', label: 'Payments', icon: '💰' },
+    { href: '/portal/files', label: 'Files', icon: '📁' },
+    { href: '/portal/ideas', label: 'Ideas', icon: '💡' },
+    { href: '/portal/settings', label: 'Settings', icon: '⚙️' },
+  ]
+
+  const sidebarContent = (
+    <div className="flex flex-col h-full">
+      <div className="flex items-center gap-3 mb-10 px-6 pt-6">
+        <div className="w-10 h-10 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center text-white font-bold text-lg">O</div>
+        <div>
+          <p className="font-bold text-lg leading-tight text-gray-900 dark:text-white">Omnix<span className="text-gray-400">Lab</span></p>
+          <p className="text-xs text-gray-500">Client Portal</p>
+        </div>
+      </div>
+
+      <nav className="flex-1 space-y-1 px-4">
+        {navItems.map(item => (
+          <Link
+            key={item.href}
+            href={item.href}
+            className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition ${
+              pathname === item.href
+                ? 'bg-indigo-50 text-indigo-700 border-l-4 border-indigo-600'
+                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+            }`}
+          >
+            <span>{item.icon}</span> {item.label}
+          </Link>
+        ))}
+      </nav>
+
+      <div className="border-t border-gray-100 pt-4 px-4 pb-6">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold">
+            {clientName.charAt(0)}
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold truncate text-gray-900">{clientName}</p>
+            <p className="text-xs text-gray-500 truncate">{user?.email}</p>
+          </div>
+        </div>
+        <a
+          href="/portal/logout"
+          className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-gray-600 hover:bg-gray-50 transition"
+        >
+          🚪 Sign Out
+        </a>
+      </div>
+    </div>
+  )
+
+  return (
+    <div className="min-h-screen bg-gray-50 flex text-gray-900">
+      {/* Desktop Sidebar */}
+      <aside className="w-64 bg-white shadow-sm border-r border-gray-200 flex-col hidden lg:flex">
+        {sidebarContent}
+      </aside>
+
+      {/* Mobile Sidebar Overlay */}
+      {mobileMenuOpen && (
+        <div className="lg:hidden fixed inset-0 z-50">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setMobileMenuOpen(false)}></div>
+          <div className="absolute left-0 top-0 bottom-0 w-72 bg-white shadow-xl overflow-y-auto transition-transform duration-300">
+            {sidebarContent}
+          </div>
+        </div>
+      )}
+
+      {/* Main content area */}
+      <div className="flex-1 flex flex-col min-w-0">
+        {/* Top Header */}
+        <header className="bg-white border-b border-gray-200 px-4 lg:px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setMobileMenuOpen(true)}
+              className="lg:hidden p-2 rounded-lg hover:bg-gray-100 transition"
+            >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <path d="M3 12h18M3 6h18M3 18h18"/>
+              </svg>
+            </button>
+            <div className="lg:hidden flex items-center gap-2">
+              <div className="w-8 h-8 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-lg flex items-center justify-center text-white font-bold">O</div>
+              <span className="text-lg font-bold">OmnixLab</span>
+            </div>
+            <h1 className="hidden lg:block text-xl font-bold text-gray-900">
+              {navItems.find(item => item.href === pathname)?.label || 'Dashboard'}
+            </h1>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <NotificationBell />
+            <div className="w-9 h-9 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold hidden sm:flex">
+              {clientName.charAt(0)}
+            </div>
+          </div>
+        </header>
+
+        <main className="flex-1 p-4 lg:p-8 overflow-auto">
+          {children}
+        </main>
+      </div>
+    </div>
+  )
+}
