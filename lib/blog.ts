@@ -38,8 +38,8 @@ At Omnix Lab, we provide transparent pricing and deliver enterprise‑grade webs
 
 Contact us today for a free consultation and a detailed quote tailored to your needs.
 
-🌐 omnixlabsupport.com
-📧 helloafrica@omnixlabsupport.com
+🌐 omnixlab-production.up.railway.app
+📧 helloafrica@omnixlab-production.up.railway.app
 💬 +234 703 370 2874
 
 #WebDevelopment #WebsiteCost #BusinessGrowth #OmnixLab`,
@@ -84,8 +84,8 @@ Ready to automate your trading? Omnix Lab has built 50+ trading bots for clients
 
 Contact us today for a free consultation.
 
-🌐 omnixlabsupport.com
-📧 helloafrica@omnixlabsupport.com
+🌐 omnixlab-production.up.railway.app
+📧 helloafrica@omnixlab-production.up.railway.app
 💬 +234 703 370 2874
 
 #TradingBot #Crypto #Forex #AutomatedTrading #OmnixLab`,
@@ -131,8 +131,8 @@ Here's an honest comparison:
 
 Omnix Lab builds custom software that pays for itself. Let's discuss your needs and find the best solution for your business.
 
-🌐 omnixlabsupport.com
-📧 helloafrica@omnixlabsupport.com
+🌐 omnixlab-production.up.railway.app
+📧 helloafrica@omnixlab-production.up.railway.app
 💬 +234 703 370 2874
 
 #CustomSoftware #SaaS #BusinessAutomation #ROI #OmnixLab`,

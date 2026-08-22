@@ -9,13 +9,13 @@ const nextConfig: NextConfig = {
       {
         source: '/:path*',
         has: [{ type: 'host', value: 'omnixlab-production.up.railway.app' }],
-        destination: 'https://omnixlabsupport.com/:path*',
+        destination: 'https://omnixlab-production.up.railway.app/:path*',
         permanent: true,
       },
       {
         source: '/:path*',
-        has: [{ type: 'host', value: 'www.omnixlabsupport.com' }],
-        destination: 'https://omnixlabsupport.com/:path*',
+        has: [{ type: 'host', value: 'www.omnixlab-production.up.railway.app' }],
+        destination: 'https://omnixlab-production.up.railway.app/:path*',
         permanent: true,
       },
     ];

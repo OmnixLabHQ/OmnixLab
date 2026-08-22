@@ -19,7 +19,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       }
 
       // Allowed admin emails (add more if needed)
-      const adminEmails = ['helloafrica@omnixlabsupport.com']
+      const adminEmails = ['helloafrica@omnixlab-production.up.railway.app']
 
       if (adminEmails.includes(user.email || '')) {
         setIsAdmin(true)

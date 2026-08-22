@@ -29,8 +29,8 @@ Key benefits of {keyword}:
 
 Ready to build your own {keyword}? Contact Omnix Lab today.
 
-🌐 https://omnixlabsupport.com
-📧 helloafrica@omnixlabsupport.com
+🌐 https://omnixlab-production.up.railway.app
+📧 helloafrica@omnixlab-production.up.railway.app
 💬 +234 703 370 2874
 
 #TradingBot #Crypto #Forex #FinTech #NigeriaTech #OmnixLab`
@@ -57,8 +57,8 @@ What makes Omnix Lab different:
 
 Ready to upgrade your online presence? Let's build something extraordinary.
 
-🌐 https://omnixlabsupport.com
-📧 helloafrica@omnixlabsupport.com
+🌐 https://omnixlab-production.up.railway.app
+📧 helloafrica@omnixlab-production.up.railway.app
 💬 +234 703 370 2874
 
 #WebDevelopment #NextJS #NigeriaTech #BusinessGrowth #OmnixLab`
@@ -85,8 +85,8 @@ At Omnix Lab, we build custom AI solutions tailored to your specific business ne
 
 Don't get left behind in the AI revolution. Contact us today.
 
-🌐 https://omnixlabsupport.com
-📧 helloafrica@omnixlabsupport.com
+🌐 https://omnixlab-production.up.railway.app
+📧 helloafrica@omnixlab-production.up.railway.app
 💬 +234 703 370 2874
 
 #AI #Automation #NigeriaTech #BusinessGrowth #OmnixLab`
@@ -114,8 +114,8 @@ Our SaaS development includes:
 
 Ready to launch your SaaS platform? Let's discuss your idea.
 
-🌐 https://omnixlabsupport.com
-📧 helloafrica@omnixlabsupport.com
+🌐 https://omnixlab-production.up.railway.app
+📧 helloafrica@omnixlab-production.up.railway.app
 💬 +234 703 370 2874
 
 #SaaS #SoftwareDevelopment #NigeriaTech #Startup #OmnixLab`

@@ -3,5 +3,5 @@ import { supabase } from '@/lib/supabase'
 
 export async function GET() {
   await supabase.auth.signOut()
-  return NextResponse.redirect(new URL('/portal/login', 'https://omnixlabsupport.com'))
+  return NextResponse.redirect(new URL('/portal/login', 'https://omnixlab-production.up.railway.app'))
 }

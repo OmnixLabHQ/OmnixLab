@@ -36,7 +36,7 @@ export async function POST(request: Request) {
               <p><strong>Idea:</strong> ${ideaTitle}</p>
               <p><strong>Reference:</strong> IDEA-${String(ideaId).padStart(4, '0')}</p>
               <p>Our team will review your idea and update its status in your portal.</p>
-              <a href="https://omnixlabsupport.com/portal/ideas/${ideaId}" class="button">View Your Idea</a>
+              <a href="https://omnixlab-production.up.railway.app/portal/ideas/${ideaId}" class="button">View Your Idea</a>
               <p>Best regards,<br/><strong>Omnix Lab Team</strong></p>
             </div>
           </div>

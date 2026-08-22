@@ -21,7 +21,7 @@ export default function TermsPage() {
           
           <div className="bg-indigo-50 rounded-2xl p-6 border border-indigo-100">
             <p className="text-gray-700 leading-relaxed">
-              Welcome to <strong>Omnix Lab</strong>. By accessing our website at <strong>omnixlabsupport.com</strong> and using our services, you agree to be bound by these Terms of Service. If you disagree with any part of these terms, please do not use our services.
+              Welcome to <strong>Omnix Lab</strong>. By accessing our website at <strong>omnixlab-production.up.railway.app</strong> and using our services, you agree to be bound by these Terms of Service. If you disagree with any part of these terms, please do not use our services.
             </p>
           </div>
 
@@ -103,9 +103,9 @@ export default function TermsPage() {
             </p>
             <div className="bg-gray-50 rounded-xl p-5 space-y-2">
               <p className="text-gray-700"><strong>Omnix Lab</strong></p>
-              <p className="text-gray-600">📧 helloafrica@omnixlabsupport.com</p>
+              <p className="text-gray-600">📧 helloafrica@omnixlab-production.up.railway.app</p>
               <p className="text-gray-600">💬 +234 703 370 2874</p>
-              <p className="text-gray-600">🌐 omnixlabsupport.com</p>
+              <p className="text-gray-600">🌐 omnixlab-production.up.railway.app</p>
             </div>
           </section>
 

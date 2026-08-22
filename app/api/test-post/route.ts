@@ -16,7 +16,7 @@ export async function GET() {
     },
   })
 
-  const tweet = `🚀 Omnix Lab — Nigeria's Most Trusted Software Company\n\nWe build: Trading Bots • Web Apps • SaaS • AI Solutions\n\n🌐 omnixlabsupport.com\n#NigeriaTech #SoftwareDevelopment #OmnixLab`
+  const tweet = `🚀 Omnix Lab — Nigeria's Most Trusted Software Company\n\nWe build: Trading Bots • Web Apps • SaaS • AI Solutions\n\n🌐 omnixlab-production.up.railway.app\n#NigeriaTech #SoftwareDevelopment #OmnixLab`
 
   const requestData = {
     url: 'https://api.twitter.com/2/tweets',

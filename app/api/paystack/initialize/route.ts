@@ -17,7 +17,7 @@ export async function POST(request: Request) {
       amount: Math.round(amount * 100),
       currency: 'NGN',
       metadata: { invoiceId },
-      callback_url: 'https://omnixlabsupport.com/portal/payments',
+      callback_url: 'https://omnixlab-production.up.railway.app/portal/payments',
     }),
   })
 

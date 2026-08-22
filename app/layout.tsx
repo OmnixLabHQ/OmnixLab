@@ -44,7 +44,7 @@ export const metadata: Metadata = {
   authors: [{ name: "Akomolafe Nathaniel" }],
   creator: "Omnix Lab",
   publisher: "Omnix Lab",
-  metadataBase: new URL("https://omnixlabsupport.com"),
+  metadataBase: new URL("https://omnixlab-production.up.railway.app"),
   robots: {
     index: true,
     follow: true,
@@ -60,7 +60,7 @@ export const metadata: Metadata = {
     title: "Omnix Lab | Global Software Development & Trading Bot Company",
     description:
       "Omnix Lab builds trading bots, web apps, SaaS, and AI solutions for businesses worldwide. 50+ projects delivered, 99% client satisfaction.",
-    url: "https://omnixlabsupport.com",
+    url: "https://omnixlab-production.up.railway.app",
     siteName: "Omnix Lab",
     locale: "en_US",
     type: "website",
@@ -84,7 +84,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="scroll-smooth">
       <head>
-        <link rel="canonical" href="https://omnixlabsupport.com" />
+        <link rel="canonical" href="https://omnixlab-production.up.railway.app" />
         <meta
           name="google-site-verification"
           content="mvuvpEIjBg35Cq2CAAWC_SJyaT-Z0ixQPcF35UJ5dWk"
@@ -123,7 +123,7 @@ export default function RootLayout({
               "@context": "https://schema.org",
               "@type": "Organization",
               name: "Omnix Lab",
-              url: "https://omnixlabsupport.com",
+              url: "https://omnixlab-production.up.railway.app",
               description:
                 "Global software development company building trading bots, web applications, SaaS platforms, and AI solutions for businesses worldwide.",
               foundingDate: "2022",
@@ -135,7 +135,7 @@ export default function RootLayout({
               contactPoint: {
                 "@type": "ContactPoint",
                 telephone: "+2347033702874",
-                email: "helloafrica@omnixlabsupport.com",
+                email: "helloafrica@omnixlab-production.up.railway.app",
                 contactType: "customer service",
               },
               aggregateRating: {

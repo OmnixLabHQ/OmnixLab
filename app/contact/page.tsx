@@ -34,7 +34,7 @@ export default function ContactPage() {
         setError(data.error || 'Something went wrong. Please try again.')
       }
     } catch (err) {
-      setError('Failed to send. Please email us directly at helloafrica@omnixlabsupport.com')
+      setError('Failed to send. Please email us directly at helloafrica@omnixlab-production.up.railway.app')
     } finally {
       setLoading(false)
     }
@@ -170,9 +170,9 @@ export default function ContactPage() {
             <div className="p-6 rounded-2xl border border-gray-100">
               <h3 className="font-bold text-gray-900 mb-4">Contact Information</h3>
               <div className="space-y-4">
-                <a href="mailto:helloafrica@omnixlabsupport.com" className="flex items-center gap-3 text-gray-600 hover:text-gray-900 transition-colors group">
+                <a href="mailto:helloafrica@omnixlab-production.up.railway.app" className="flex items-center gap-3 text-gray-600 hover:text-gray-900 transition-colors group">
                   <span className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center text-lg group-hover:bg-indigo-100 transition-colors">✉️</span>
-                  <span className="text-sm">helloafrica@omnixlabsupport.com</span>
+                  <span className="text-sm">helloafrica@omnixlab-production.up.railway.app</span>
                 </a>
                 <a href="https://wa.me/2347033702874" target="_blank" className="flex items-center gap-3 text-gray-600 hover:text-gray-900 transition-colors group">
                   <span className="w-10 h-10 rounded-xl bg-green-50 flex items-center justify-center text-lg group-hover:bg-green-100 transition-colors">💬</span>

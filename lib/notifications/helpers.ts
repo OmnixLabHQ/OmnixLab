@@ -9,7 +9,7 @@ const supabaseUrl = 'https://tmvsxsbiowhcufbyqfan.supabase.co'
 const supabaseSecretKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 const supabaseAdmin = createClient(supabaseUrl, supabaseSecretKey)
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://omnixlabsupport.com'
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://omnixlab-production.up.railway.app'
 
 export async function notifyInvoiceCreated(invoiceId: string) {
   const { data: invoice } = await supabaseAdmin

@@ -176,7 +176,7 @@ export default function Home() {
               </Link>
             </motion.div>
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-              <a href="mailto:helloafrica@omnixlabsupport.com" className="inline-flex px-8 py-4 border-2 border-white/30 text-white font-semibold rounded-full hover:bg-white/10 transition-all duration-300 text-center backdrop-blur-sm">
+              <a href="mailto:helloafrica@omnixlab-production.up.railway.app" className="inline-flex px-8 py-4 border-2 border-white/30 text-white font-semibold rounded-full hover:bg-white/10 transition-all duration-300 text-center backdrop-blur-sm">
                 Send an Email
               </a>
             </motion.div>

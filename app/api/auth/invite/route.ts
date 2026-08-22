@@ -38,7 +38,7 @@ export async function POST(request: Request) {
     }
 
     // Send invitation email
-    const inviteUrl = `https://omnixlabsupport.com/portal/accept-invitation?token=${token}`
+    const inviteUrl = `https://omnixlab-production.up.railway.app/portal/accept-invitation?token=${token}`
 
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">

@@ -38,7 +38,7 @@ export default function AboutPage() {
             name: "Omnix Lab",
             description:
               "Global software development company founded by Akomolafe Nathaniel. Building trading bots, web applications, SaaS platforms, and AI solutions for businesses worldwide.",
-            url: "https://omnixlabsupport.com",
+            url: "https://omnixlab-production.up.railway.app",
             logo: "https://i.ibb.co/jXsT2ZB/image.jpg",
             foundingDate: "2022",
             founder: {
@@ -47,7 +47,7 @@ export default function AboutPage() {
               jobTitle: "Founder & CEO",
               description:
                 "Akomolafe Nathaniel is the Founder and CEO of Omnix Lab, a global software development company. Expert in trading bot development, web development, and enterprise software engineering.",
-              url: "https://omnixlabsupport.com/about",
+              url: "https://omnixlab-production.up.railway.app/about",
               sameAs: [
                 "https://linkedin.com/in/akomolafe-nathaniel",
                 "https://github.com/OmnixLabHQ",
@@ -56,7 +56,7 @@ export default function AboutPage() {
             contactPoint: {
               "@type": "ContactPoint",
               telephone: "+2347033702874",
-              email: "helloafrica@omnixlabsupport.com",
+              email: "helloafrica@omnixlab-production.up.railway.app",
               contactType: "customer service",
               availableLanguage: ["English"],
             },
@@ -378,7 +378,7 @@ export default function AboutPage() {
                 Start Your Project →
               </Link>
               <a
-                href="mailto:helloafrica@omnixlabsupport.com"
+                href="mailto:helloafrica@omnixlab-production.up.railway.app"
                 className="inline-flex px-8 py-4 border-2 border-white/30 text-white font-semibold rounded-full hover:bg-white/10 transition-colors"
               >
                 Email the Founder

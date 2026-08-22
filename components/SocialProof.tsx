@@ -178,7 +178,7 @@ export default function SocialProof() {
             See Google Reviews
           </a>
           <a
-            href="https://www.trustpilot.com/evaluate/omnixlabsupport.com"
+            href="https://www.trustpilot.com/evaluate/omnixlab-production.up.railway.app"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 px-6 py-3 bg-green-600 text-white font-semibold rounded-full hover:bg-green-700 transition-colors shadow-lg shadow-green-200"
