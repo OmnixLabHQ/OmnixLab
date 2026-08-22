@@ -4,22 +4,6 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: process.cwd(),
   },
-  async redirects() {
-    return [
-      {
-        source: '/:path*',
-        has: [{ type: 'host', value: 'omnixlab-production.up.railway.app' }],
-        destination: 'https://omnixlab-production.up.railway.app/:path*',
-        permanent: true,
-      },
-      {
-        source: '/:path*',
-        has: [{ type: 'host', value: 'www.omnixlab-production.up.railway.app' }],
-        destination: 'https://omnixlab-production.up.railway.app/:path*',
-        permanent: true,
-      },
-    ];
-  },
   async headers() {
     return [
       {
