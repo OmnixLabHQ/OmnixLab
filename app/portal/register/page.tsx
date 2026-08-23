@@ -116,8 +116,20 @@ export default function RegisterPage() {
 
       await sendTelegramAlert(fullName, company, email, phone, data.user.id)
 
-      setSubmitted(true)
-      setLoading(false)
+// Send welcome email to client
+try {
+  await fetch('/api/onboarding', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, fullName }),
+  })
+} catch (emailError) {
+  console.error('Welcome email error:', emailError)
+}
+
+setSubmitted(true)
+setLoading(false)
+
     }
   }
 
