@@ -1,0 +1,5 @@
+[33mffb4789[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m Remove Tawk.to script for testing
+[33mb257210[m Added Tawk.to live chat widget
+[33me741aa9[m Global repositioning: removed Nigeria-centric language, updated all pages and blog generator
+[33m154ab0a[m Fix Supabase project URL and keys
+[33mbfcdd92[m Fix Supabase - use service role key
