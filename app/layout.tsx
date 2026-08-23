@@ -1,15 +1,7 @@
 import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import './globals.css'
-import Navbar from '@/components/Navbar'
-import Footer from '@/components/Footer'
 import ConditionalLayout from '@/components/ConditionalLayout'
-import Preloader from '@/components/Preloader'
-import ScrollProgress from '@/components/ScrollProgress'
-import BackToTop from '@/components/BackToTop'
-import WhatsAppBubble from '@/components/WhatsAppBubble'
-import CursorGlow from '@/components/CursorGlow'
-import VisitorTracker from '@/components/VisitorTracker'
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -95,15 +87,7 @@ export default function RootLayout({
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <ConditionalLayout>
-          <Preloader />
-          <ScrollProgress />
-          <Navbar />
-          <main className="min-h-screen">{children}</main>
-          <Footer />
-          <BackToTop />
-          <WhatsAppBubble />
-          <CursorGlow />
-          <VisitorTracker />
+          {children}
 
           {/* Small Google Translate Widget */}
           <div
