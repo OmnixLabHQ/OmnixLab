@@ -23,6 +23,8 @@ const servicesDropdown = [
 
 export default function Navbar() {
   const pathname = usePathname()
+    if (pathname.startsWith('/portal')) return null
+      if (pathname.startsWith('/portal')) return null
   const [scrolled, setScrolled] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [servicesOpen, setServicesOpen] = useState(false)
