@@ -26,7 +26,7 @@ const projects: Project[] = [
     title: 'Crypto Trading Platform',
     client: 'FinEdge Capital',
     category: 'Trading Systems',
-    heroImage: '📈',
+    heroImage: '/images/trading platform.jpg',
     problem: 'Manual trading caused missed opportunities and inconsistent profits in volatile markets.',
     solution: 'Built a high frequency trading system with real time analytics and automated execution.',
     metrics: [
@@ -51,7 +51,7 @@ const projects: Project[] = [
     title: 'E-Commerce Platform',
     client: 'CloudStack Solutions',
     category: 'E-Commerce',
-    heroImage: '🛒',
+    heroImage: '/images/ecommerce platform.jpg',
     problem: 'Outdated platform could not handle growing traffic and mobile optimization.',
     solution: 'Developed a modern e-commerce platform with inventory management and payment processing.',
     metrics: [
@@ -76,7 +76,7 @@ const projects: Project[] = [
     title: 'Healthcare SaaS Platform',
     client: 'MediCare Plus',
     category: 'SaaS Platforms',
-    heroImage: '🏥',
+    heroImage: '/images/healthcare saas.jpg',
     problem: 'Patient data was scattered across multiple systems causing scheduling conflicts.',
     solution: 'Created a centralized patient management system with telemedicine and secure records.',
     metrics: [
@@ -101,7 +101,7 @@ const projects: Project[] = [
     title: 'FinTech Dashboard',
     client: 'DataVault Systems',
     category: 'Data & Analytics',
-    heroImage: '💹',
+    heroImage: '/images/fintech dashboard.jpg',
     problem: 'Analysts needed real time market data across multiple exchanges simultaneously.',
     solution: 'Built a real time dashboard with live market streams and portfolio tracking.',
     metrics: [
@@ -126,7 +126,7 @@ const projects: Project[] = [
     title: 'Delivery Mobile App',
     client: 'SwiftDeliver',
     category: 'Mobile Applications',
-    heroImage: '📱',
+    heroImage: '/images/delivery mobile app.jpg',
     problem: 'Manual dispatch system caused delays and poor customer experience.',
     solution: 'Built a cross platform delivery app with real time tracking and notifications.',
     metrics: [
@@ -151,7 +151,7 @@ const projects: Project[] = [
     title: 'AI Content Generator',
     client: 'ContentPro',
     category: 'AI Solutions',
-    heroImage: '🤖',
+    heroImage: '/images/ai content generator.jpg',
     problem: 'Content team struggled to scale production while maintaining quality.',
     solution: 'Built an AI powered platform with team collaboration and brand voice control.',
     metrics: [
@@ -248,10 +248,15 @@ export default function WorkPage() {
                 onClick={() => setSelectedProject(project)}
                 className="group rounded-2xl overflow-hidden bg-white/5 border border-white/10 hover:bg-white/10 hover:shadow-xl transition-all cursor-pointer"
               >
-                <div className={`aspect-[4/3] bg-gradient-to-br ${project.gradient} relative overflow-hidden flex items-center justify-center`}>
-                  <span className="text-6xl opacity-50 group-hover:scale-110 transition-transform duration-500">{project.icon}</span>
+                <div className="aspect-[4/3] relative overflow-hidden">
+                  <img
+                    src={project.heroImage}
+                    alt={project.title}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
                   <div className="absolute top-4 left-4">
-                    <span className="px-3 py-1 bg-black/40 backdrop-blur-sm text-white text-xs font-medium rounded-full">
+                    <span className="px-3 py-1 bg-black/60 backdrop-blur-sm text-white text-xs font-medium rounded-full">
                       {project.category}
                     </span>
                   </div>
