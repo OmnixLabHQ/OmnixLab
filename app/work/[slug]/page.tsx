@@ -14,6 +14,9 @@ interface Project {
   tech: string[]
   testimonial: { quote: string; author: string; role: string }
   timeline: string
+  gradient: string
+  icon: string
+  features: string[]
 }
 
 const projects: Project[] = [
@@ -21,10 +24,10 @@ const projects: Project[] = [
     slug: 'crypto-trading-platform',
     title: 'Crypto Trading Platform',
     client: 'FinEdge Capital',
-    category: 'Trading Bot',
+    category: 'Trading Systems',
     heroImage: '📈',
-    problem: 'Manual trading caused missed opportunities and inconsistent profits in volatile crypto markets. The client needed 24/7 automated execution.',
-    solution: 'Built a high-frequency trading bot with real-time market analysis, automated execution, and risk management dashboard.',
+    problem: 'Manual trading caused missed opportunities and inconsistent profits. The client needed 24/7 automated execution with real time risk management.',
+    solution: 'Built a high frequency trading bot with real time analytics, automated execution, and a comprehensive risk management dashboard.',
     metrics: [
       { label: 'Execution Speed', value: '0.003ms' },
       { label: 'Monthly Return', value: '18%' },
@@ -33,17 +36,20 @@ const projects: Project[] = [
     ],
     tech: ['Python', 'CCXT', 'PostgreSQL', 'WebSocket', 'AWS'],
     testimonial: {
-      quote: "Omnix Lab's trading bot has been a game-changer for our firm. Consistent returns with zero manual intervention.",
+      quote: "Omnix Lab's trading bot has been a game changer for our firm. Consistent returns with zero manual intervention.",
       author: 'Michael Chen',
       role: 'CEO, FinEdge Capital'
     },
-    timeline: '8 weeks'
+    timeline: '8 weeks',
+    gradient: 'from-emerald-500 to-teal-600',
+    icon: '📈',
+    features: ['Real time analytics', 'Risk management', 'Multi exchange', 'Backtesting']
   },
   {
     slug: 'ecommerce-platform',
     title: 'E-Commerce Platform',
     client: 'CloudStack Solutions',
-    category: 'Web Development',
+    category: 'E-Commerce',
     heroImage: '🛒',
     problem: 'Outdated platform could not handle growing traffic and lacked mobile optimization, causing lost sales.',
     solution: 'Developed a modern, responsive e-commerce platform with inventory management, payment processing, and analytics.',
@@ -59,13 +65,16 @@ const projects: Project[] = [
       author: 'Sarah Johnson',
       role: 'Founder, CloudStack Solutions'
     },
-    timeline: '6 weeks'
+    timeline: '6 weeks',
+    gradient: 'from-blue-500 to-indigo-600',
+    icon: '🛒',
+    features: ['Payment integration', 'Inventory system', 'Analytics', 'Mobile first']
   },
   {
     slug: 'healthcare-saas',
-    title: 'Healthcare SaaS',
+    title: 'Healthcare SaaS Platform',
     client: 'MediCare Plus',
-    category: 'Software Development',
+    category: 'SaaS Platforms',
     heroImage: '🏥',
     problem: 'Patient data was scattered across multiple systems, causing scheduling conflicts and delays in care.',
     solution: 'Created a centralized patient management system with telemedicine, appointment scheduling, and secure medical records.',
@@ -77,20 +86,23 @@ const projects: Project[] = [
     ],
     tech: ['React', 'Node.js', 'PostgreSQL', 'WebRTC', 'AWS'],
     testimonial: {
-      quote: "Omnix Lab built exactly what we needed. Our operations are now streamlined and our patients love the telemedicine feature.",
+      quote: "Omnix Lab built exactly what we needed. Our operations are streamlined and patients love the telemedicine feature.",
       author: 'Dr. Amina Yusuf',
       role: 'CEO, MediCare Plus'
     },
-    timeline: '12 weeks'
+    timeline: '12 weeks',
+    gradient: 'from-purple-500 to-pink-600',
+    icon: '🏥',
+    features: ['Appointments', 'Telemedicine', 'Secure records', 'HIPAA compliant']
   },
   {
     slug: 'fintech-dashboard',
     title: 'FinTech Dashboard',
     client: 'DataVault Systems',
-    category: 'Web Development',
+    category: 'Data & Analytics',
     heroImage: '💹',
-    problem: 'Financial analysts needed a real-time dashboard to monitor market data across multiple exchanges simultaneously.',
-    solution: 'Built a real-time data visualization dashboard with live market streams, portfolio tracking, and custom reporting.',
+    problem: 'Financial analysts needed a real time dashboard to monitor market data across multiple exchanges simultaneously.',
+    solution: 'Built a real time data visualization dashboard with live market streams, portfolio tracking, and custom reporting.',
     metrics: [
       { label: 'Data Latency', value: '<100ms' },
       { label: 'Exchanges Connected', value: '5' },
@@ -99,20 +111,23 @@ const projects: Project[] = [
     ],
     tech: ['Next.js', 'WebSocket', 'D3.js', 'Node.js', 'Redis'],
     testimonial: {
-      quote: "The dashboard Omnix Lab built gives us a competitive edge. Real-time data at our fingertips.",
+      quote: "The dashboard Omnix Lab built gives us a competitive edge. Real time data at our fingertips.",
       author: 'David Okafor',
       role: 'CTO, DataVault Systems'
     },
-    timeline: '10 weeks'
+    timeline: '10 weeks',
+    gradient: 'from-violet-500 to-purple-600',
+    icon: '💹',
+    features: ['Live data', 'Portfolio tracking', 'Custom charts', 'Reports']
   },
   {
     slug: 'delivery-mobile-app',
     title: 'Delivery Mobile App',
     client: 'SwiftDeliver',
-    category: 'Mobile Development',
+    category: 'Mobile Applications',
     heroImage: '📱',
-    problem: 'Manual dispatch system caused delays and poor customer experience with no real-time tracking.',
-    solution: 'Built a cross-platform delivery app with real-time tracking, driver management, and push notifications.',
+    problem: 'Manual dispatch system caused delays and poor customer experience with no real time tracking.',
+    solution: 'Built a cross platform delivery app with real time tracking, driver management, and push notifications.',
     metrics: [
       { label: 'App Rating', value: '4.8★' },
       { label: 'Delivery Time Reduced', value: '35%' },
@@ -125,16 +140,19 @@ const projects: Project[] = [
       author: 'James Okonkwo',
       role: 'Founder, SwiftDeliver'
     },
-    timeline: '8 weeks'
+    timeline: '8 weeks',
+    gradient: 'from-orange-500 to-red-500',
+    icon: '📱',
+    features: ['Live tracking', 'Push notifications', 'Driver dashboard', 'Wallet']
   },
   {
     slug: 'ai-content-generator',
     title: 'AI Content Generator',
     client: 'ContentPro',
-    category: 'AI & Automation',
+    category: 'AI Solutions',
     heroImage: '🤖',
     problem: 'Content team struggled to scale production while maintaining quality and brand voice consistency.',
-    solution: 'Built an AI-powered content generation platform with team collaboration, SEO optimization, and brand voice control.',
+    solution: 'Built an AI powered content generation platform with team collaboration, SEO optimization, and brand voice control.',
     metrics: [
       { label: 'Content Output', value: '1M+/month' },
       { label: 'Time Saved', value: '70%' },
@@ -147,7 +165,10 @@ const projects: Project[] = [
       author: 'Grace Okonkwo',
       role: 'CEO, ContentPro'
     },
-    timeline: '10 weeks'
+    timeline: '10 weeks',
+    gradient: 'from-cyan-500 to-blue-600',
+    icon: '🤖',
+    features: ['GPT integration', 'Team collaboration', 'SEO optimization', 'Brand voice']
   }
 ]
 
@@ -169,14 +190,24 @@ export default function ProjectPage({ params }: { params: { slug: string } }) {
   if (!project) notFound()
 
   return (
-    <div className="bg-white pt-32 pb-24 px-6 lg:px-8">
+    <div className="bg-white pt-32 pb-24 px-6 lg:px-8 min-h-screen">
       <div className="max-w-4xl mx-auto">
         <Link href="/work" className="text-indigo-600 hover:text-indigo-700 font-medium text-sm mb-8 inline-block">
           ← Back to Portfolio
         </Link>
 
+        {/* Hero */}
+        <div className={`aspect-[21/9] bg-gradient-to-br ${project.gradient} rounded-3xl relative overflow-hidden mb-10 flex items-center justify-center`}>
+          <div className="absolute inset-0 opacity-20">
+            <svg className="w-full h-full" viewBox="0 0 200 150" preserveAspectRatio="none">
+              <rect width="200" height="150" fill="none" stroke="white" strokeWidth="0.5" opacity="0.3"/>
+            </svg>
+          </div>
+          <span className="text-8xl relative z-10">{project.icon}</span>
+        </div>
+
         <div className="mb-8">
-          <div className="flex items-center gap-3 mb-4">
+          <div className="flex items-center gap-3 mb-4 flex-wrap">
             <span className="px-3 py-1 bg-indigo-50 text-indigo-700 text-xs font-medium rounded-full">
               {project.category}
             </span>
@@ -189,18 +220,31 @@ export default function ProjectPage({ params }: { params: { slug: string } }) {
         {/* Problem & Solution */}
         <div className="grid md:grid-cols-2 gap-6 mb-12">
           <div className="bg-red-50 rounded-2xl p-6 border border-red-100">
-            <h3 className="text-lg font-bold text-red-700 mb-2">🔴 The Problem</h3>
+            <h3 className="text-lg font-bold text-red-700 mb-2">The Problem</h3>
             <p className="text-gray-700 leading-relaxed">{project.problem}</p>
           </div>
           <div className="bg-green-50 rounded-2xl p-6 border border-green-100">
-            <h3 className="text-lg font-bold text-green-700 mb-2">🟢 The Solution</h3>
+            <h3 className="text-lg font-bold text-green-700 mb-2">The Solution</h3>
             <p className="text-gray-700 leading-relaxed">{project.solution}</p>
           </div>
         </div>
 
-        {/* Key Metrics */}
+        {/* Key Features */}
         <div className="mb-12">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">📊 Key Results</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">Key Features</h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {project.features.map((feature, i) => (
+              <div key={i} className="bg-gray-50 rounded-xl p-4 text-center border border-gray-100">
+                <span className="text-green-500 block mb-2">✓</span>
+                <p className="text-sm font-medium text-gray-700">{feature}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Key Results */}
+        <div className="mb-12">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">Key Results</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {project.metrics.map((metric, i) => (
               <div key={i} className="bg-gray-50 rounded-xl p-5 text-center border border-gray-100">
@@ -213,7 +257,7 @@ export default function ProjectPage({ params }: { params: { slug: string } }) {
 
         {/* Tech Stack */}
         <div className="mb-12">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">🛠️ Tech Stack</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Tech Stack</h2>
           <div className="flex flex-wrap gap-2">
             {project.tech.map((tech, i) => (
               <span key={i} className="px-4 py-2 bg-indigo-50 text-indigo-700 rounded-full text-sm font-medium border border-indigo-100">
@@ -235,6 +279,24 @@ export default function ProjectPage({ params }: { params: { slug: string } }) {
               <p className="font-bold">{project.testimonial.author}</p>
               <p className="text-indigo-200 text-sm">{project.testimonial.role}</p>
             </div>
+          </div>
+        </div>
+
+        {/* Related Projects */}
+        <div className="mb-12">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">Explore More Work</h2>
+          <div className="grid md:grid-cols-3 gap-4">
+            {projects.filter(p => p.slug !== project.slug).slice(0, 3).map((related) => (
+              <Link
+                key={related.slug}
+                href={`/work/${related.slug}`}
+                className={`block rounded-2xl p-6 bg-gradient-to-br ${related.gradient} text-white hover:shadow-xl transition-all`}
+              >
+                <div className="text-3xl mb-3">{related.icon}</div>
+                <p className="font-bold">{related.title}</p>
+                <p className="text-xs text-white/70 mt-1">{related.category}</p>
+              </Link>
+            ))}
           </div>
         </div>
 
