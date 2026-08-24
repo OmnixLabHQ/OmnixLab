@@ -7,7 +7,6 @@ interface Project {
   title: string
   client: string
   category: string
-  heroImage: string
   problem: string
   solution: string
   metrics: { label: string; value: string }[]
@@ -25,7 +24,6 @@ const projects: Project[] = [
     title: 'Crypto Trading Platform',
     client: 'FinEdge Capital',
     category: 'Trading Systems',
-    heroImage: '📈',
     problem: 'Manual trading caused missed opportunities and inconsistent profits. The client needed 24/7 automated execution with real time risk management.',
     solution: 'Built a high frequency trading bot with real time analytics, automated execution, and a comprehensive risk management dashboard.',
     metrics: [
@@ -36,7 +34,7 @@ const projects: Project[] = [
     ],
     tech: ['Python', 'CCXT', 'PostgreSQL', 'WebSocket', 'AWS'],
     testimonial: {
-      quote: "Omnix Lab's trading bot has been a game changer for our firm. Consistent returns with zero manual intervention.",
+      quote: "Omnix Lab's trading bot has been a game changer for our firm.",
       author: 'Michael Chen',
       role: 'CEO, FinEdge Capital'
     },
@@ -50,9 +48,8 @@ const projects: Project[] = [
     title: 'E-Commerce Platform',
     client: 'CloudStack Solutions',
     category: 'E-Commerce',
-    heroImage: '🛒',
-    problem: 'Outdated platform could not handle growing traffic and lacked mobile optimization, causing lost sales.',
-    solution: 'Developed a modern, responsive e-commerce platform with inventory management, payment processing, and analytics.',
+    problem: 'Outdated platform could not handle growing traffic.',
+    solution: 'Developed a modern e-commerce platform with inventory and payments.',
     metrics: [
       { label: 'Mobile Sales Increase', value: '200%' },
       { label: 'Page Load Time', value: '1.2s' },
@@ -61,7 +58,7 @@ const projects: Project[] = [
     ],
     tech: ['Next.js', 'React', 'Node.js', 'PostgreSQL', 'Stripe'],
     testimonial: {
-      quote: "Our sales doubled after Omnix Lab rebuilt our platform. The mobile experience is now seamless.",
+      quote: "Our sales doubled after Omnix Lab rebuilt our platform.",
       author: 'Sarah Johnson',
       role: 'Founder, CloudStack Solutions'
     },
@@ -75,9 +72,8 @@ const projects: Project[] = [
     title: 'Healthcare SaaS Platform',
     client: 'MediCare Plus',
     category: 'SaaS Platforms',
-    heroImage: '🏥',
-    problem: 'Patient data was scattered across multiple systems, causing scheduling conflicts and delays in care.',
-    solution: 'Created a centralized patient management system with telemedicine, appointment scheduling, and secure medical records.',
+    problem: 'Patient data was scattered across multiple systems.',
+    solution: 'Created a centralized patient management system with telemedicine.',
     metrics: [
       { label: 'Scheduling Time Reduced', value: '80%' },
       { label: 'Patients Onboarded', value: '10,000+' },
@@ -86,23 +82,22 @@ const projects: Project[] = [
     ],
     tech: ['React', 'Node.js', 'PostgreSQL', 'WebRTC', 'AWS'],
     testimonial: {
-      quote: "Omnix Lab built exactly what we needed. Our operations are streamlined and patients love the telemedicine feature.",
+      quote: "Omnix Lab built exactly what we needed.",
       author: 'Dr. Amina Yusuf',
       role: 'CEO, MediCare Plus'
     },
     timeline: '12 weeks',
     gradient: 'from-purple-500 to-pink-600',
     icon: '🏥',
-    features: ['Appointments', 'Telemedicine', 'Secure records', 'HIPAA compliant']
+    features: ['Appointments', 'Telemedicine', 'Secure records', 'HIPAA']
   },
   {
     slug: 'fintech-dashboard',
     title: 'FinTech Dashboard',
     client: 'DataVault Systems',
     category: 'Data & Analytics',
-    heroImage: '💹',
-    problem: 'Financial analysts needed a real time dashboard to monitor market data across multiple exchanges simultaneously.',
-    solution: 'Built a real time data visualization dashboard with live market streams, portfolio tracking, and custom reporting.',
+    problem: 'Analysts needed real time market data.',
+    solution: 'Built a real time dashboard with live streams.',
     metrics: [
       { label: 'Data Latency', value: '<100ms' },
       { label: 'Exchanges Connected', value: '5' },
@@ -111,64 +106,62 @@ const projects: Project[] = [
     ],
     tech: ['Next.js', 'WebSocket', 'D3.js', 'Node.js', 'Redis'],
     testimonial: {
-      quote: "The dashboard Omnix Lab built gives us a competitive edge. Real time data at our fingertips.",
+      quote: "The dashboard gives us a competitive edge.",
       author: 'David Okafor',
       role: 'CTO, DataVault Systems'
     },
     timeline: '10 weeks',
     gradient: 'from-violet-500 to-purple-600',
     icon: '💹',
-    features: ['Live data', 'Portfolio tracking', 'Custom charts', 'Reports']
+    features: ['Live data', 'Portfolio', 'Charts', 'Reports']
   },
   {
     slug: 'delivery-mobile-app',
     title: 'Delivery Mobile App',
     client: 'SwiftDeliver',
     category: 'Mobile Applications',
-    heroImage: '📱',
-    problem: 'Manual dispatch system caused delays and poor customer experience with no real time tracking.',
-    solution: 'Built a cross platform delivery app with real time tracking, driver management, and push notifications.',
+    problem: 'Manual dispatch caused delays.',
+    solution: 'Built a cross platform delivery app with tracking.',
     metrics: [
-      { label: 'App Rating', value: '4.8★' },
+      { label: 'App Rating', value: '4.8' },
       { label: 'Delivery Time Reduced', value: '35%' },
       { label: 'Active Drivers', value: '500+' },
       { label: 'Customer Satisfaction', value: '92%' }
     ],
-    tech: ['React Native', 'Firebase', 'Google Maps API', 'Node.js', 'MongoDB'],
+    tech: ['React Native', 'Firebase', 'Maps API', 'Node.js', 'MongoDB'],
     testimonial: {
-      quote: "Our delivery operations are now fully automated. The app is fast, reliable, and our customers love the live tracking.",
+      quote: "Our operations are now fully automated.",
       author: 'James Okonkwo',
       role: 'Founder, SwiftDeliver'
     },
     timeline: '8 weeks',
     gradient: 'from-orange-500 to-red-500',
     icon: '📱',
-    features: ['Live tracking', 'Push notifications', 'Driver dashboard', 'Wallet']
+    features: ['Tracking', 'Notifications', 'Dashboard', 'Wallet']
   },
   {
     slug: 'ai-content-generator',
     title: 'AI Content Generator',
     client: 'ContentPro',
     category: 'AI Solutions',
-    heroImage: '🤖',
-    problem: 'Content team struggled to scale production while maintaining quality and brand voice consistency.',
-    solution: 'Built an AI powered content generation platform with team collaboration, SEO optimization, and brand voice control.',
+    problem: 'Content team struggled to scale.',
+    solution: 'Built an AI powered content platform.',
     metrics: [
       { label: 'Content Output', value: '1M+/month' },
       { label: 'Time Saved', value: '70%' },
       { label: 'SEO Score', value: '90+' },
       { label: 'Team Adoption', value: '100%' }
     ],
-    tech: ['Python', 'OpenAI API', 'Next.js', 'PostgreSQL', 'LangChain'],
+    tech: ['Python', 'OpenAI', 'Next.js', 'PostgreSQL'],
     testimonial: {
-      quote: "Omnix Lab's AI platform transformed our content operation. We now produce 10x more content with consistent quality.",
+      quote: "The AI platform transformed our operation.",
       author: 'Grace Okonkwo',
       role: 'CEO, ContentPro'
     },
     timeline: '10 weeks',
     gradient: 'from-cyan-500 to-blue-600',
     icon: '🤖',
-    features: ['GPT integration', 'Team collaboration', 'SEO optimization', 'Brand voice']
+    features: ['GPT', 'Team', 'SEO', 'Voice']
   }
 ]
 
@@ -190,89 +183,63 @@ export default function ProjectPage({ params }: { params: { slug: string } }) {
   if (!project) notFound()
 
   return (
-    <div className="bg-white pt-32 pb-24 px-6 lg:px-8 min-h-screen">
+    <div className="bg-gray-950 text-white min-h-screen pt-32 pb-24 px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
-        <Link href="/work" className="text-indigo-600 hover:text-indigo-700 font-medium text-sm mb-8 inline-block">
+        <Link href="/work" className="text-blue-400 hover:text-blue-300 font-medium text-sm mb-8 inline-block">
           ← Back to Portfolio
         </Link>
 
-        {/* Hero */}
         <div className={`aspect-[21/9] bg-gradient-to-br ${project.gradient} rounded-3xl relative overflow-hidden mb-10 flex items-center justify-center`}>
-          <div className="absolute inset-0 opacity-20">
-            <svg className="w-full h-full" viewBox="0 0 200 150" preserveAspectRatio="none">
-              <rect width="200" height="150" fill="none" stroke="white" strokeWidth="0.5" opacity="0.3"/>
-            </svg>
-          </div>
-          <span className="text-8xl relative z-10">{project.icon}</span>
+          <span className="text-8xl">{project.icon}</span>
         </div>
 
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-4 flex-wrap">
-            <span className="px-3 py-1 bg-indigo-50 text-indigo-700 text-xs font-medium rounded-full">
-              {project.category}
-            </span>
+            <span className="px-3 py-1 bg-blue-500/20 text-blue-300 text-xs font-medium rounded-full">{project.category}</span>
             <span className="text-sm text-gray-400">Timeline: {project.timeline}</span>
           </div>
-          <h1 className="text-3xl md:text-5xl font-bold text-gray-900 mb-2">{project.title}</h1>
-          <p className="text-xl text-gray-500">Client: {project.client}</p>
+          <h1 className="text-3xl md:text-5xl font-bold text-white mb-2">{project.title}</h1>
+          <p className="text-xl text-gray-400">Client: {project.client}</p>
         </div>
 
-        {/* Problem & Solution */}
         <div className="grid md:grid-cols-2 gap-6 mb-12">
-          <div className="bg-red-50 rounded-2xl p-6 border border-red-100">
-            <h3 className="text-lg font-bold text-red-700 mb-2">The Problem</h3>
-            <p className="text-gray-700 leading-relaxed">{project.problem}</p>
+          <div className="bg-red-500/10 rounded-2xl p-6 border border-red-500/20">
+            <h3 className="text-lg font-bold text-red-400 mb-2">The Problem</h3>
+            <p className="text-gray-300 leading-relaxed">{project.problem}</p>
           </div>
-          <div className="bg-green-50 rounded-2xl p-6 border border-green-100">
-            <h3 className="text-lg font-bold text-green-700 mb-2">The Solution</h3>
-            <p className="text-gray-700 leading-relaxed">{project.solution}</p>
-          </div>
-        </div>
-
-        {/* Key Features */}
-        <div className="mb-12">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Key Features</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {project.features.map((feature, i) => (
-              <div key={i} className="bg-gray-50 rounded-xl p-4 text-center border border-gray-100">
-                <span className="text-green-500 block mb-2">✓</span>
-                <p className="text-sm font-medium text-gray-700">{feature}</p>
-              </div>
-            ))}
+          <div className="bg-green-500/10 rounded-2xl p-6 border border-green-500/20">
+            <h3 className="text-lg font-bold text-green-400 mb-2">The Solution</h3>
+            <p className="text-gray-300 leading-relaxed">{project.solution}</p>
           </div>
         </div>
 
-        {/* Key Results */}
         <div className="mb-12">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Key Results</h2>
+          <h2 className="text-2xl font-bold text-white mb-6">Key Results</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {project.metrics.map((metric, i) => (
-              <div key={i} className="bg-gray-50 rounded-xl p-5 text-center border border-gray-100">
-                <div className="text-2xl md:text-3xl font-bold text-indigo-600 mb-1">{metric.value}</div>
-                <div className="text-xs text-gray-500">{metric.label}</div>
+              <div key={i} className="bg-white/5 rounded-xl p-5 text-center border border-white/10">
+                <div className="text-2xl md:text-3xl font-bold text-blue-400 mb-1">{metric.value}</div>
+                <div className="text-xs text-gray-400">{metric.label}</div>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Tech Stack */}
         <div className="mb-12">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Tech Stack</h2>
+          <h2 className="text-2xl font-bold text-white mb-4">Tech Stack</h2>
           <div className="flex flex-wrap gap-2">
             {project.tech.map((tech, i) => (
-              <span key={i} className="px-4 py-2 bg-indigo-50 text-indigo-700 rounded-full text-sm font-medium border border-indigo-100">
+              <span key={i} className="px-4 py-2 bg-blue-500/20 text-blue-300 rounded-full text-sm font-medium border border-blue-500/20">
                 {tech}
               </span>
             ))}
           </div>
         </div>
 
-        {/* Testimonial */}
-        <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl p-8 text-white mb-12">
-          <div className="text-4xl mb-4">"</div>
+        <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-8 text-white mb-12">
           <p className="text-lg leading-relaxed mb-4 italic">{project.testimonial.quote}</p>
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white font-bold text-sm">
+            <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center font-bold text-sm">
               {project.testimonial.author.charAt(0)}
             </div>
             <div>
@@ -282,31 +249,9 @@ export default function ProjectPage({ params }: { params: { slug: string } }) {
           </div>
         </div>
 
-        {/* Related Projects */}
-        <div className="mb-12">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Explore More Work</h2>
-          <div className="grid md:grid-cols-3 gap-4">
-            {projects.filter(p => p.slug !== project.slug).slice(0, 3).map((related) => (
-              <Link
-                key={related.slug}
-                href={`/work/${related.slug}`}
-                className={`block rounded-2xl p-6 bg-gradient-to-br ${related.gradient} text-white hover:shadow-xl transition-all`}
-              >
-                <div className="text-3xl mb-3">{related.icon}</div>
-                <p className="font-bold">{related.title}</p>
-                <p className="text-xs text-white/70 mt-1">{related.category}</p>
-              </Link>
-            ))}
-          </div>
-        </div>
-
-        {/* CTA */}
         <div className="text-center">
-          <h3 className="text-xl font-bold text-gray-900 mb-4">Ready for similar results?</h3>
-          <Link
-            href="/contact"
-            className="inline-flex px-8 py-4 bg-indigo-600 text-white font-semibold rounded-full hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-200"
-          >
+          <h3 className="text-xl font-bold text-white mb-4">Ready for similar results?</h3>
+          <Link href="/contact" className="inline-flex px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl">
             Start Your Project →
           </Link>
         </div>
