@@ -176,7 +176,6 @@ const projects: Project[] = [
 const categories = ['All', 'Trading Systems', 'E-Commerce', 'SaaS Platforms', 'Data & Analytics', 'Mobile Applications', 'AI Solutions']
 
 export default function WorkPage() {
-  const [selectedProject, setSelectedProject] = useState<Project | null>(null)
   const [activeFilter, setActiveFilter] = useState('All')
 
   const filteredProjects = activeFilter === 'All' ? projects : projects.filter(p => p.category === activeFilter)
@@ -243,10 +242,10 @@ export default function WorkPage() {
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredProjects.map((project) => (
-              <div
+              <Link
                 key={project.slug}
-                onClick={() => setSelectedProject(project)}
-                className="group rounded-2xl overflow-hidden bg-white/5 border border-white/10 hover:bg-white/10 hover:shadow-xl transition-all cursor-pointer"
+                href={`/work/${project.slug}`}
+                className="group rounded-2xl overflow-hidden bg-white/5 border border-white/10 hover:bg-white/10 hover:shadow-xl transition-all block"
               >
                 <div className="aspect-[4/3] relative overflow-hidden">
                   <img
@@ -270,7 +269,7 @@ export default function WorkPage() {
                     View Case Study →
                   </span>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         </div>
@@ -308,83 +307,6 @@ export default function WorkPage() {
           </Link>
         </div>
       </section>
-
-      {/* CASE STUDY MODAL */}
-      {selectedProject && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" onClick={() => setSelectedProject(null)}>
-          <div className="bg-gray-900 rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-white/10" onClick={e => e.stopPropagation()}>
-            <div className="sticky top-0 bg-gray-900 rounded-t-3xl p-4 flex justify-between items-center border-b border-white/10">
-              <div className="flex items-center gap-3">
-                <span className="px-3 py-1 bg-blue-500/20 text-blue-300 text-xs font-medium rounded-full">{selectedProject.category}</span>
-                <span className="text-sm text-gray-400">Timeline: {selectedProject.timeline}</span>
-              </div>
-              <button onClick={() => setSelectedProject(null)} className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors">
-                ✕
-              </button>
-            </div>
-
-            <div className="p-6 md:p-8 space-y-8">
-              <div>
-                <h2 className="text-2xl md:text-3xl font-bold text-white mb-1">{selectedProject.title}</h2>
-                <p className="text-lg text-gray-400">Client: {selectedProject.client}</p>
-              </div>
-
-              <div className="grid md:grid-cols-2 gap-4">
-                <div className="bg-red-500/10 rounded-2xl p-5 border border-red-500/20">
-                  <h3 className="font-bold text-red-400 mb-2">The Problem</h3>
-                  <p className="text-gray-300 text-sm leading-relaxed">{selectedProject.problem}</p>
-                </div>
-                <div className="bg-green-500/10 rounded-2xl p-5 border border-green-500/20">
-                  <h3 className="font-bold text-green-400 mb-2">The Solution</h3>
-                  <p className="text-gray-300 text-sm leading-relaxed">{selectedProject.solution}</p>
-                </div>
-              </div>
-
-              <div>
-                <h3 className="text-xl font-bold text-white mb-4">Key Results</h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  {selectedProject.metrics.map((metric, i) => (
-                    <div key={i} className="bg-white/5 rounded-xl p-4 text-center border border-white/10">
-                      <div className="text-xl font-bold text-blue-400">{metric.value}</div>
-                      <div className="text-xs text-gray-400 mt-1">{metric.label}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <h3 className="text-xl font-bold text-white mb-3">Tech Stack</h3>
-                <div className="flex flex-wrap gap-2">
-                  {selectedProject.tech.map((tech, i) => (
-                    <span key={i} className="px-3 py-1.5 bg-blue-500/20 text-blue-300 rounded-full text-sm font-medium border border-blue-500/20">
-                      {tech}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-6 text-white">
-                <p className="italic mb-4">{selectedProject.testimonial.quote}</p>
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center font-bold text-sm">
-                    {selectedProject.testimonial.author.charAt(0)}
-                  </div>
-                  <div>
-                    <p className="font-bold">{selectedProject.testimonial.author}</p>
-                    <p className="text-indigo-200 text-sm">{selectedProject.testimonial.role}</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="text-center">
-                <Link href="/contact" className="inline-flex px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl">
-                  Start a Similar Project →
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
