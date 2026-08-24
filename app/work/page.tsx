@@ -182,207 +182,233 @@ export default function WorkPage() {
   const filteredProjects = activeFilter === 'All' ? projects : projects.filter(p => p.category === activeFilter)
 
   return (
-    <div className="bg-white pt-32 pb-24 px-6 lg:px-8 min-h-screen">
-      <div className="max-w-7xl mx-auto">
-        {/* HERO */}
-        <div className="text-center mb-20">
-          <p className="text-sm font-medium text-indigo-600 uppercase tracking-wider mb-3">Portfolio</p>
-          <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-4">
-            Software Built to Solve Real Business Challenges
-          </h1>
-          <p className="text-lg text-gray-500 max-w-2xl mx-auto">
-            Explore selected software products, platforms, applications, and digital solutions developed by Omnix Lab for businesses across different industries.
-          </p>
-          <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/contact" className="inline-flex px-8 py-4 bg-indigo-600 text-white font-semibold rounded-full hover:bg-indigo-700 transition-colors">
-              Start Your Project
-            </Link>
-            <a href="#portfolio" className="inline-flex px-8 py-4 border-2 border-gray-200 text-gray-700 font-semibold rounded-full hover:border-indigo-300 transition-colors">
-              Explore Our Work
-            </a>
-          </div>
-        </div>
+    <div className="bg-gray-950 text-white min-h-screen">
+      {/* HERO */}
+<section className="relative pt-36 pb-20 px-6 lg:px-8 overflow-hidden">
+  <div
+    className="absolute inset-0 bg-cover bg-center"
+    style={{ backgroundImage: "url('/images/about-hero.jpg')" }}
+  />
+  <div className="absolute inset-0 bg-gradient-to-br from-gray-950/95 via-indigo-950/85 to-black/90" />
+  <div className="absolute inset-0 opacity-10">
+    <div className="h-full w-full bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:60px_60px]" />
+  </div>
+  <div className="absolute top-1/3 left-1/4 w-72 h-72 bg-indigo-600/20 rounded-full blur-3xl animate-pulse" />
 
-        {/* TRUST STRIP */}
-        <div className="mb-16">
-          <p className="text-center text-sm text-gray-500 mb-6">Selected Work Across Multiple Industries</p>
+  <div className="relative z-10 max-w-7xl mx-auto text-center">
+    <p className="text-sm uppercase tracking-widest text-blue-400 mb-4">Our Portfolio</p>
+    <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">
+      Software Built to Solve Real Business Challenges
+    </h1>
+    <p className="text-lg text-gray-300 max-w-2xl mx-auto mb-10">
+      Explore selected software products, platforms, applications, and digital solutions developed by Omnix Lab for businesses across different industries.
+    </p>
+    <div className="flex flex-col sm:flex-row gap-4 justify-center">
+      <Link href="/contact" className="inline-flex px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-colors">
+        Start Your Project
+      </Link>
+      <a href="#portfolio" className="inline-flex px-8 py-4 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-semibold rounded-xl transition-colors">
+        Explore Our Work
+      </a>
+    </div>
+
+    {/* Trust metrics */}
+    <div className="mt-14 grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl mx-auto">
+      {[
+        ['50+', 'Projects Delivered'],
+        ['99%', 'Client Satisfaction'],
+        ['Global', 'Delivery'],
+        ['Enterprise', 'Technology'],
+      ].map(([num, label]) => (
+        <div key={label} className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-xl p-4">
+          <p className="text-2xl font-bold text-blue-400">{num}</p>
+          <p className="text-xs text-gray-300 mt-1">{label}</p>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>
+
+      {/* INDUSTRY STRIP */}
+      <section className="px-6 lg:px-8 py-12 border-y border-white/10 bg-gray-900/50">
+        <div className="max-w-7xl mx-auto">
+          <p className="text-center text-sm text-gray-400 mb-6">Selected Work Across Multiple Industries</p>
           <div className="flex flex-wrap justify-center gap-3">
             {['FinTech', 'Healthcare', 'E-Commerce', 'Logistics', 'SaaS', 'AI', 'Trading', 'Business Operations'].map(industry => (
-              <span key={industry} className="px-4 py-2 bg-gray-50 text-gray-700 text-sm rounded-full border border-gray-100">
+              <span key={industry} className="px-4 py-2 bg-white/5 border border-white/10 text-gray-300 text-sm rounded-full">
                 {industry}
               </span>
             ))}
           </div>
         </div>
+      </section>
 
-        {/* FEATURED PROJECT */}
-        <div className="mb-20">
-          <div onClick={() => setSelectedProject(projects[0])} className="relative rounded-3xl overflow-hidden shadow-2xl group cursor-pointer block">
-            <div className="aspect-[21/9] bg-gradient-to-br from-gray-900 via-indigo-900 to-purple-900 relative overflow-hidden">
-              <div className="absolute inset-0 opacity-30">
-                <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
-                  <defs>
-                    <pattern id="chart" width="60" height="60" patternUnits="userSpaceOnUse">
-                      <rect width="60" height="60" fill="none" stroke="white" strokeWidth="0.3" opacity="0.3"/>
-                      <circle cx="30" cy="30" r="2" fill="white" opacity="0.5"/>
-                    </pattern>
-                  </defs>
-                  <rect width="100%" height="100%" fill="url(#chart)" />
-                </svg>
+      {/* FEATURED PROJECT */}
+      <section className="px-6 lg:px-8 py-20">
+        <div className="max-w-7xl mx-auto">
+          <h2 className="text-3xl md:text-4xl font-bold mb-8">Featured Case Study</h2>
+          <div onClick={() => setSelectedProject(projects[0])} className="rounded-3xl overflow-hidden bg-white/5 border border-white/10 cursor-pointer group hover:bg-white/10 transition-all">
+            <div className={`aspect-[21/9] bg-gradient-to-br ${projects[0].gradient} relative overflow-hidden flex items-center justify-center`}>
+              <span className="text-8xl opacity-60 group-hover:scale-110 transition-transform duration-500">{projects[0].icon}</span>
+            </div>
+            <div className="p-8 lg:p-12">
+              <div className="flex items-center gap-3 mb-3">
+                <span className="px-3 py-1 bg-blue-500 text-white text-xs font-semibold rounded-full">Featured</span>
+                <span className="text-gray-400 text-sm">{projects[0].category}</span>
               </div>
-              <div className="absolute inset-0 bg-gradient-to-t from-gray-900/90 via-gray-900/20 to-transparent"></div>
-              <div className="absolute bottom-0 left-0 right-0 p-8 lg:p-12">
-                <div className="flex items-center gap-3 mb-3">
-                  <span className="px-3 py-1 bg-emerald-500 text-white text-xs font-semibold rounded-full">Featured</span>
-                  <span className="text-gray-300 text-sm">Trading Systems</span>
-                </div>
-                <h2 className="text-3xl lg:text-4xl font-bold text-white mb-3">{projects[0].title}</h2>
-                <p className="text-gray-300 max-w-2xl">{projects[0].problem}</p>
-                <span className="inline-flex mt-4 px-6 py-3 bg-white text-gray-900 font-semibold rounded-full hover:bg-gray-200 transition-colors">
-                  View Case Study →
-                </span>
-              </div>
+              <h3 className="text-2xl lg:text-3xl font-bold text-white mb-3">{projects[0].title}</h3>
+              <p className="text-gray-300 max-w-2xl">{projects[0].problem}</p>
+              <span className="inline-flex mt-4 px-6 py-3 bg-white text-gray-900 font-semibold rounded-full group-hover:bg-gray-200 transition-colors">
+                View Case Study →
+              </span>
             </div>
           </div>
         </div>
+      </section>
 
-        {/* FILTERS */}
-        <div id="portfolio" className="flex flex-wrap justify-center gap-3 mb-12">
-          {categories.map(cat => (
-            <button
-              key={cat}
-              onClick={() => setActiveFilter(cat)}
-              className={`px-5 py-2.5 rounded-full text-sm font-medium transition-colors ${
-                activeFilter === cat ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              {cat}
-            </button>
-          ))}
-        </div>
+      {/* FILTERS + PORTFOLIO */}
+      <section id="portfolio" className="px-6 lg:px-8 py-20 bg-gray-900/50 border-t border-white/10">
+        <div className="max-w-7xl mx-auto">
+          <h2 className="text-3xl md:text-4xl font-bold mb-8">Explore Our Work</h2>
+          <div className="flex flex-wrap gap-3 mb-10">
+            {categories.map(cat => (
+              <button
+                key={cat}
+                onClick={() => setActiveFilter(cat)}
+                className={`px-5 py-2.5 rounded-full text-sm font-medium transition-colors ${
+                  activeFilter === cat ? 'bg-blue-600 text-white' : 'bg-white/5 border border-white/10 text-gray-300 hover:bg-white/10'
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
 
-        {/* PROJECT GRID */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
-          {filteredProjects.map((project) => (
-            <div
-              key={project.slug}
-              onClick={() => setSelectedProject(project)}
-              className="group rounded-2xl border border-gray-100 overflow-hidden hover:shadow-xl hover:shadow-gray-100 transition-all duration-300 cursor-pointer block"
-            >
-              <div className={`aspect-[4/3] bg-gradient-to-br ${project.gradient} relative overflow-hidden`}>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-6xl opacity-40 group-hover:scale-110 transition-transform duration-500">{project.icon}</span>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredProjects.map((project) => (
+              <div
+                key={project.slug}
+                onClick={() => setSelectedProject(project)}
+                className="group rounded-2xl overflow-hidden bg-white/5 border border-white/10 hover:bg-white/10 hover:shadow-xl transition-all cursor-pointer"
+              >
+                <div className={`aspect-[4/3] bg-gradient-to-br ${project.gradient} relative overflow-hidden flex items-center justify-center`}>
+                  <span className="text-6xl opacity-50 group-hover:scale-110 transition-transform duration-500">{project.icon}</span>
+                  <div className="absolute top-4 left-4">
+                    <span className="px-3 py-1 bg-black/40 backdrop-blur-sm text-white text-xs font-medium rounded-full">
+                      {project.category}
+                    </span>
+                  </div>
                 </div>
-                <div className="absolute top-4 left-4">
-                  <span className="px-3 py-1 bg-white/20 backdrop-blur-sm text-white text-xs font-medium rounded-full">
-                    {project.category}
+                <div className="p-6">
+                  <h3 className="text-lg font-bold text-white mb-2 group-hover:text-blue-400 transition-colors">
+                    {project.title}
+                  </h3>
+                  <p className="text-gray-400 text-sm mb-4 line-clamp-3">{project.problem}</p>
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {project.features.slice(0, 3).map((feature, j) => (
+                      <span key={j} className="px-2 py-1 bg-white/5 text-gray-400 text-xs rounded-md border border-white/10">
+                        {feature}
+                      </span>
+                    ))}
+                  </div>
+                  <span className="inline-flex items-center gap-1 text-blue-400 font-medium text-sm group-hover:underline">
+                    View Case Study →
                   </span>
                 </div>
               </div>
-              <div className="p-6">
-                <h3 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-indigo-600 transition-colors">
-                  {project.title}
-                </h3>
-                <p className="text-gray-500 text-sm mb-4 line-clamp-3">{project.problem}</p>
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {project.features.map((feature, j) => (
-                    <span key={j} className="px-2 py-1 bg-gray-50 text-gray-600 text-xs rounded-md border border-gray-100">
-                      {feature}
-                    </span>
-                  ))}
-                </div>
-                <span className="inline-flex items-center gap-1 text-indigo-600 font-medium text-sm group-hover:underline">
-                  View Case Study →
-                </span>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* CAPABILITIES */}
-        <div className="mt-20 grid md:grid-cols-4 gap-6">
-          {[
-            ['Product Development', 'Custom software built around business goals.'],
-            ['AI Solutions', 'Automation and intelligent systems.'],
-            ['SaaS Platforms', 'Multi-tenant products and dashboards.'],
-            ['Business Automation', 'Replace manual workflows with software.'],
-          ].map(([title, desc]) => (
-            <div key={title} className="bg-gray-50 rounded-2xl p-6 border border-gray-100">
-              <h3 className="font-bold text-gray-900 mb-2">{title}</h3>
-              <p className="text-gray-500 text-sm">{desc}</p>
-            </div>
-          ))}
-        </div>
-
-        {/* FINAL CTA */}
-        <div className="text-center mt-20">
-          <div className="max-w-2xl mx-auto bg-gradient-to-r from-indigo-600 to-purple-600 rounded-3xl p-10 lg:p-14 text-white">
-            <h2 className="text-2xl lg:text-3xl font-bold mb-4">Have a product in mind?</h2>
-            <p className="text-indigo-100 mb-8">
-              Tell us what you are building, what you are trying to improve, or the problem you are trying to solve.
-            </p>
-            <Link href="/contact" className="inline-flex px-8 py-4 bg-white text-indigo-600 font-semibold rounded-full hover:bg-gray-100 transition-colors">
-              Start Your Project →
-            </Link>
+            ))}
           </div>
         </div>
-      </div>
+      </section>
+
+      {/* CAPABILITIES */}
+      <section className="px-6 lg:px-8 py-20">
+        <div className="max-w-7xl mx-auto">
+          <h2 className="text-3xl md:text-4xl font-bold mb-10">How We Create Value</h2>
+          <div className="grid md:grid-cols-4 gap-6">
+            {[
+              ['Product Development', 'Custom software built around business goals.'],
+              ['AI Solutions', 'Automation and intelligent systems.'],
+              ['SaaS Platforms', 'Multi-tenant products and dashboards.'],
+              ['Business Automation', 'Replace manual workflows with software.'],
+            ].map(([title, desc]) => (
+              <div key={title} className="bg-white/5 border border-white/10 rounded-2xl p-6 hover:bg-white/10 transition-all">
+                <h3 className="font-bold text-white mb-2">{title}</h3>
+                <p className="text-gray-400 text-sm">{desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* FINAL CTA */}
+      <section className="px-6 lg:px-8 py-24">
+        <div className="max-w-4xl mx-auto text-center bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-12">
+          <h2 className="text-3xl md:text-5xl font-bold mb-4">Ready to Build Something?</h2>
+          <p className="text-lg text-gray-300 max-w-2xl mx-auto mb-8">
+            Tell us what you are building, what you are trying to improve, or the problem you are trying to solve.
+          </p>
+          <Link href="/contact" className="inline-flex px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl">
+            Start Your Project →
+          </Link>
+        </div>
+      </section>
 
       {/* CASE STUDY MODAL */}
       {selectedProject && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setSelectedProject(null)}>
-          <div className="bg-white rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl" onClick={e => e.stopPropagation()}>
-            <div className="sticky top-0 bg-white rounded-t-3xl p-4 flex justify-between items-center border-b border-gray-100">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" onClick={() => setSelectedProject(null)}>
+          <div className="bg-gray-900 rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-white/10" onClick={e => e.stopPropagation()}>
+            <div className="sticky top-0 bg-gray-900 rounded-t-3xl p-4 flex justify-between items-center border-b border-white/10">
               <div className="flex items-center gap-3">
-                <span className="px-3 py-1 bg-indigo-50 text-indigo-700 text-xs font-medium rounded-full">{selectedProject.category}</span>
+                <span className="px-3 py-1 bg-blue-500/20 text-blue-300 text-xs font-medium rounded-full">{selectedProject.category}</span>
                 <span className="text-sm text-gray-400">Timeline: {selectedProject.timeline}</span>
               </div>
-              <button onClick={() => setSelectedProject(null)} className="w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors">
+              <button onClick={() => setSelectedProject(null)} className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
               </button>
             </div>
 
             <div className="p-6 md:p-8 space-y-8">
               <div>
-                <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-1">{selectedProject.title}</h2>
-                <p className="text-lg text-gray-500">Client: {selectedProject.client}</p>
+                <h2 className="text-2xl md:text-3xl font-bold text-white mb-1">{selectedProject.title}</h2>
+                <p className="text-lg text-gray-400">Client: {selectedProject.client}</p>
               </div>
 
               <div className="grid md:grid-cols-2 gap-4">
-                <div className="bg-red-50 rounded-2xl p-5 border border-red-100">
-                  <h3 className="font-bold text-red-700 mb-2">The Problem</h3>
-                  <p className="text-gray-700 text-sm leading-relaxed">{selectedProject.problem}</p>
+                <div className="bg-red-500/10 rounded-2xl p-5 border border-red-500/20">
+                  <h3 className="font-bold text-red-400 mb-2">The Problem</h3>
+                  <p className="text-gray-300 text-sm leading-relaxed">{selectedProject.problem}</p>
                 </div>
-                <div className="bg-green-50 rounded-2xl p-5 border border-green-100">
-                  <h3 className="font-bold text-green-700 mb-2">The Solution</h3>
-                  <p className="text-gray-700 text-sm leading-relaxed">{selectedProject.solution}</p>
+                <div className="bg-green-500/10 rounded-2xl p-5 border border-green-500/20">
+                  <h3 className="font-bold text-green-400 mb-2">The Solution</h3>
+                  <p className="text-gray-300 text-sm leading-relaxed">{selectedProject.solution}</p>
                 </div>
               </div>
 
               <div>
-                <h3 className="text-xl font-bold text-gray-900 mb-4">Key Results</h3>
+                <h3 className="text-xl font-bold text-white mb-4">Key Results</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                   {selectedProject.metrics.map((metric, i) => (
-                    <div key={i} className="bg-gray-50 rounded-xl p-4 text-center border border-gray-100">
-                      <div className="text-xl font-bold text-indigo-600">{metric.value}</div>
-                      <div className="text-xs text-gray-500 mt-1">{metric.label}</div>
+                    <div key={i} className="bg-white/5 rounded-xl p-4 text-center border border-white/10">
+                      <div className="text-xl font-bold text-blue-400">{metric.value}</div>
+                      <div className="text-xs text-gray-400 mt-1">{metric.label}</div>
                     </div>
                   ))}
                 </div>
               </div>
 
               <div>
-                <h3 className="text-xl font-bold text-gray-900 mb-3">Tech Stack</h3>
+                <h3 className="text-xl font-bold text-white mb-3">Tech Stack</h3>
                 <div className="flex flex-wrap gap-2">
                   {selectedProject.tech.map((tech, i) => (
-                    <span key={i} className="px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-full text-sm font-medium border border-indigo-100">
+                    <span key={i} className="px-3 py-1.5 bg-blue-500/20 text-blue-300 rounded-full text-sm font-medium border border-blue-500/20">
                       {tech}
                     </span>
                   ))}
                 </div>
               </div>
 
-              <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl p-6 text-white">
+              <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-6 text-white">
                 <div className="text-3xl mb-3">"</div>
                 <p className="italic mb-4">{selectedProject.testimonial.quote}</p>
                 <div className="flex items-center gap-3">
@@ -397,7 +423,7 @@ export default function WorkPage() {
               </div>
 
               <div className="text-center">
-                <Link href="/contact" className="inline-flex px-8 py-4 bg-indigo-600 text-white font-semibold rounded-full hover:bg-indigo-700 transition-colors">
+                <Link href="/contact" className="inline-flex px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl">
                   Start a Similar Project →
                 </Link>
               </div>
