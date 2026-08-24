@@ -232,7 +232,7 @@ export default function ContactPage() {
       <section className="relative pt-36 pb-20 px-6 lg:px-8 overflow-hidden">
         <div
           className="absolute inset-0 bg-cover bg-center"
-          style={{ backgroundImage: "url('/images/contact hero.jpg')" }}
+          style={{ backgroundImage: "url('/images/contact-hero.jpg')" }}
         />
         <div className="absolute inset-0 bg-gradient-to-br from-gray-950/90 via-indigo-950/80 to-black/90" />
         <div className="relative z-10 max-w-7xl mx-auto text-center">
