@@ -47,7 +47,7 @@ export default function AboutPage() {
               name: 'Akomolafe Nathaniel',
               jobTitle: 'Founder & CEO',
               description:
-                'Akomolafe Nathaniel is the Founder and CEO of Omnix Lab, a global software development company. Expert in trading bot development, web development, and enterprise software engineering.',
+                'Akomolafe Nathaniel is the Founder and CEO of Omnix Lab, a global software development company. Expert in trading bot development, web development, and enterprise software development.',
               url: 'https://omnixlab-production.up.railway.app/about',
               sameAs: [
                 'https://linkedin.com/in/akomolafe-nathaniel',
@@ -77,7 +77,7 @@ export default function AboutPage() {
             knowsAbout: [
               'Web Development',
               'Trading Bot Development',
-              'Software Engineering',
+              'Software Development',
               'SaaS Development',
               'AI Solutions',
               'Mobile App Development',
@@ -88,7 +88,6 @@ export default function AboutPage() {
 
       {/* ================= HERO ================= */}
       <section className="relative min-h-[90vh] flex items-center overflow-hidden">
-        {/* Hero Background Image */}
         <div
           className="absolute inset-0 bg-cover bg-center"
           style={{
@@ -103,7 +102,7 @@ export default function AboutPage() {
               About Omnix Lab
             </p>
             <h1 className="text-4xl md:text-6xl font-bold leading-tight mb-6">
-              Engineering the Digital Systems That Move Businesses Forward.
+              Developing the Digital Systems That Move Businesses Forward.
             </h1>
             <p className="text-lg text-gray-300 mb-8">
               Omnix Lab builds software, AI systems, trading technology, SaaS
@@ -150,7 +149,7 @@ export default function AboutPage() {
             We don&apos;t just build software.
             <br />
             <span className="text-gray-400">
-              We engineer systems around the way businesses actually operate.
+              We build systems around the way businesses actually operate.
             </span>
           </h2>
           <div className="space-y-4 text-gray-300">
@@ -161,10 +160,10 @@ export default function AboutPage() {
               delivered 50+ projects for clients across 10+ countries.
             </p>
             <p>
-              Our approach combines rigorous engineering with product thinking.
-              We don&apos;t just write code — we design systems that improve
-              efficiency, reduce operational complexity, and drive measurable
-              business growth.
+              Our approach combines rigorous software development with product
+              thinking. We don&apos;t just write code — we design systems that
+              improve efficiency, reduce operational complexity, and drive
+              measurable business growth.
             </p>
             <p>
               From startups to established enterprises, Omnix Lab provides
@@ -183,7 +182,7 @@ export default function AboutPage() {
           </h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             {[
-              ['01', 'Engineering', 'Custom software engineered around business requirements.'],
+              ['01', 'Software Development', 'Custom software developed around business requirements.'],
               ['02', 'Intelligence', 'AI, automation and intelligent workflows that reduce operational complexity.'],
               ['03', 'Infrastructure', 'Scalable architectures designed for reliability, security and growth.'],
               ['04', 'Product Thinking', 'Every system is designed around measurable business outcomes.'],
@@ -237,7 +236,7 @@ export default function AboutPage() {
             {[
               ['01', 'Discover', 'Understand the business, users and problem.'],
               ['02', 'Strategize', 'Define architecture, product direction and technical requirements.'],
-              ['03', 'Engineer', 'Build the system using modern engineering practices.'],
+              ['03', 'Develop', 'Build the system using modern software development practices.'],
               ['04', 'Validate', 'Test functionality, performance, security and usability.'],
               ['05', 'Launch', 'Deploy the product into production.'],
               ['06', 'Evolve', 'Maintain, optimize and continuously improve.'],
@@ -264,7 +263,7 @@ export default function AboutPage() {
         <div className="grid md:grid-cols-3 gap-6">
           {[
             ['Build With Purpose', 'Every feature must have a reason.'],
-            ['Engineer for Tomorrow', 'Architecture should accommodate future growth.'],
+            ['Build for Tomorrow', 'System should accommodate future growth.'],
             ['Obsess Over Experience', 'Complex technology should still feel simple to use.'],
           ].map(([title, desc]) => (
             <div key={title} className="bg-white/5 rounded-2xl p-8 text-center border border-white/10">
@@ -279,7 +278,7 @@ export default function AboutPage() {
       <section className="py-24 px-6 lg:px-8 bg-gray-900/50">
         <div className="max-w-7xl mx-auto text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-8">
-            Built in Africa. Engineered for the World.
+            Built in Africa. Delivered for the World.
           </h2>
           <p className="text-gray-300 mb-8">
             Remote-first collaboration, international clients, and global delivery standards.
@@ -322,11 +321,11 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* ================= TECHNOLOGY & ENGINEERING ================= */}
+      {/* ================= TECHNOLOGY ================= */}
       <section className="py-24 px-6 lg:px-8 bg-gray-900/50">
         <div className="max-w-7xl mx-auto">
           <h2 className="text-3xl md:text-4xl font-bold mb-12">
-            Modern Technology. Serious Engineering.
+            Modern Technology. Serious Development.
           </h2>
           <div className="grid md:grid-cols-4 gap-6">
             {[
@@ -381,7 +380,6 @@ export default function AboutPage() {
             The Work Speaks for Itself.
           </h2>
           <div className="grid md:grid-cols-2 gap-6">
-            {/* Placeholder cards — replace with actual projects */}
             {[
               ['Crypto Trading Platform', 'FinTech', 'Automated trading system with risk management.'],
               ['E-commerce Platform', 'Retail', 'Full-featured online store with payment integration.'],
@@ -443,12 +441,12 @@ export default function AboutPage() {
             <h2 className="text-3xl md:text-4xl font-bold mb-4">Akomolafe Nathaniel</h2>
             <p className="text-gray-300 leading-relaxed">
               Akomolafe Nathaniel is the visionary Founder and CEO of Omnix Lab.
-              With over 4 years of expertise in software engineering, he has
+              With over 4 years of expertise in software development, he has
               personally led the delivery of 50+ successful projects for clients
               across 10+ countries, earning a 99% client satisfaction rate.
             </p>
             <p className="text-gray-400 mt-4">
-              His focus: engineering, entrepreneurship, technology, product development, and building a global software company.
+              His focus: software development, entrepreneurship, technology, product development, and building a global software company.
             </p>
           </div>
         </div>
@@ -519,7 +517,7 @@ export default function AboutPage() {
               { q: 'What types of companies do you work with?', a: 'We work with startups, scaleups, and established enterprises across FinTech, Healthcare, E-Commerce, Logistics, and more.' },
               { q: 'Can Omnix Lab handle enterprise projects?', a: 'Yes. We build enterprise-grade systems with secure authentication, RBAC, scalable architecture, and production deployment practices.' },
               { q: 'Do you work with international clients?', a: 'Absolutely. We work with clients worldwide, with remote-first collaboration and flexible timezone coverage.' },
-              { q: 'How does your development process work?', a: 'Our approach: Discover → Strategize → Engineer → Validate → Launch → Evolve. Weekly updates and direct communication included.' },
+              { q: 'How does your development process work?', a: 'Our approach: Discover → Strategize → Develop → Validate → Launch → Evolve. Weekly updates and direct communication included.' },
               { q: 'Do you provide post-launch support?', a: 'Yes, we offer 30 days free support and extended maintenance packages.' },
               { q: 'Can you take over an existing project?', a: 'Yes. We can audit the existing codebase and continue development seamlessly.' },
               { q: 'How do clients track their projects?', a: 'Clients use the Omnix Client Workspace — a structured portal to manage projects, files, messages, invoices, payments, and progress.' },
