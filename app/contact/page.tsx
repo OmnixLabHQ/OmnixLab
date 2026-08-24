@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import Link from 'next/link'
+import { supabase } from '@/lib/supabase'
 
 const WHATSAPP_URL = 'https://wa.me/2347033702874'
 const TELEGRAM_URL = 'https://t.me/OmnixLab'
@@ -53,26 +54,10 @@ const timelines = [
 ]
 
 const howWeWork = [
-  {
-    step: '01',
-    title: 'Discover',
-    description: 'We understand your business, requirements and goals.',
-  },
-  {
-    step: '02',
-    title: 'Plan',
-    description: 'We define the technical approach, scope and roadmap.',
-  },
-  {
-    step: '03',
-    title: 'Build',
-    description: 'Our team designs, develops, tests and iterates.',
-  },
-  {
-    step: '04',
-    title: 'Launch & Support',
-    description: 'We deploy the solution and provide ongoing support.',
-  },
+  { step: '01', title: 'Discover', description: 'We understand your business, requirements and goals.' },
+  { step: '02', title: 'Plan', description: 'We define the technical approach, scope and roadmap.' },
+  { step: '03', title: 'Build', description: 'Our team designs, develops, tests and iterates.' },
+  { step: '04', title: 'Launch & Support', description: 'We deploy the solution and provide ongoing support.' },
 ]
 
 const solutions = [
@@ -87,38 +72,14 @@ const solutions = [
 ]
 
 const faqs = [
-  {
-    q: 'How quickly will you respond?',
-    a: 'We typically respond within 1–2 business hours during working days. For enterprise inquiries, we aim for same‑day response.',
-  },
-  {
-    q: 'Do you work with international clients?',
-    a: 'Yes. Omnix Lab works with clients worldwide across multiple time zones.',
-  },
-  {
-    q: 'Can you work with an existing development team?',
-    a: 'Absolutely. We can collaborate with your in‑house team, complementing their skills and filling technical gaps.',
-  },
-  {
-    q: 'Can you sign an NDA?',
-    a: 'Yes, we regularly sign NDAs to protect your intellectual property and business information.',
-  },
-  {
-    q: 'Can you take over an existing project?',
-    a: 'Yes. We can audit the existing codebase, understand the architecture, and continue development seamlessly.',
-  },
-  {
-    q: 'Do you provide ongoing maintenance?',
-    a: 'Yes, we offer flexible maintenance and support packages for all delivered projects.',
-  },
-  {
-    q: 'Can you build an MVP first?',
-    a: 'Definitely. We often help clients build an MVP to validate the market before scaling to a full product.',
-  },
-  {
-    q: 'Do you offer custom enterprise solutions?',
-    a: 'Yes. We specialise in building tailored enterprise‑grade software, trading systems, AI, and SaaS platforms.',
-  },
+  { q: 'How quickly will you respond?', a: 'We typically respond within 1–2 business hours during working days. For enterprise inquiries, we aim for same-day response.' },
+  { q: 'Do you work with international clients?', a: 'Yes. Omnix Lab works with clients worldwide across multiple time zones.' },
+  { q: 'Can you work with an existing development team?', a: 'Absolutely. We can collaborate with your in-house team, complementing their skills and filling technical gaps.' },
+  { q: 'Can you sign an NDA?', a: 'Yes, we regularly sign NDAs to protect your intellectual property and business information.' },
+  { q: 'Can you take over an existing project?', a: 'Yes. We can audit the existing codebase, understand the architecture, and continue development seamlessly.' },
+  { q: 'Do you provide ongoing maintenance?', a: 'Yes, we offer flexible maintenance and support packages for all delivered projects.' },
+  { q: 'Can you build an MVP first?', a: 'Definitely. We often help clients build an MVP to validate the market before scaling to a full product.' },
+  { q: 'Do you offer custom enterprise solutions?', a: 'Yes. We specialise in building tailored enterprise-grade software, trading systems, AI, and SaaS platforms.' },
 ]
 
 export default function ContactPage() {
@@ -129,26 +90,43 @@ export default function ContactPage() {
     phone: '',
     service: services[0],
     stage: stages[0],
-    budget: budgets[6], // Not sure yet
-    timeline: timelines[4], // Planning / exploring
+    budget: budgets[6],
+    timeline: timelines[4],
     description: '',
   })
-  const [fileNames, setFileNames] = useState<string[]>([])
+  const [files, setFiles] = useState<File[]>([])
+  const [dragging, setDragging] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [reference, setReference] = useState('')
   const [error, setError] = useState('')
   const [openFaq, setOpenFaq] = useState<number | null>(0)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
-  ) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value })
+  }
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault()
+    setDragging(true)
+  }
+
+  const handleDragLeave = () => {
+    setDragging(false)
+  }
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault()
+    setDragging(false)
+    if (e.dataTransfer.files) {
+      setFiles(Array.from(e.dataTransfer.files))
+    }
   }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      setFileNames(Array.from(e.target.files).map((f) => f.name))
+      setFiles(Array.from(e.target.files))
     }
   }
 
@@ -164,27 +142,64 @@ export default function ContactPage() {
     setSubmitting(true)
 
     try {
-      const response = await fetch('/api/contact', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...form,
-          attachments: fileNames,
-        }),
-      })
+      // Upload files
+      const uploadedFileUrls: string[] = []
+      for (const file of files) {
+        const fileName = `contact-${Date.now()}-${file.name}`
+        const { error: uploadError } = await supabase.storage
+          .from('contact-files')
+          .upload(fileName, file)
 
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to submit inquiry')
+        if (!uploadError) {
+          const { data: urlData } = supabase.storage.from('contact-files').getPublicUrl(fileName)
+          if (urlData?.publicUrl) uploadedFileUrls.push(urlData.publicUrl)
+        }
       }
 
-      // Generate a reference if the API doesn't return one
-      const ref = data.reference || `OMX-2026-${Math.floor(100000 + Math.random() * 900000)}`
+      // Create lead in database
+      const { data: lead, error: leadError } = await supabase
+        .from('project_requests')
+        .insert({
+          full_name: form.fullName,
+          email: form.email,
+          company: form.company || null,
+          phone: form.phone || null,
+          service: form.service,
+          stage: form.stage,
+          budget: form.budget,
+          timeline: form.timeline,
+          description: form.description,
+          attachments: uploadedFileUrls,
+          status: 'new',
+        })
+        .select()
+        .single()
+
+      if (leadError) {
+        console.error('Lead insert error:', leadError)
+      }
+
+      // Telegram notification
+      try {
+        const telegramMsg = `📥 *New Project Inquiry!*\n\n👤 *Name:* ${form.fullName}\n📧 *Email:* ${form.email}${form.company ? `\n🏢 *Company:* ${form.company}` : ''}\n🔧 *Service:* ${form.service}\n💰 *Budget:* ${form.budget}\n⏰ *Timeline:* ${form.timeline}\n📋 *Description:* ${form.description.slice(0, 200)}`
+        await fetch('https://api.telegram.org/bot8870833593:AAGnId0fJ7pgSCaiGHmSzgmLgpYiOUBpe8c/sendMessage', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: '8550312488',
+            text: telegramMsg,
+            parse_mode: 'Markdown',
+          }),
+        })
+      } catch (tgError) {
+        console.error('Telegram error:', tgError)
+      }
+
+      const ref = lead?.id ? `OMX-${String(lead.id).padStart(6, '0')}` : `OMX-${Date.now()}`
       setReference(ref)
       setSubmitted(true)
     } catch (err) {
-      console.error('Contact form error:', err)
+      console.error('Submit error:', err)
       setError('Something went wrong. Please try again or contact us via WhatsApp.')
     } finally {
       setSubmitting(false)
@@ -198,16 +213,12 @@ export default function ContactPage() {
           <div className="text-5xl mb-4">✅</div>
           <h1 className="text-2xl font-bold text-white mb-2">Inquiry Received</h1>
           <p className="text-gray-300 mb-2">
-            We&apos;ve received your project details. Our team will review your requirements and
-            contact you through your preferred communication channel.
+            We&apos;ve received your project details. Our team will review your requirements and contact you.
           </p>
           <p className="text-sm text-gray-400 mb-6">
             Inquiry Reference: <span className="font-mono text-blue-400">{reference}</span>
           </p>
-          <Link
-            href="/"
-            className="inline-block px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-colors"
-          >
+          <Link href="/" className="inline-block px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl">
             Back to Home
           </Link>
         </div>
@@ -217,15 +228,13 @@ export default function ContactPage() {
 
   return (
     <div className="min-h-screen bg-gray-950 text-white">
-      {/* Hero */}
+      {/* HERO with Background Image */}
       <section className="relative pt-36 pb-20 px-6 lg:px-8 overflow-hidden">
-        {/* Background effects */}
-        <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-indigo-950 to-black" />
-        <div className="absolute inset-0 opacity-10">
-          <div className="h-full w-full bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:60px_60px]" />
-        </div>
-        <div className="absolute top-1/3 left-1/4 w-72 h-72 bg-indigo-600/20 rounded-full blur-3xl animate-pulse" />
-
+        <div
+          className="absolute inset-0 bg-cover bg-center"
+          style={{ backgroundImage: "url('/images/contact hero.jpg')" }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-br from-gray-950/90 via-indigo-950/80 to-black/90" />
         <div className="relative z-10 max-w-7xl mx-auto text-center">
           <p className="text-sm uppercase tracking-widest text-blue-400 mb-4">Contact Omnix Lab</p>
           <h1 className="text-4xl md:text-6xl font-bold mb-6">Let&apos;s Build Something Exceptional</h1>
@@ -235,73 +244,44 @@ export default function ContactPage() {
             we&apos;ll help you determine the right technical path.
           </p>
           <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
-            <a
-              href="#project-inquiry"
-              className="px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-colors"
-            >
+            <a href="#project-inquiry" className="px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-colors">
               Start a Project →
             </a>
-            <a
-              href={WHATSAPP_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="px-8 py-4 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-semibold rounded-xl transition-colors"
-            >
+            <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className="px-8 py-4 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-semibold rounded-xl transition-colors">
               💬 WhatsApp Us
             </a>
           </div>
         </div>
       </section>
 
-      {/* Contact Cards */}
+      {/* CONTACT CARDS */}
       <section className="px-6 lg:px-8 py-16 max-w-7xl mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {[
-            {
-              icon: '💬',
-              title: 'WhatsApp',
-              detail: '+234 703 370 2874',
-              description: 'Message us directly for quick project discussions.',
-              href: WHATSAPP_URL,
-              cta: 'Message on WhatsApp →',
-            },
-            {
-              icon: '✉️',
-              title: 'Email',
-              detail: EMAIL_ADDRESS,
-              description: 'Send us your requirements and documentation.',
-              href: `mailto:${EMAIL_ADDRESS}`,
-              cta: 'Send an Email →',
-            },
-            {
-              icon: '✈️',
-              title: 'Telegram',
-              detail: '@OmnixLab',
-              description: 'Reach us on Telegram for business inquiries.',
-              href: TELEGRAM_URL,
-              cta: 'Message on Telegram →',
-            },
-          ].map((card, i) => (
-            <a
-              key={i}
-              href={card.href}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-8 hover:bg-white/10 hover:shadow-xl transition-all duration-300 group"
-            >
-              <div className="text-4xl mb-4">{card.icon}</div>
-              <h3 className="text-xl font-bold mb-2">{card.title}</h3>
-              <p className="text-gray-300 mb-1">{card.detail}</p>
-              <p className="text-sm text-gray-400 mb-4">{card.description}</p>
-              <span className="text-blue-400 group-hover:text-blue-300 transition-colors">
-                {card.cta}
-              </span>
-            </a>
-          ))}
+          <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-8 hover:bg-white/10 transition-all">
+            <div className="text-4xl mb-4">💬</div>
+            <h3 className="text-xl font-bold mb-2">WhatsApp</h3>
+            <p className="text-gray-300 mb-1">+234 703 370 2874</p>
+            <p className="text-sm text-gray-400 mb-4">Available for project discussions</p>
+            <span className="text-blue-400">Message on WhatsApp →</span>
+          </a>
+          <a href={`mailto:${EMAIL_ADDRESS}`} className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-8 hover:bg-white/10 transition-all">
+            <div className="text-4xl mb-4">✉️</div>
+            <h3 className="text-xl font-bold mb-2">Email</h3>
+            <p className="text-gray-300 mb-1">{EMAIL_ADDRESS}</p>
+            <p className="text-sm text-gray-400 mb-4">Send us your requirements</p>
+            <span className="text-blue-400">Send an Email →</span>
+          </a>
+          <a href={TELEGRAM_URL} target="_blank" rel="noopener noreferrer" className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-8 hover:bg-white/10 transition-all">
+            <div className="text-4xl mb-4">✈️</div>
+            <h3 className="text-xl font-bold mb-2">Telegram</h3>
+            <p className="text-gray-300 mb-1">@OmnixLab</p>
+            <p className="text-sm text-gray-400 mb-4">Reach us on Telegram</p>
+            <span className="text-blue-400">Message on Telegram →</span>
+          </a>
         </div>
       </section>
 
-      {/* Project Inquiry Form */}
+      {/* PROJECT INQUIRY FORM */}
       <section id="project-inquiry" className="px-6 lg:px-8 py-16 max-w-7xl mx-auto">
         <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-8 md:p-12">
           <p className="text-sm uppercase tracking-widest text-blue-400 mb-2">Project Inquiry</p>
@@ -314,154 +294,76 @@ export default function ContactPage() {
           )}
 
           <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Contact details */}
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-1">Full Name *</label>
-              <input
-                type="text"
-                name="fullName"
-                value={form.fullName}
-                onChange={handleChange}
-                required
-                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 outline-none transition"
-              />
+              <input type="text" name="fullName" value={form.fullName} onChange={handleChange} required className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:border-blue-500 outline-none" />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-1">Work Email *</label>
-              <input
-                type="email"
-                name="email"
-                value={form.email}
-                onChange={handleChange}
-                required
-                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 outline-none transition"
-              />
+              <input type="email" name="email" value={form.email} onChange={handleChange} required className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:border-blue-500 outline-none" />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-1">Company / Organization</label>
-              <input
-                type="text"
-                name="company"
-                value={form.company}
-                onChange={handleChange}
-                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 outline-none transition"
-              />
+              <input type="text" name="company" value={form.company} onChange={handleChange} className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:border-blue-500 outline-none" />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-1">Phone / WhatsApp</label>
-              <input
-                type="tel"
-                name="phone"
-                value={form.phone}
-                onChange={handleChange}
-                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 outline-none transition"
-              />
+              <input type="tel" name="phone" value={form.phone} onChange={handleChange} className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:border-blue-500 outline-none" />
             </div>
-
-            {/* Service */}
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-1">What are you looking to build?</label>
-              <select
-                name="service"
-                value={form.service}
-                onChange={handleChange}
-                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 outline-none transition"
-              >
-                {services.map((s) => (
-                  <option key={s} value={s} className="bg-gray-900">
-                    {s}
-                  </option>
-                ))}
+              <select name="service" value={form.service} onChange={handleChange} className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:border-blue-500 outline-none">
+                {services.map((s) => <option key={s} value={s} className="bg-gray-900">{s}</option>)}
               </select>
             </div>
-            {/* Stage */}
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-1">Current Project Stage</label>
-              <select
-                name="stage"
-                value={form.stage}
-                onChange={handleChange}
-                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 outline-none transition"
-              >
-                {stages.map((s) => (
-                  <option key={s} value={s} className="bg-gray-900">
-                    {s}
-                  </option>
-                ))}
+              <select name="stage" value={form.stage} onChange={handleChange} className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:border-blue-500 outline-none">
+                {stages.map((s) => <option key={s} value={s} className="bg-gray-900">{s}</option>)}
               </select>
             </div>
-            {/* Budget */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">Estimated Project Budget</label>
-              <select
-                name="budget"
-                value={form.budget}
-                onChange={handleChange}
-                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 outline-none transition"
-              >
-                {budgets.map((b) => (
-                  <option key={b} value={b} className="bg-gray-900">
-                    {b}
-                  </option>
-                ))}
+              <label className="block text-sm font-medium text-gray-300 mb-1">Estimated Budget</label>
+              <select name="budget" value={form.budget} onChange={handleChange} className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:border-blue-500 outline-none">
+                {budgets.map((b) => <option key={b} value={b} className="bg-gray-900">{b}</option>)}
               </select>
             </div>
-            {/* Timeline */}
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-1">When would you like to start?</label>
-              <select
-                name="timeline"
-                value={form.timeline}
-                onChange={handleChange}
-                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 outline-none transition"
-              >
-                {timelines.map((t) => (
-                  <option key={t} value={t} className="bg-gray-900">
-                    {t}
-                  </option>
-                ))}
+              <select name="timeline" value={form.timeline} onChange={handleChange} className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:border-blue-500 outline-none">
+                {timelines.map((t) => <option key={t} value={t} className="bg-gray-900">{t}</option>)}
               </select>
             </div>
-
-            {/* Description */}
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-300 mb-1">Tell us about your project *</label>
-              <textarea
-                name="description"
-                value={form.description}
-                onChange={handleChange}
-                required
-                rows={5}
-                placeholder="What are you trying to build, what problem should it solve, and what would success look like?"
-                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 outline-none transition resize-none"
-              />
+              <textarea name="description" value={form.description} onChange={handleChange} required rows={5} placeholder="What are you trying to build, what problem should it solve, and what would success look like?" className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-500 focus:border-blue-500 outline-none resize-none" />
             </div>
 
-            {/* File attachment */}
+            {/* DRAG & DROP */}
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-300 mb-1">
-                Attach project documents (optional)
-              </label>
-              <input
-                type="file"
-                multiple
-                onChange={handleFileChange}
-                className="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-blue-600 file:text-white file:font-medium hover:file:bg-blue-700"
-              />
-              {fileNames.length > 0 && (
-                <p className="text-xs text-gray-400 mt-2">
-                  Selected: {fileNames.join(', ')}
-                </p>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Attach project documents (optional)</label>
+              <div
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                onClick={() => fileInputRef.current?.click()}
+                className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-colors ${dragging ? 'border-blue-500 bg-blue-500/10' : 'border-white/20 hover:border-white/40'}`}
+              >
+                <p className="text-gray-400">Drag files here or click to browse</p>
+                <p className="text-xs text-gray-500 mt-1">PDF • DOCX • PNG • JPG • ZIP</p>
+                <input ref={fileInputRef} type="file" multiple onChange={handleFileChange} className="hidden" />
+              </div>
+              {files.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {files.map((file, idx) => (
+                    <span key={idx} className="text-xs bg-white/10 px-3 py-1 rounded-full">📎 {file.name}</span>
+                  ))}
+                </div>
               )}
             </div>
 
-            {/* Submit */}
             <div className="md:col-span-2">
-              <button
-                type="submit"
-                disabled={submitting}
-                className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
+              <button type="submit" disabled={submitting} className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
                 {submitting ? 'Sending Inquiry...' : 'Send Inquiry'}
               </button>
             </div>
@@ -469,16 +371,13 @@ export default function ContactPage() {
         </div>
       </section>
 
-      {/* How We Work */}
+      {/* HOW WE WORK */}
       <section className="px-6 lg:px-8 py-16 max-w-7xl mx-auto">
         <p className="text-sm uppercase tracking-widest text-blue-400 mb-2 text-center">How We Handle Inquiries</p>
         <h2 className="text-3xl md:text-4xl font-bold mb-12 text-center">From Discovery to Delivery</h2>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           {howWeWork.map((step) => (
-            <div
-              key={step.step}
-              className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6 text-center hover:bg-white/10 transition-all"
-            >
+            <div key={step.step} className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6 text-center hover:bg-white/10 transition-all">
               <div className="text-4xl font-bold text-blue-500 mb-3">{step.step}</div>
               <h3 className="text-lg font-semibold mb-2">{step.title}</h3>
               <p className="text-sm text-gray-400">{step.description}</p>
@@ -487,16 +386,13 @@ export default function ContactPage() {
         </div>
       </section>
 
-      {/* Solutions */}
+      {/* SOLUTIONS */}
       <section className="px-6 lg:px-8 py-16 max-w-7xl mx-auto">
         <p className="text-sm uppercase tracking-widest text-blue-400 mb-2 text-center">What We Build</p>
         <h2 className="text-3xl md:text-4xl font-bold mb-12 text-center">What Can We Help You Build?</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {solutions.map((sol) => (
-            <div
-              key={sol.label}
-              className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-4 text-center hover:bg-white/10 transition-all"
-            >
+            <div key={sol.label} className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-4 text-center hover:bg-white/10 transition-all">
               <div className="text-3xl mb-2">{sol.icon}</div>
               <p className="text-sm font-medium">{sol.label}</p>
             </div>
@@ -504,25 +400,20 @@ export default function ContactPage() {
         </div>
       </section>
 
-      {/* Trust Metrics */}
+      {/* TRUST METRICS */}
       <section className="px-6 lg:px-8 py-16 max-w-7xl mx-auto">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-          <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6">
-            <p className="text-4xl font-bold text-blue-500">50+</p>
-            <p className="text-gray-300 mt-2">Projects Delivered</p>
-          </div>
-          <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6">
-            <p className="text-4xl font-bold text-blue-500">99%</p>
-            <p className="text-gray-300 mt-2">Client Satisfaction</p>
-          </div>
-          <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6">
-            <p className="text-4xl font-bold text-blue-500">Global</p>
-            <p className="text-gray-300 mt-2">Client Delivery</p>
-          </div>
-          <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6">
-            <p className="text-4xl font-bold text-blue-500">24/7</p>
-            <p className="text-gray-300 mt-2">Digital Solutions</p>
-          </div>
+          {[
+            { num: '50+', label: 'Projects Delivered' },
+            { num: '99%', label: 'Client Satisfaction' },
+            { num: 'Global', label: 'Client Delivery' },
+            { num: '24/7', label: 'Digital Solutions' },
+          ].map(({ num, label }) => (
+            <div key={label} className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6">
+              <p className="text-4xl font-bold text-blue-500">{num}</p>
+              <p className="text-gray-300 mt-2">{label}</p>
+            </div>
+          ))}
         </div>
       </section>
 
@@ -532,10 +423,7 @@ export default function ContactPage() {
         <h2 className="text-3xl md:text-4xl font-bold mb-12 text-center">Frequently Asked Questions</h2>
         <div className="space-y-4">
           {faqs.map((faq, idx) => (
-            <div
-              key={idx}
-              className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden"
-            >
+            <div key={idx} className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden">
               <button
                 onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
                 className="w-full flex items-center justify-between px-6 py-4 text-left"
@@ -551,7 +439,7 @@ export default function ContactPage() {
         </div>
       </section>
 
-      {/* Final CTA */}
+      {/* FINAL CTA */}
       <section className="px-6 lg:px-8 py-24">
         <div className="relative max-w-4xl mx-auto text-center bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-12 overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-indigo-600/20 to-purple-600/20 pointer-events-none" />
@@ -561,18 +449,10 @@ export default function ContactPage() {
               Let&apos;s turn your idea, system, or business challenge into a technology solution.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <a
-                href="#project-inquiry"
-                className="px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-colors"
-              >
+              <a href="#project-inquiry" className="px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-colors">
                 Start a Project →
               </a>
-              <a
-                href={WHATSAPP_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-8 py-4 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-semibold rounded-xl transition-colors"
-              >
+              <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className="px-8 py-4 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-semibold rounded-xl transition-colors">
                 💬 WhatsApp Us
               </a>
             </div>
