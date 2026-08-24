@@ -189,8 +189,8 @@ export default function ServicesPage() {
     <div className="bg-gray-950 text-white min-h-screen">
       {/* HERO */}
       <section className="relative pt-36 pb-24 px-6 lg:px-8 overflow-hidden">
-        <div className="absolute inset-0 bg-cover bg-center opacity-30" style={{ backgroundImage: "url('/images/services-hero.jpg')" }} />
-        <div className="absolute inset-0 bg-gradient-to-br from-gray-950 via-indigo-950/90 to-black/90" />
+        <div className="absolute inset-0 bg-cover bg-center opacity-60" style={{ backgroundImage: "url('/images/services-hero.jpg')" }} />
+<div className="absolute inset-0 bg-gradient-to-b from-gray-950/90 via-gray-950/60 to-gray-950/90" />
         <div className="relative z-10 max-w-7xl mx-auto text-center">
           <p className="text-sm uppercase tracking-widest text-blue-400 mb-4">What We Build</p>
           <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">Software Solutions Built Around Your Business</h1>
