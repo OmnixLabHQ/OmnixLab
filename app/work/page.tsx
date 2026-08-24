@@ -26,7 +26,7 @@ const projects: Project[] = [
     title: 'Crypto Trading Platform',
     client: 'FinEdge Capital',
     category: 'Trading Systems',
-    heroImage: '/images/trading platform.jpg',
+    heroImage: '/images/trading-platform.jpg',
     problem: 'Manual trading caused missed opportunities and inconsistent profits in volatile markets.',
     solution: 'Built a high frequency trading system with real time analytics and automated execution.',
     metrics: [
@@ -51,7 +51,7 @@ const projects: Project[] = [
     title: 'E-Commerce Platform',
     client: 'CloudStack Solutions',
     category: 'E-Commerce',
-    heroImage: '/images/ecommerce platform.jpg',
+    heroImage: '/images/ecommerce-platform.jpg',
     problem: 'Outdated platform could not handle growing traffic and mobile optimization.',
     solution: 'Developed a modern e-commerce platform with inventory management and payment processing.',
     metrics: [
@@ -76,7 +76,7 @@ const projects: Project[] = [
     title: 'Healthcare SaaS Platform',
     client: 'MediCare Plus',
     category: 'SaaS Platforms',
-    heroImage: '/images/healthcare saas.jpg',
+    heroImage: '/images/healthcare-saas.jpg',
     problem: 'Patient data was scattered across multiple systems causing scheduling conflicts.',
     solution: 'Created a centralized patient management system with telemedicine and secure records.',
     metrics: [
@@ -101,7 +101,7 @@ const projects: Project[] = [
     title: 'FinTech Dashboard',
     client: 'DataVault Systems',
     category: 'Data & Analytics',
-    heroImage: '/images/fintech dashboard.jpg',
+    heroImage: '/images/fintech-dashboard.jpg',
     problem: 'Analysts needed real time market data across multiple exchanges simultaneously.',
     solution: 'Built a real time dashboard with live market streams and portfolio tracking.',
     metrics: [
@@ -126,7 +126,7 @@ const projects: Project[] = [
     title: 'Delivery Mobile App',
     client: 'SwiftDeliver',
     category: 'Mobile Applications',
-    heroImage: '/images/delivery mobile app.jpg',
+    heroImage: '/images/delivery-mobile-app.jpg',
     problem: 'Manual dispatch system caused delays and poor customer experience.',
     solution: 'Built a cross platform delivery app with real time tracking and notifications.',
     metrics: [
@@ -151,7 +151,7 @@ const projects: Project[] = [
     title: 'AI Content Generator',
     client: 'ContentPro',
     category: 'AI Solutions',
-    heroImage: '/images/ai content generator.jpg',
+    heroImage: '/images/ai-content-generator.jpg',
     problem: 'Content team struggled to scale production while maintaining quality.',
     solution: 'Built an AI powered platform with team collaboration and brand voice control.',
     metrics: [
