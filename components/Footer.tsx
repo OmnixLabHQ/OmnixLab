@@ -1,14 +1,6 @@
-'use client'
-
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
 
 export default function Footer() {
-  const pathname = usePathname()
-
-  // Hide footer on portal pages
-  if (pathname.startsWith('/portal')) return null
-
   return (
     <footer className="border-t border-gray-100 py-12 px-6 lg:px-8 bg-gray-50">
       <div className="max-w-7xl mx-auto">
