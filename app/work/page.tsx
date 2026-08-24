@@ -27,8 +27,8 @@ const projects: Project[] = [
     client: 'FinEdge Capital',
     category: 'Trading Systems',
     heroImage: '📈',
-    problem: 'Manual trading caused missed opportunities and inconsistent profits. The client needed 24/7 automated execution with real time risk management.',
-    solution: 'Built a high frequency trading bot with real time analytics, automated execution, and a comprehensive risk management dashboard.',
+    problem: 'Manual trading caused missed opportunities and inconsistent profits in volatile markets.',
+    solution: 'Built a high frequency trading system with real time analytics and automated execution.',
     metrics: [
       { label: 'Execution Speed', value: '0.003ms' },
       { label: 'Monthly Return', value: '18%' },
@@ -37,7 +37,7 @@ const projects: Project[] = [
     ],
     tech: ['Python', 'CCXT', 'PostgreSQL', 'WebSocket', 'AWS'],
     testimonial: {
-      quote: "Omnix Lab's trading bot has been a game changer for our firm. Consistent returns with zero manual intervention.",
+      quote: "Omnix Lab delivered exactly what we needed. Consistent returns with zero manual intervention.",
       author: 'Michael Chen',
       role: 'CEO, FinEdge Capital'
     },
@@ -52,8 +52,8 @@ const projects: Project[] = [
     client: 'CloudStack Solutions',
     category: 'E-Commerce',
     heroImage: '🛒',
-    problem: 'Outdated platform could not handle growing traffic and lacked mobile optimization, causing lost sales.',
-    solution: 'Developed a modern, responsive e-commerce platform with inventory management, payment processing, and analytics.',
+    problem: 'Outdated platform could not handle growing traffic and mobile optimization.',
+    solution: 'Developed a modern e-commerce platform with inventory management and payment processing.',
     metrics: [
       { label: 'Mobile Sales Increase', value: '200%' },
       { label: 'Page Load Time', value: '1.2s' },
@@ -77,8 +77,8 @@ const projects: Project[] = [
     client: 'MediCare Plus',
     category: 'SaaS Platforms',
     heroImage: '🏥',
-    problem: 'Patient data was scattered across multiple systems, causing scheduling conflicts and delays in care.',
-    solution: 'Created a centralized patient management system with telemedicine, appointment scheduling, and secure medical records.',
+    problem: 'Patient data was scattered across multiple systems causing scheduling conflicts.',
+    solution: 'Created a centralized patient management system with telemedicine and secure records.',
     metrics: [
       { label: 'Scheduling Time Reduced', value: '80%' },
       { label: 'Patients Onboarded', value: '10,000+' },
@@ -87,7 +87,7 @@ const projects: Project[] = [
     ],
     tech: ['React', 'Node.js', 'PostgreSQL', 'WebRTC', 'AWS'],
     testimonial: {
-      quote: "Omnix Lab built exactly what we needed. Our operations are streamlined and patients love the telemedicine feature.",
+      quote: "Omnix Lab built exactly what we needed. Our operations are streamlined and patients love telemedicine.",
       author: 'Dr. Amina Yusuf',
       role: 'CEO, MediCare Plus'
     },
@@ -102,8 +102,8 @@ const projects: Project[] = [
     client: 'DataVault Systems',
     category: 'Data & Analytics',
     heroImage: '💹',
-    problem: 'Financial analysts needed a real time dashboard to monitor market data across multiple exchanges simultaneously.',
-    solution: 'Built a real time data visualization dashboard with live market streams, portfolio tracking, and custom reporting.',
+    problem: 'Analysts needed real time market data across multiple exchanges simultaneously.',
+    solution: 'Built a real time dashboard with live market streams and portfolio tracking.',
     metrics: [
       { label: 'Data Latency', value: '<100ms' },
       { label: 'Exchanges Connected', value: '5' },
@@ -112,7 +112,7 @@ const projects: Project[] = [
     ],
     tech: ['Next.js', 'WebSocket', 'D3.js', 'Node.js', 'Redis'],
     testimonial: {
-      quote: "The dashboard Omnix Lab built gives us a competitive edge. Real time data at our fingertips.",
+      quote: "The dashboard gives us a competitive edge. Real time data at our fingertips.",
       author: 'David Okafor',
       role: 'CTO, DataVault Systems'
     },
@@ -127,8 +127,8 @@ const projects: Project[] = [
     client: 'SwiftDeliver',
     category: 'Mobile Applications',
     heroImage: '📱',
-    problem: 'Manual dispatch system caused delays and poor customer experience with no real time tracking.',
-    solution: 'Built a cross platform delivery app with real time tracking, driver management, and push notifications.',
+    problem: 'Manual dispatch system caused delays and poor customer experience.',
+    solution: 'Built a cross platform delivery app with real time tracking and notifications.',
     metrics: [
       { label: 'App Rating', value: '4.8★' },
       { label: 'Delivery Time Reduced', value: '35%' },
@@ -137,7 +137,7 @@ const projects: Project[] = [
     ],
     tech: ['React Native', 'Firebase', 'Google Maps API', 'Node.js', 'MongoDB'],
     testimonial: {
-      quote: "Our delivery operations are now fully automated. The app is fast, reliable, and our customers love the live tracking.",
+      quote: "Our operations are now fully automated. Customers love the live tracking.",
       author: 'James Okonkwo',
       role: 'Founder, SwiftDeliver'
     },
@@ -152,8 +152,8 @@ const projects: Project[] = [
     client: 'ContentPro',
     category: 'AI Solutions',
     heroImage: '🤖',
-    problem: 'Content team struggled to scale production while maintaining quality and brand voice consistency.',
-    solution: 'Built an AI powered content generation platform with team collaboration, SEO optimization, and brand voice control.',
+    problem: 'Content team struggled to scale production while maintaining quality.',
+    solution: 'Built an AI powered platform with team collaboration and brand voice control.',
     metrics: [
       { label: 'Content Output', value: '1M+/month' },
       { label: 'Time Saved', value: '70%' },
@@ -162,7 +162,7 @@ const projects: Project[] = [
     ],
     tech: ['Python', 'OpenAI API', 'Next.js', 'PostgreSQL', 'LangChain'],
     testimonial: {
-      quote: "Omnix Lab's AI platform transformed our content operation. We now produce 10x more content with consistent quality.",
+      quote: "The AI platform transformed our operation. We now produce 10x more content.",
       author: 'Grace Okonkwo',
       role: 'CEO, ContentPro'
     },
@@ -183,51 +183,31 @@ export default function WorkPage() {
 
   return (
     <div className="bg-gray-950 text-white min-h-screen">
-      {/* HERO */}
-<section className="relative pt-36 pb-20 px-6 lg:px-8 overflow-hidden">
-  <div
-    className="absolute inset-0 bg-cover bg-center"
-    style={{ backgroundImage: "url('/images/about-hero.jpg')" }}
-  />
-  <div className="absolute inset-0 bg-gradient-to-br from-gray-950/95 via-indigo-950/85 to-black/90" />
-  <div className="absolute inset-0 opacity-10">
-    <div className="h-full w-full bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:60px_60px]" />
-  </div>
-  <div className="absolute top-1/3 left-1/4 w-72 h-72 bg-indigo-600/20 rounded-full blur-3xl animate-pulse" />
-
-  <div className="relative z-10 max-w-7xl mx-auto text-center">
-    <p className="text-sm uppercase tracking-widest text-blue-400 mb-4">Our Portfolio</p>
-    <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">
-      Software Built to Solve Real Business Challenges
-    </h1>
-    <p className="text-lg text-gray-300 max-w-2xl mx-auto mb-10">
-      Explore selected software products, platforms, applications, and digital solutions developed by Omnix Lab for businesses across different industries.
-    </p>
-    <div className="flex flex-col sm:flex-row gap-4 justify-center">
-      <Link href="/contact" className="inline-flex px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-colors">
-        Start Your Project
-      </Link>
-      <a href="#portfolio" className="inline-flex px-8 py-4 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-semibold rounded-xl transition-colors">
-        Explore Our Work
-      </a>
-    </div>
-
-    {/* Trust metrics */}
-    <div className="mt-14 grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl mx-auto">
-      {[
-        ['50+', 'Projects Delivered'],
-        ['99%', 'Client Satisfaction'],
-        ['Global', 'Delivery'],
-        ['Enterprise', 'Technology'],
-      ].map(([num, label]) => (
-        <div key={label} className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-xl p-4">
-          <p className="text-2xl font-bold text-blue-400">{num}</p>
-          <p className="text-xs text-gray-300 mt-1">{label}</p>
+      {/* HERO with Image */}
+      <section className="relative pt-36 pb-20 px-6 lg:px-8 overflow-hidden">
+        <div
+          className="absolute inset-0 bg-cover bg-center"
+          style={{ backgroundImage: "url('/images/about-hero.jpg')" }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-br from-gray-950/95 via-indigo-950/85 to-black/90" />
+        <div className="relative z-10 max-w-7xl mx-auto text-center">
+          <p className="text-sm uppercase tracking-widest text-blue-400 mb-4">Our Portfolio</p>
+          <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">
+            Software Built to Solve Real Business Challenges
+          </h1>
+          <p className="text-lg text-gray-300 max-w-2xl mx-auto mb-10">
+            Explore selected software products, platforms, applications, and digital solutions developed by Omnix Lab for businesses across different industries.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link href="/contact" className="inline-flex px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-colors">
+              Start Your Project
+            </Link>
+            <a href="#portfolio" className="inline-flex px-8 py-4 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-semibold rounded-xl transition-colors">
+              Explore Our Work
+            </a>
+          </div>
         </div>
-      ))}
-    </div>
-  </div>
-</section>
+      </section>
 
       {/* INDUSTRY STRIP */}
       <section className="px-6 lg:px-8 py-12 border-y border-white/10 bg-gray-900/50">
@@ -243,31 +223,8 @@ export default function WorkPage() {
         </div>
       </section>
 
-      {/* FEATURED PROJECT */}
-      <section className="px-6 lg:px-8 py-20">
-        <div className="max-w-7xl mx-auto">
-          <h2 className="text-3xl md:text-4xl font-bold mb-8">Featured Case Study</h2>
-          <div onClick={() => setSelectedProject(projects[0])} className="rounded-3xl overflow-hidden bg-white/5 border border-white/10 cursor-pointer group hover:bg-white/10 transition-all">
-            <div className={`aspect-[21/9] bg-gradient-to-br ${projects[0].gradient} relative overflow-hidden flex items-center justify-center`}>
-              <span className="text-8xl opacity-60 group-hover:scale-110 transition-transform duration-500">{projects[0].icon}</span>
-            </div>
-            <div className="p-8 lg:p-12">
-              <div className="flex items-center gap-3 mb-3">
-                <span className="px-3 py-1 bg-blue-500 text-white text-xs font-semibold rounded-full">Featured</span>
-                <span className="text-gray-400 text-sm">{projects[0].category}</span>
-              </div>
-              <h3 className="text-2xl lg:text-3xl font-bold text-white mb-3">{projects[0].title}</h3>
-              <p className="text-gray-300 max-w-2xl">{projects[0].problem}</p>
-              <span className="inline-flex mt-4 px-6 py-3 bg-white text-gray-900 font-semibold rounded-full group-hover:bg-gray-200 transition-colors">
-                View Case Study →
-              </span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* FILTERS + PORTFOLIO */}
-      <section id="portfolio" className="px-6 lg:px-8 py-20 bg-gray-900/50 border-t border-white/10">
+      {/* PORTFOLIO */}
+      <section id="portfolio" className="px-6 lg:px-8 py-20">
         <div className="max-w-7xl mx-auto">
           <h2 className="text-3xl md:text-4xl font-bold mb-8">Explore Our Work</h2>
           <div className="flex flex-wrap gap-3 mb-10">
@@ -304,13 +261,6 @@ export default function WorkPage() {
                     {project.title}
                   </h3>
                   <p className="text-gray-400 text-sm mb-4 line-clamp-3">{project.problem}</p>
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    {project.features.slice(0, 3).map((feature, j) => (
-                      <span key={j} className="px-2 py-1 bg-white/5 text-gray-400 text-xs rounded-md border border-white/10">
-                        {feature}
-                      </span>
-                    ))}
-                  </div>
                   <span className="inline-flex items-center gap-1 text-blue-400 font-medium text-sm group-hover:underline">
                     View Case Study →
                   </span>
@@ -322,7 +272,7 @@ export default function WorkPage() {
       </section>
 
       {/* CAPABILITIES */}
-      <section className="px-6 lg:px-8 py-20">
+      <section className="px-6 lg:px-8 py-20 bg-gray-900/50 border-t border-white/10">
         <div className="max-w-7xl mx-auto">
           <h2 className="text-3xl md:text-4xl font-bold mb-10">How We Create Value</h2>
           <div className="grid md:grid-cols-4 gap-6">
@@ -364,7 +314,7 @@ export default function WorkPage() {
                 <span className="text-sm text-gray-400">Timeline: {selectedProject.timeline}</span>
               </div>
               <button onClick={() => setSelectedProject(null)} className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                ✕
               </button>
             </div>
 
@@ -409,7 +359,6 @@ export default function WorkPage() {
               </div>
 
               <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-6 text-white">
-                <div className="text-3xl mb-3">"</div>
                 <p className="italic mb-4">{selectedProject.testimonial.quote}</p>
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center font-bold text-sm">
