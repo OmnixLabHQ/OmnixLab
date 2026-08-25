@@ -3,454 +3,230 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 
-interface AnalyticsData {
-  totalClients: number
-  newClients: number
-  activeClients: number
-  returningClients: number
-  clientRetention: number
-  avgLifetimeValue: number
-  totalProjects: number
-  activeProjects: number
-  completedProjects: number
-  delayedProjects: number
-  avgCompletionDays: number
-  milestoneCompletionRate: number
-  totalRevenue: number
-  outstandingInvoices: number
-  paidInvoices: number
-  overdueInvoices: number
-  paymentFailures: number
-  collectionsRate: number
-  totalLogins: number
-  totalMessages: number
-  totalFiles: number
-  totalIdeas: number
-  totalRequirements: number
-  revenueByMonth: { month: string; amount: number }[]
-  revenueByClient: { client: string; amount: number }[]
-  projectsByStatus: { status: string; count: number }[]
-  paymentsByMethod: { method: string; count: number }[]
-  clientsByMonth: { month: string; count: number }[]
-  revenueToday: number
-  revenueThisMonth: number
-  revenueThisYear: number
-  refunds: number
+interface ActivityItem {
+  id: string
+  user_id: string
+  action_type: string
+  description: string
+  entity_type: string
+  entity_id: string
+  client_name: string
+  project_name: string
+  created_at: string
 }
 
-const TIME_RANGES: Record<string, string> = {
-  'today': 'Today',
-  '7d': 'Last 7 Days',
-  '30d': 'Last 30 Days',
-  '90d': 'Last 90 Days',
-  '180d': 'Last 6 Months',
-  '365d': 'Last 12 Months',
-  'all': 'All Time',
+const ITEMS_PER_PAGE = 20
+const ACTIVITY_TYPES: Record<string, { label: string; icon: string; color: string }> = {
+  login: { label: 'Login', icon: '[>]', color: 'bg-blue-500/20 text-blue-300' },
+  logout: { label: 'Logout', icon: '[<]', color: 'bg-gray-500/20 text-gray-300' },
+  client_created: { label: 'Client Created', icon: '[+]', color: 'bg-green-500/20 text-green-300' },
+  client_updated: { label: 'Client Updated', icon: '[~]', color: 'bg-blue-500/20 text-blue-300' },
+  project_created: { label: 'Project Created', icon: '[+]', color: 'bg-purple-500/20 text-purple-300' },
+  project_updated: { label: 'Project Updated', icon: '[~]', color: 'bg-purple-500/20 text-purple-300' },
+  milestone_completed: { label: 'Milestone Completed', icon: '[✓]', color: 'bg-emerald-500/20 text-emerald-300' },
+  milestone_approved: { label: 'Milestone Approved', icon: '[✓]', color: 'bg-green-500/20 text-green-300' },
+  file_uploaded: { label: 'File Uploaded', icon: '[^]', color: 'bg-cyan-500/20 text-cyan-300' },
+  file_deleted: { label: 'File Deleted', icon: '[x]', color: 'bg-red-500/20 text-red-300' },
+  message_created: { label: 'Message Sent', icon: '[>]', color: 'bg-blue-500/20 text-blue-300' },
+  message_read: { label: 'Message Read', icon: '[✓]', color: 'bg-gray-500/20 text-gray-300' },
+  idea_submitted: { label: 'Idea Submitted', icon: '[!]', color: 'bg-orange-500/20 text-orange-300' },
+  idea_updated: { label: 'Idea Updated', icon: '[~]', color: 'bg-orange-500/20 text-orange-300' },
+  invoice_created: { label: 'Invoice Created', icon: '[+]', color: 'bg-yellow-500/20 text-yellow-300' },
+  invoice_sent: { label: 'Invoice Sent', icon: '[>]', color: 'bg-yellow-500/20 text-yellow-300' },
+  invoice_paid: { label: 'Invoice Paid', icon: '[✓]', color: 'bg-green-500/20 text-green-300' },
+  payment_verified: { label: 'Payment Verified', icon: '[✓]', color: 'bg-green-500/20 text-green-300' },
+  payment_failed: { label: 'Payment Failed', icon: '[x]', color: 'bg-red-500/20 text-red-300' },
+  offer_created: { label: 'Offer Created', icon: '[+]', color: 'bg-purple-500/20 text-purple-300' },
+  offer_accepted: { label: 'Offer Accepted', icon: '[✓]', color: 'bg-green-500/20 text-green-300' },
+  support_ticket_created: { label: 'Support Ticket', icon: '[?]', color: 'bg-orange-500/20 text-orange-300' },
+  support_ticket_resolved: { label: 'Ticket Resolved', icon: '[✓]', color: 'bg-emerald-500/20 text-emerald-300' },
+  requirement_submitted: { label: 'Requirement Submitted', icon: '[+]', color: 'bg-cyan-500/20 text-cyan-300' },
+  requirement_approved: { label: 'Requirement Approved', icon: '[✓]', color: 'bg-green-500/20 text-green-300' },
+  notification_sent: { label: 'Notification Sent', icon: '[>]', color: 'bg-blue-500/20 text-blue-300' },
+  team_member_created: { label: 'Team Member Added', icon: '[+]', color: 'bg-purple-500/20 text-purple-300' },
+  permission_changed: { label: 'Permission Changed', icon: '[~]', color: 'bg-red-500/20 text-red-300' },
 }
 
-export default function AdminAnalyticsPage() {
-  const [analytics, setAnalytics] = useState<AnalyticsData>({
-    totalClients: 0,
-    newClients: 0,
-    activeClients: 0,
-    returningClients: 0,
-    clientRetention: 0,
-    avgLifetimeValue: 0,
-    totalProjects: 0,
-    activeProjects: 0,
-    completedProjects: 0,
-    delayedProjects: 0,
-    avgCompletionDays: 0,
-    milestoneCompletionRate: 0,
-    totalRevenue: 0,
-    outstandingInvoices: 0,
-    paidInvoices: 0,
-    overdueInvoices: 0,
-    paymentFailures: 0,
-    collectionsRate: 0,
-    totalLogins: 0,
-    totalMessages: 0,
-    totalFiles: 0,
-    totalIdeas: 0,
-    totalRequirements: 0,
-    revenueByMonth: [],
-    revenueByClient: [],
-    projectsByStatus: [],
-    paymentsByMethod: [],
-    clientsByMonth: [],
-    revenueToday: 0,
-    revenueThisMonth: 0,
-    revenueThisYear: 0,
-    refunds: 0,
-  })
-  
+export default function AdminActivityPage() {
+  const [activities, setActivities] = useState<ActivityItem[]>([])
+  const [filteredActivities, setFilteredActivities] = useState<ActivityItem[]>([])
   const [loading, setLoading] = useState(true)
-  const [timeRange, setTimeRange] = useState('30d')
-  const [activeTab, setActiveTab] = useState<'overview' | 'clients' | 'projects' | 'financial' | 'engagement'>('overview')
+  const [searchTerm, setSearchTerm] = useState('')
+  const [typeFilter, setTypeFilter] = useState('all')
+  const [entityFilter, setEntityFilter] = useState('all')
+  
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [paginatedActivities, setPaginatedActivities] = useState<ActivityItem[]>([])
+  
+  const [selectedActivity, setSelectedActivity] = useState<ActivityItem | null>(null)
+  const [showDetailModal, setShowDetailModal] = useState(false)
+  
+  const [stats, setStats] = useState({
+    total: 0,
+    today: 0,
+    thisWeek: 0,
+    uniqueTypes: 0,
+  })
 
   useEffect(() => {
-    fetchAnalytics()
-  }, [timeRange])
+    fetchActivities()
+  }, [])
 
-  const fetchAnalytics = useCallback(async () => {
+  useEffect(() => {
+    applyFilters()
+  }, [searchTerm, typeFilter, entityFilter, activities])
+
+  useEffect(() => {
+    updatePagination()
+  }, [filteredActivities, currentPage])
+
+  const fetchActivities = useCallback(async () => {
     setLoading(true)
     try {
-      const dateFilter = getDateFilter(timeRange)
-      
-      const [
-        clientsData,
-        projectsData,
-        invoicesData,
-        paymentsData,
-        milestonesData,
-        messagesData,
-        filesData,
-        ideasData,
-        requirementsData,
-        activityData,
-      ] = await Promise.all([
-        supabase.from('clients').select('*').order('created_at', { ascending: true }),
-        supabase.from('projects').select('*').order('created_at', { ascending: true }),
-        supabase.from('invoices').select('*').order('created_at', { ascending: true }),
-        supabase.from('payments').select('*').order('created_at', { ascending: true }),
-        supabase.from('milestones').select('*').order('created_at', { ascending: true }),
-        supabase.from('messages').select('*').order('created_at', { ascending: true }),
-        supabase.from('files').select('*').order('created_at', { ascending: true }),
-        supabase.from('ideas').select('*').order('created_at', { ascending: true }),
-        supabase.from('requirements').select('*').order('created_at', { ascending: true }),
-        supabase.from('activity_logs').select('*').order('created_at', { ascending: true }),
-      ])
+      const { data: activitiesData } = await supabase
+        .from('activity_logs')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(500)
 
-      const clients = clientsData.data || []
-      const projects = projectsData.data || []
-      const invoices = invoicesData.data || []
-      const payments = paymentsData.data || []
-      const milestones = milestonesData.data || []
-      const messages = messagesData.data || []
-      const files = filesData.data || []
-      const ideas = ideasData.data || []
-      const requirements = requirementsData.data || []
-      const activities = activityData.data || []
+      const activitiesWithDetails = await Promise.all(
+        (activitiesData || []).map(async (activity) => {
+          let clientName = 'System'
+          if (activity.user_id) {
+            const { data: client } = await supabase
+              .from('clients')
+              .select('full_name, company')
+              .eq('id', activity.user_id)
+              .single()
+            clientName = client?.full_name || client?.company || 'System'
+          }
 
-      const filteredClients = filterByDate(clients, dateFilter)
-      const filteredPayments = filterByDate(payments, dateFilter)
-      const filteredMessages = filterByDate(messages, dateFilter)
-      const filteredFiles = filterByDate(files, dateFilter)
-      const filteredIdeas = filterByDate(ideas, dateFilter)
-      const filteredRequirements = filterByDate(requirements, dateFilter)
+          let projectName = '-'
+          if (activity.entity_type === 'project' && activity.entity_id) {
+            const { data: project } = await supabase
+              .from('projects')
+              .select('name')
+              .eq('id', activity.entity_id)
+              .single()
+            projectName = project?.name || '-'
+          }
 
-      // Client analytics
-      const totalClients = clients.length
-      const newClients = filteredClients.length
-      const activeClients = clients.filter(c => (c.status || '') === 'active').length
-      const returningClients = clients.filter(c => {
-        const clientProjects = projects.filter(p => p.client_id === c.id)
-        return clientProjects.length > 1
-      }).length
-      const clientRetention = totalClients > 0 ? (returningClients / totalClients) * 100 : 0
-      
-      const clientRevenue = clients.map(client => {
-        const clientInvoices = invoices.filter(inv => inv.client_id === client.id)
-        return clientInvoices.reduce((sum, inv) => sum + (inv.total_amount || 0), 0)
-      })
-      const avgLifetimeValue = totalClients > 0 ? clientRevenue.reduce((a, b) => a + b, 0) / totalClients : 0
-
-      // Project analytics
-      const totalProjects = projects.length
-      const activeProjects = projects.filter(p => ['planning', 'active', 'development'].includes(p.status || '')).length
-      const completedProjects = projects.filter(p => p.status === 'completed').length
-      const delayedProjects = projects.filter(p => {
-        return p.expected_completion_date && new Date(p.expected_completion_date) < new Date() && p.status !== 'completed'
-      }).length
-      
-      const completedDurations = projects
-        .filter(p => p.status === 'completed' && p.created_at && p.completed_at)
-        .map(p => {
-          const start = new Date(p.created_at)
-          const end = new Date(p.completed_at)
-          return Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24))
+          return {
+            ...activity,
+            client_name: clientName,
+            project_name: projectName,
+          }
         })
-      const avgCompletionDays = completedDurations.length > 0 
-        ? Math.round(completedDurations.reduce((a, b) => a + b, 0) / completedDurations.length) 
-        : 0
+      )
 
-      const totalMilestones = milestones.length
-      const completedMilestones = milestones.filter(m => m.status === 'completed').length
-      const milestoneCompletionRate = totalMilestones > 0 ? (completedMilestones / totalMilestones) * 100 : 0
-
-      // Financial analytics
-      const successfulPayments = payments.filter(p => p.status === 'successful')
-      const totalRevenue = successfulPayments.reduce((sum, p) => sum + (p.amount || 0), 0)
-      
-      const now = new Date()
-      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
-      const yearStart = new Date(now.getFullYear(), 0, 1)
-      
-      const revenueToday = successfulPayments
-        .filter(p => new Date(p.created_at) >= todayStart)
-        .reduce((sum, p) => sum + (p.amount || 0), 0)
-      
-      const revenueThisMonth = successfulPayments
-        .filter(p => new Date(p.created_at) >= monthStart)
-        .reduce((sum, p) => sum + (p.amount || 0), 0)
-      
-      const revenueThisYear = successfulPayments
-        .filter(p => new Date(p.created_at) >= yearStart)
-        .reduce((sum, p) => sum + (p.amount || 0), 0)
-      
-      const refunds = payments
-        .filter(p => p.status === 'refunded')
-        .reduce((sum, p) => sum + Math.abs(p.amount || 0), 0)
-      
-      const outstandingInvoices = invoices
-        .filter(inv => ['sent', 'viewed', 'overdue'].includes(inv.status || ''))
-        .reduce((sum, inv) => {
-          const paid = payments
-            .filter(p => p.invoice_id === inv.id && p.status === 'successful')
-            .reduce((s, p) => s + p.amount, 0)
-          return sum + ((inv.total_amount || 0) - paid)
-        }, 0)
-      
-      const paidInvoices = invoices
-        .filter(inv => inv.status === 'paid')
-        .reduce((sum, inv) => sum + (inv.total_amount || 0), 0)
-      
-      const overdueInvoices = invoices
-        .filter(inv => inv.status === 'overdue')
-        .reduce((sum, inv) => sum + (inv.total_amount || 0), 0)
-      
-      const paymentFailures = payments.filter(p => p.status === 'failed').length
-      const collectionsRate = (paidInvoices + outstandingInvoices) > 0 
-        ? (paidInvoices / (paidInvoices + outstandingInvoices)) * 100 
-        : 0
-
-      // Engagement analytics
-      const totalLogins = activities.filter(a => a.action_type === 'login').length
-      const totalMessages = messages.length
-      const totalFiles = files.length
-      const totalIdeas = ideas.length
-      const totalRequirements = requirements.length
-
-      // Charts
-      const revenueByMonth = getRevenueByMonth(payments, timeRange)
-      const revenueByClient = getRevenueByClient(clients, invoices)
-      const projectsByStatus = getProjectsByStatus(projects)
-      const paymentsByMethod = getPaymentsByMethod(payments)
-      const clientsByMonth = getClientsByMonth(clients, timeRange)
-
-      setAnalytics({
-        totalClients,
-        newClients,
-        activeClients,
-        returningClients,
-        clientRetention: Math.round(clientRetention),
-        avgLifetimeValue,
-        totalProjects,
-        activeProjects,
-        completedProjects,
-        delayedProjects,
-        avgCompletionDays,
-        milestoneCompletionRate: Math.round(milestoneCompletionRate),
-        totalRevenue,
-        outstandingInvoices,
-        paidInvoices,
-        overdueInvoices,
-        paymentFailures,
-        collectionsRate: Math.round(collectionsRate),
-        totalLogins,
-        totalMessages,
-        totalFiles,
-        totalIdeas,
-        totalRequirements,
-        revenueByMonth,
-        revenueByClient,
-        projectsByStatus,
-        paymentsByMethod,
-        clientsByMonth,
-        revenueToday,
-        revenueThisMonth,
-        revenueThisYear,
-        refunds,
-      })
-
+      setActivities(activitiesWithDetails)
+      calculateStats(activitiesWithDetails)
       setLoading(false)
     } catch (error) {
-      console.error('Fetch analytics error:', error)
+      console.error('Fetch activities error:', error)
       setLoading(false)
     }
-  }, [timeRange])
+  }, [])
 
-  function getDateFilter(range: string): Date | null {
-    if (range === 'all' || range === 'today') return null
+  function calculateStats(activities: ActivityItem[]) {
     const now = new Date()
-    const filter = new Date(now)
-    const days = parseInt(range.replace('d', '')) || 30
-    filter.setDate(now.getDate() - days)
-    return filter
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    const weekStart = new Date(now)
+    weekStart.setDate(now.getDate() - 7)
+    
+    const total = activities.length
+    const today = activities.filter(a => new Date(a.created_at) >= todayStart).length
+    const thisWeek = activities.filter(a => new Date(a.created_at) >= weekStart).length
+    const uniqueTypes = new Set(activities.map(a => a.action_type)).size
+
+    setStats({ total, today, thisWeek, uniqueTypes })
   }
 
-  function filterByDate(data: any[], dateFilter: Date | null) {
-    if (!dateFilter) return data
-    return data.filter(item => {
-      const date = item.created_at ? new Date(item.created_at) : null
-      return date && date >= dateFilter
-    })
-  }
+  function applyFilters() {
+    let filtered = [...activities]
 
-  function getRevenueByMonth(payments: any[], range: string): { month: string; amount: number }[] {
-    const monthsMap: Record<string, number> = {
-      'today': 1,
-      '7d': 1,
-      '30d': 3,
-      '90d': 3,
-      '180d': 6,
-      '365d': 12,
-      'all': 12,
+    if (searchTerm.trim()) {
+      const term = searchTerm.toLowerCase()
+      filtered = filtered.filter(
+        (activity) =>
+          activity.description?.toLowerCase().includes(term) ||
+          activity.client_name?.toLowerCase().includes(term) ||
+          activity.project_name?.toLowerCase().includes(term)
+      )
     }
-    const months = monthsMap[range] || 3
-    const result: { month: string; amount: number }[] = []
-    
-    for (let i = months - 1; i >= 0; i--) {
-      const date = new Date()
-      date.setMonth(date.getMonth() - i)
-      const monthKey = date.toLocaleString('en-US', { month: 'short', year: '2-digit' })
-      const monthStart = new Date(date.getFullYear(), date.getMonth(), 1)
-      const monthEnd = new Date(date.getFullYear(), date.getMonth() + 1, 0)
-      
-      const monthPayments = payments.filter(p => {
-        const paymentDate = new Date(p.created_at)
-        return paymentDate >= monthStart && paymentDate <= monthEnd && p.status === 'successful'
-      })
-      
-      const amount = monthPayments.reduce((sum, p) => sum + (p.amount || 0), 0)
-      result.push({ month: monthKey, amount })
+
+    if (typeFilter !== 'all') {
+      filtered = filtered.filter((activity) => activity.action_type === typeFilter)
     }
-    
-    return result
-  }
 
-  function getRevenueByClient(clients: any[], invoices: any[]): { client: string; amount: number }[] {
-    const result: { client: string; amount: number }[] = []
-    
-    const sortedClients = [...clients].sort((a, b) => {
-      const aRevenue = invoices.filter(inv => inv.client_id === a.id).reduce((sum, inv) => sum + (inv.total_amount || 0), 0)
-      const bRevenue = invoices.filter(inv => inv.client_id === b.id).reduce((sum, inv) => sum + (inv.total_amount || 0), 0)
-      return bRevenue - aRevenue
-    })
-    
-    sortedClients.slice(0, 10).forEach(client => {
-      const revenue = invoices
-        .filter(inv => inv.client_id === client.id)
-        .reduce((sum, inv) => sum + (inv.total_amount || 0), 0)
-      result.push({
-        client: client.full_name || client.company || 'Unknown',
-        amount: revenue,
-      })
-    })
-    
-    return result
-  }
-
-  function getProjectsByStatus(projects: any[]): { status: string; count: number }[] {
-    const statusMap: Record<string, number> = {}
-    
-    projects.forEach(project => {
-      const status = project.status || 'unknown'
-      statusMap[status] = (statusMap[status] || 0) + 1
-    })
-    
-    return Object.entries(statusMap).map(([status, count]) => ({
-      status: (status || 'unknown').replace(/_/g, ' '),
-      count,
-    }))
-  }
-
-  function getPaymentsByMethod(payments: any[]): { method: string; count: number }[] {
-    const methodMap: Record<string, number> = {}
-    
-    payments.filter(p => p.status === 'successful').forEach(payment => {
-      const method = payment.method || 'unknown'
-      methodMap[method] = (methodMap[method] || 0) + 1
-    })
-    
-    return Object.entries(methodMap).map(([method, count]) => ({
-      method: (method || 'unknown').replace(/_/g, ' '),
-      count,
-    }))
-  }
-
-  function getClientsByMonth(clients: any[], range: string): { month: string; count: number }[] {
-    const monthsMap: Record<string, number> = {
-      'today': 1,
-      '7d': 1,
-      '30d': 3,
-      '90d': 3,
-      '180d': 6,
-      '365d': 12,
-      'all': 12,
+    if (entityFilter !== 'all') {
+      filtered = filtered.filter((activity) => activity.entity_type === entityFilter)
     }
-    const months = monthsMap[range] || 3
-    const result: { month: string; count: number }[] = []
+
+    setFilteredActivities(filtered)
+    setCurrentPage(1)
+  }
+
+  function updatePagination() {
+    const total = Math.ceil(filteredActivities.length / ITEMS_PER_PAGE)
+    setTotalPages(total || 1)
     
-    for (let i = months - 1; i >= 0; i--) {
-      const date = new Date()
-      date.setMonth(date.getMonth() - i)
-      const monthKey = date.toLocaleString('en-US', { month: 'short', year: '2-digit' })
-      const monthStart = new Date(date.getFullYear(), date.getMonth(), 1)
-      const monthEnd = new Date(date.getFullYear(), date.getMonth() + 1, 0)
-      
-      const monthClients = clients.filter(c => {
-        const clientDate = new Date(c.created_at)
-        return clientDate >= monthStart && clientDate <= monthEnd
-      })
-      
-      result.push({ month: monthKey, count: monthClients.length })
+    const start = (currentPage - 1) * ITEMS_PER_PAGE
+    const end = start + ITEMS_PER_PAGE
+    setPaginatedActivities(filteredActivities.slice(start, end))
+  }
+
+  function getActivityInfo(actionType: string) {
+    return ACTIVITY_TYPES[actionType] || { 
+      label: actionType?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) || 'Activity', 
+      icon: '[*]', 
+      color: 'bg-gray-500/20 text-gray-300' 
     }
-    
-    return result
   }
 
-  function formatCurrency(amount: number): string {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(amount || 0)
+  function formatDate(date: string) {
+    if (!date) return '-'
+    return new Date(date).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    })
   }
 
-  function formatCompactCurrency(amount: number): string {
-    if (amount >= 1000000) return `$${(amount / 1000000).toFixed(1)}M`
-    if (amount >= 1000) return `$${(amount / 1000).toFixed(1)}K`
-    return `$${(amount || 0).toFixed(0)}`
+  function formatTime(date: string) {
+    if (!date) return '-'
+    return new Date(date).toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+    })
   }
 
-  function renderBarChart(data: { label: string; value: number }[], color: string = 'bg-blue-500') {
-    const maxValue = Math.max(...data.map(d => d.value), 1)
-    
-    return (
-      <div className="space-y-3">
-        {data.map((item, index) => (
-          <div key={index} className="flex items-center gap-3">
-            <span className="text-xs text-gray-400 w-20 truncate" title={item.label}>
-              {item.label}
-            </span>
-            <div className="flex-1 h-7 bg-white/5 rounded-lg overflow-hidden">
-              <div
-                className={`h-full ${color} rounded-lg transition-all duration-500 flex items-center`}
-                style={{ width: `${Math.max((item.value / maxValue) * 100, 2)}%` }}
-              >
-                {item.value > 0 && (
-                  <span className="text-[10px] text-white px-2 truncate">
-                    {item.value >= 1000 ? formatCompactCurrency(item.value) : item.value}
-                  </span>
-                )}
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    )
+  function formatRelativeTime(date: string) {
+    if (!date) return '-'
+    const now = new Date()
+    const activityDate = new Date(date)
+    const diffMs = now.getTime() - activityDate.getTime()
+    const diffMins = Math.floor(diffMs / 60000)
+    const diffHours = Math.floor(diffMs / 3600000)
+    const diffDays = Math.floor(diffMs / 86400000)
+
+    if (diffMins < 1) return 'Just now'
+    if (diffMins < 60) return `${diffMins} min ago`
+    if (diffHours < 24) return `${diffHours} hours ago`
+    if (diffDays < 7) return `${diffDays} days ago`
+    return formatDate(date)
   }
+
+  // Group activities by date
+  const groupedActivities = paginatedActivities.reduce((groups: Record<string, ActivityItem[]>, activity) => {
+    const dateKey = formatDate(activity.created_at)
+    if (!groups[dateKey]) {
+      groups[dateKey] = []
+    }
+    groups[dateKey].push(activity)
+    return groups
+  }, {})
 
   if (loading) {
     return (
@@ -465,369 +241,203 @@ export default function AdminAnalyticsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white">Analytics</h1>
+          <h1 className="text-2xl font-bold text-white">Activity</h1>
           <p className="text-sm text-gray-400 mt-1">
-            Real-time business intelligence and performance metrics
+            Real-time business activity timeline
           </p>
         </div>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-white/5 border border-white/10 rounded-xl p-4">
+          <p className="text-sm text-gray-400">Total Events</p>
+          <p className="text-2xl font-bold text-white mt-1">{stats.total}</p>
+        </div>
+        <div className="bg-white/5 border border-white/10 rounded-xl p-4">
+          <p className="text-sm text-gray-400">Today</p>
+          <p className="text-2xl font-bold text-green-400 mt-1">{stats.today}</p>
+        </div>
+        <div className="bg-white/5 border border-white/10 rounded-xl p-4">
+          <p className="text-sm text-gray-400">This Week</p>
+          <p className="text-2xl font-bold text-blue-400 mt-1">{stats.thisWeek}</p>
+        </div>
+        <div className="bg-white/5 border border-white/10 rounded-xl p-4">
+          <p className="text-sm text-gray-400">Event Types</p>
+          <p className="text-2xl font-bold text-purple-400 mt-1">{stats.uniqueTypes}</p>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div className="flex flex-col sm:flex-row gap-4">
+        <input
+          type="text"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          placeholder="Search activity..."
+          className="flex-1 px-4 py-2.5 bg-white/10 border border-white/20 text-white rounded-lg text-sm placeholder-gray-500 focus:border-blue-500 outline-none"
+        />
         <select
-          value={timeRange}
-          onChange={(e) => setTimeRange(e.target.value)}
+          value={typeFilter}
+          onChange={(e) => setTypeFilter(e.target.value)}
           className="px-4 py-2.5 bg-white/10 border border-white/20 text-white rounded-lg text-sm focus:border-blue-500 outline-none"
         >
-          {Object.entries(TIME_RANGES).map(([value, label]) => (
-            <option key={value} value={value} className="bg-gray-900">{label}</option>
+          <option value="all" className="bg-gray-900">All Event Types</option>
+          {Object.entries(ACTIVITY_TYPES).map(([value, info]) => (
+            <option key={value} value={value} className="bg-gray-900">{info.label}</option>
           ))}
+        </select>
+        <select
+          value={entityFilter}
+          onChange={(e) => setEntityFilter(e.target.value)}
+          className="px-4 py-2.5 bg-white/10 border border-white/20 text-white rounded-lg text-sm focus:border-blue-500 outline-none"
+        >
+          <option value="all" className="bg-gray-900">All Entities</option>
+          <option value="client" className="bg-gray-900">Client</option>
+          <option value="project" className="bg-gray-900">Project</option>
+          <option value="invoice" className="bg-gray-900">Invoice</option>
+          <option value="payment" className="bg-gray-900">Payment</option>
+          <option value="file" className="bg-gray-900">File</option>
+          <option value="message" className="bg-gray-900">Message</option>
+          <option value="idea" className="bg-gray-900">Idea</option>
+          <option value="offer" className="bg-gray-900">Offer</option>
+          <option value="support_ticket" className="bg-gray-900">Support Ticket</option>
+          <option value="requirement" className="bg-gray-900">Requirement</option>
+          <option value="milestone" className="bg-gray-900">Milestone</option>
         </select>
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-2 border-b border-white/10 overflow-x-auto">
-        {[
-          { id: 'overview', label: 'Overview' },
-          { id: 'clients', label: 'Clients' },
-          { id: 'projects', label: 'Projects' },
-          { id: 'financial', label: 'Financial' },
-          { id: 'engagement', label: 'Engagement' },
-        ].map(tab => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id as any)}
-            className={`px-4 py-2.5 text-sm font-medium transition-colors whitespace-nowrap ${
-              activeTab === tab.id
-                ? 'text-white border-b-2 border-blue-500'
-                : 'text-gray-400 hover:text-white'
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
+      {/* Activity Timeline */}
+      <div className="space-y-6">
+        {Object.entries(groupedActivities).length === 0 ? (
+          <div className="bg-white/5 border border-white/10 rounded-xl p-12 text-center">
+            <div className="text-4xl mb-3">[*]</div>
+            <p className="text-gray-500">No activity recorded</p>
+            <p className="text-gray-600 text-xs mt-1">Business events will appear here in real-time</p>
+          </div>
+        ) : (
+          Object.entries(groupedActivities).map(([dateKey, dateActivities]) => (
+            <div key={dateKey}>
+              <div className="flex items-center gap-3 mb-3">
+                <h3 className="text-sm font-semibold text-gray-400">{dateKey}</h3>
+                <div className="flex-1 h-px bg-white/10"></div>
+                <span className="text-xs text-gray-500">{dateActivities.length} events</span>
+              </div>
+              <div className="space-y-2">
+                {dateActivities.map((activity) => {
+                  const info = getActivityInfo(activity.action_type)
+                  return (
+                    <button
+                      key={activity.id}
+                      onClick={() => { setSelectedActivity(activity); setShowDetailModal(true); }}
+                      className="w-full text-left bg-white/5 border border-white/10 rounded-xl p-4 hover:bg-white/10 transition-colors"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${info.color}`}>
+                          <span className="text-xs font-bold">{info.icon}</span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${info.color}`}>
+                              {info.label}
+                            </span>
+                            <span className="text-xs text-gray-500">{formatTime(activity.created_at)}</span>
+                          </div>
+                          <p className="text-sm text-white mt-1">{activity.description || '-'}</p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="text-xs text-gray-400">{activity.client_name}</span>
+                            {activity.project_name !== '-' && (
+                              <>
+                                <span className="text-xs text-gray-600">|</span>
+                                <span className="text-xs text-gray-400">{activity.project_name}</span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                        <span className="text-xs text-gray-500 shrink-0">{formatRelativeTime(activity.created_at)}</span>
+                      </div>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          ))
+        )}
       </div>
 
-      {/* Overview Tab */}
-      {activeTab === 'overview' && (
-        <div className="space-y-6">
-          {/* Top KPIs */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-gradient-to-br from-blue-500/20 to-blue-600/10 border border-blue-500/30 rounded-xl p-4">
-              <p className="text-sm text-blue-300">Total Clients</p>
-              <p className="text-3xl font-bold text-white mt-2">{analytics.totalClients}</p>
-              <p className="text-xs text-blue-300 mt-1">+{analytics.newClients} this period</p>
-            </div>
-            <div className="bg-gradient-to-br from-green-500/20 to-green-600/10 border border-green-500/30 rounded-xl p-4">
-              <p className="text-sm text-green-300">Total Revenue</p>
-              <p className="text-3xl font-bold text-white mt-2">{formatCompactCurrency(analytics.totalRevenue)}</p>
-              <p className="text-xs text-green-300 mt-1">{analytics.collectionsRate}% collections</p>
-            </div>
-            <div className="bg-gradient-to-br from-purple-500/20 to-purple-600/10 border border-purple-500/30 rounded-xl p-4">
-              <p className="text-sm text-purple-300">Active Projects</p>
-              <p className="text-3xl font-bold text-white mt-2">{analytics.activeProjects}</p>
-              <p className="text-xs text-purple-300 mt-1">{analytics.completedProjects} completed</p>
-            </div>
-            <div className="bg-gradient-to-br from-orange-500/20 to-orange-600/10 border border-orange-500/30 rounded-xl p-4">
-              <p className="text-sm text-orange-300">Outstanding</p>
-              <p className="text-3xl font-bold text-white mt-2">{formatCompactCurrency(analytics.outstandingInvoices)}</p>
-              <p className="text-xs text-orange-300 mt-1">{formatCompactCurrency(analytics.overdueInvoices)} overdue</p>
-            </div>
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between">
+          <div className="text-sm text-gray-400">
+            Page {currentPage} of {totalPages}
           </div>
-
-          {/* Revenue Trend */}
-          <div className="bg-white/5 border border-white/10 rounded-xl p-6">
-            <h3 className="text-lg font-semibold text-white mb-4">Revenue Trend</h3>
-            {analytics.revenueByMonth.length > 0 ? (
-              renderBarChart(
-                analytics.revenueByMonth.map(item => ({
-                  label: item.month,
-                  value: item.amount,
-                })),
-                'bg-gradient-to-r from-blue-500 to-green-500'
-              )
-            ) : (
-              <p className="text-gray-500">No revenue data</p>
-            )}
-          </div>
-
-          {/* Charts Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            <div className="bg-white/5 border border-white/10 rounded-xl p-6">
-              <h4 className="text-sm font-semibold text-white mb-4">Projects by Status</h4>
-              {analytics.projectsByStatus.length > 0 ? (
-                renderBarChart(
-                  analytics.projectsByStatus.map(item => ({
-                    label: item.status,
-                    value: item.count,
-                  })),
-                  'bg-purple-500'
-                )
-              ) : (
-                <p className="text-gray-500">No project data</p>
-              )}
-            </div>
-            <div className="bg-white/5 border border-white/10 rounded-xl p-6">
-              <h4 className="text-sm font-semibold text-white mb-4">Payment Methods</h4>
-              {analytics.paymentsByMethod.length > 0 ? (
-                renderBarChart(
-                  analytics.paymentsByMethod.map(item => ({
-                    label: item.method,
-                    value: item.count,
-                  })),
-                  'bg-green-500'
-                )
-              ) : (
-                <p className="text-gray-500">No payment data</p>
-              )}
-            </div>
-            <div className="bg-white/5 border border-white/10 rounded-xl p-6">
-              <h4 className="text-sm font-semibold text-white mb-4">Client Growth</h4>
-              {analytics.clientsByMonth.length > 0 ? (
-                renderBarChart(
-                  analytics.clientsByMonth.map(item => ({
-                    label: item.month,
-                    value: item.count,
-                  })),
-                  'bg-cyan-500'
-                )
-              ) : (
-                <p className="text-gray-500">No client data</p>
-              )}
-            </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setCurrentPage(currentPage - 1)}
+              disabled={currentPage === 1}
+              className="px-3 py-1.5 bg-white/10 text-white text-sm rounded-lg disabled:opacity-50 hover:bg-white/20 transition-colors"
+            >
+              Previous
+            </button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+              <button
+                key={page}
+                onClick={() => setCurrentPage(page)}
+                className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
+                  currentPage === page
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-white/10 text-gray-300 hover:bg-white/20'
+                }`}
+              >
+                {page}
+              </button>
+            ))}
+            <button
+              onClick={() => setCurrentPage(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              className="px-3 py-1.5 bg-white/10 text-white text-sm rounded-lg disabled:opacity-50 hover:bg-white/20 transition-colors"
+            >
+              Next
+            </button>
           </div>
         </div>
       )}
 
-      {/* Clients Tab */}
-      {activeTab === 'clients' && (
-        <div className="space-y-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-              <p className="text-sm text-gray-400">Total Clients</p>
-              <p className="text-3xl font-bold text-white mt-2">{analytics.totalClients}</p>
+      {/* Detail Modal */}
+      {showDetailModal && selectedActivity && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+          <div className="bg-gray-900 rounded-2xl max-w-md w-full p-6 border border-white/10">
+            <div className="flex justify-between items-start mb-4">
+              <div>
+                <h2 className="text-lg font-bold text-white">Activity Details</h2>
+                <span className={`inline-block mt-2 px-2.5 py-1 text-xs font-medium rounded-full ${getActivityInfo(selectedActivity.action_type).color}`}>
+                  {getActivityInfo(selectedActivity.action_type).label}
+                </span>
+              </div>
+              <button onClick={() => setShowDetailModal(false)} className="p-1 rounded-lg hover:bg-white/10 text-white">X</button>
             </div>
-            <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-              <p className="text-sm text-gray-400">New Clients</p>
-              <p className="text-3xl font-bold text-blue-400 mt-2">{analytics.newClients}</p>
-            </div>
-            <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-              <p className="text-sm text-gray-400">Active Clients</p>
-              <p className="text-3xl font-bold text-green-400 mt-2">{analytics.activeClients}</p>
-            </div>
-            <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-              <p className="text-sm text-gray-400">Returning Clients</p>
-              <p className="text-3xl font-bold text-purple-400 mt-2">{analytics.returningClients}</p>
-            </div>
-          </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <div className="bg-white/5 border border-white/10 rounded-xl p-6">
-              <h3 className="text-lg font-semibold text-white mb-4">Client Retention Rate</h3>
-              <div className="flex items-center gap-6">
-                <div className="w-32 h-32 rounded-full border-8 border-blue-500 flex items-center justify-center shrink-0">
-                  <span className="text-2xl font-bold text-white">{analytics.clientRetention}%</span>
+            <div className="space-y-4">
+              <div>
+                <p className="text-xs text-gray-500">Description</p>
+                <p className="text-sm text-gray-300 mt-1">{selectedActivity.description || '-'}</p>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs text-gray-500">Client</p>
+                  <p className="text-sm text-white">{selectedActivity.client_name}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-400">
-                    {analytics.returningClients} of {analytics.totalClients} clients have multiple projects
-                  </p>
+                  <p className="text-xs text-gray-500">Entity Type</p>
+                  <p className="text-sm text-white">{selectedActivity.entity_type || '-'}</p>
                 </div>
               </div>
-            </div>
-            <div className="bg-white/5 border border-white/10 rounded-xl p-6">
-              <h3 className="text-lg font-semibold text-white mb-4">Average Lifetime Value</h3>
-              <p className="text-4xl font-bold text-green-400">{formatCurrency(analytics.avgLifetimeValue)}</p>
-              <p className="text-sm text-gray-400 mt-2">Per client</p>
-            </div>
-          </div>
-
-          <div className="bg-white/5 border border-white/10 rounded-xl p-6">
-            <h3 className="text-lg font-semibold text-white mb-4">Top Clients by Revenue</h3>
-            {analytics.revenueByClient.length > 0 ? (
-              renderBarChart(
-                analytics.revenueByClient.map(item => ({
-                  label: item.client,
-                  value: item.amount,
-                })),
-                'bg-blue-500'
-              )
-            ) : (
-              <p className="text-gray-500">No client revenue data</p>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Projects Tab */}
-      {activeTab === 'projects' && (
-        <div className="space-y-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-              <p className="text-sm text-gray-400">Total Projects</p>
-              <p className="text-3xl font-bold text-white mt-2">{analytics.totalProjects}</p>
-            </div>
-            <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-              <p className="text-sm text-gray-400">Active Projects</p>
-              <p className="text-3xl font-bold text-blue-400 mt-2">{analytics.activeProjects}</p>
-            </div>
-            <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-              <p className="text-sm text-gray-400">Completed</p>
-              <p className="text-3xl font-bold text-green-400 mt-2">{analytics.completedProjects}</p>
-            </div>
-            <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-              <p className="text-sm text-gray-400">Delayed</p>
-              <p className="text-3xl font-bold text-red-400 mt-2">{analytics.delayedProjects}</p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <div className="bg-white/5 border border-white/10 rounded-xl p-6">
-              <h3 className="text-lg font-semibold text-white mb-4">Average Completion Time</h3>
-              <p className="text-4xl font-bold text-purple-400">{analytics.avgCompletionDays} days</p>
-              <p className="text-sm text-gray-400 mt-2">Average project duration</p>
-            </div>
-            <div className="bg-white/5 border border-white/10 rounded-xl p-6">
-              <h3 className="text-lg font-semibold text-white mb-4">Milestone Completion Rate</h3>
-              <div className="flex items-center gap-6">
-                <div className="w-32 h-32 rounded-full border-8 border-green-500 flex items-center justify-center shrink-0">
-                  <span className="text-2xl font-bold text-white">{analytics.milestoneCompletionRate}%</span>
-                </div>
-                <p className="text-sm text-gray-400">Milestones completed</p>
+              <div>
+                <p className="text-xs text-gray-500">Timestamp</p>
+                <p className="text-sm text-white">
+                  {formatDate(selectedActivity.created_at)} at {formatTime(selectedActivity.created_at)}
+                </p>
               </div>
-            </div>
-          </div>
-
-          <div className="bg-white/5 border border-white/10 rounded-xl p-6">
-            <h3 className="text-lg font-semibold text-white mb-4">Projects by Status</h3>
-            {analytics.projectsByStatus.length > 0 ? (
-              renderBarChart(
-                analytics.projectsByStatus.map(item => ({
-                  label: item.status,
-                  value: item.count,
-                })),
-                'bg-purple-500'
-              )
-            ) : (
-              <p className="text-gray-500">No project data</p>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Financial Tab */}
-      {activeTab === 'financial' && (
-        <div className="space-y-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-gradient-to-br from-green-500/20 to-green-600/10 border border-green-500/30 rounded-xl p-4">
-              <p className="text-sm text-green-300">Total Revenue</p>
-              <p className="text-3xl font-bold text-white mt-2">{formatCurrency(analytics.totalRevenue)}</p>
-              <p className="text-xs text-green-300 mt-1">Today: {formatCompactCurrency(analytics.revenueToday)}</p>
-            </div>
-            <div className="bg-gradient-to-br from-yellow-500/20 to-yellow-600/10 border border-yellow-500/30 rounded-xl p-4">
-              <p className="text-sm text-yellow-300">Outstanding</p>
-              <p className="text-3xl font-bold text-white mt-2">{formatCurrency(analytics.outstandingInvoices)}</p>
-              <p className="text-xs text-yellow-300 mt-1">Overdue: {formatCompactCurrency(analytics.overdueInvoices)}</p>
-            </div>
-            <div className="bg-gradient-to-br from-blue-500/20 to-blue-600/10 border border-blue-500/30 rounded-xl p-4">
-              <p className="text-sm text-blue-300">Paid Invoices</p>
-              <p className="text-3xl font-bold text-white mt-2">{formatCurrency(analytics.paidInvoices)}</p>
-              <p className="text-xs text-blue-300 mt-1">This month: {formatCompactCurrency(analytics.revenueThisMonth)}</p>
-            </div>
-            <div className="bg-gradient-to-br from-red-500/20 to-red-600/10 border border-red-500/30 rounded-xl p-4">
-              <p className="text-sm text-red-300">Payment Failures</p>
-              <p className="text-3xl font-bold text-white mt-2">{analytics.paymentFailures}</p>
-              <p className="text-xs text-red-300 mt-1">Refunds: {formatCompactCurrency(analytics.refunds)}</p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <div className="bg-white/5 border border-white/10 rounded-xl p-6">
-              <h3 className="text-lg font-semibold text-white mb-4">Collections Rate</h3>
-              <div className="flex items-center gap-6">
-                <div className="w-32 h-32 rounded-full border-8 border-green-500 flex items-center justify-center shrink-0">
-                  <span className="text-2xl font-bold text-white">{analytics.collectionsRate}%</span>
-                </div>
-                <p className="text-sm text-gray-400">Percentage of invoices collected</p>
-              </div>
-            </div>
-            <div className="bg-white/5 border border-white/10 rounded-xl p-6">
-              <h3 className="text-lg font-semibold text-white mb-4">Revenue This Year</h3>
-              <p className="text-4xl font-bold text-green-400">{formatCurrency(analytics.revenueThisYear)}</p>
-            </div>
-          </div>
-
-          <div className="bg-white/5 border border-white/10 rounded-xl p-6">
-            <h3 className="text-lg font-semibold text-white mb-4">Payment Methods Distribution</h3>
-            {analytics.paymentsByMethod.length > 0 ? (
-              renderBarChart(
-                analytics.paymentsByMethod.map(item => ({
-                  label: item.method,
-                  value: item.count,
-                })),
-                'bg-green-500'
-              )
-            ) : (
-              <p className="text-gray-500">No payment data</p>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Engagement Tab */}
-      {activeTab === 'engagement' && (
-        <div className="space-y-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-            <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-              <p className="text-sm text-gray-400">Portal Logins</p>
-              <p className="text-3xl font-bold text-blue-400 mt-2">{analytics.totalLogins}</p>
-            </div>
-            <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-              <p className="text-sm text-gray-400">Messages</p>
-              <p className="text-3xl font-bold text-green-400 mt-2">{analytics.totalMessages}</p>
-            </div>
-            <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-              <p className="text-sm text-gray-400">Files</p>
-              <p className="text-3xl font-bold text-purple-400 mt-2">{analytics.totalFiles}</p>
-            </div>
-            <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-              <p className="text-sm text-gray-400">Ideas</p>
-              <p className="text-3xl font-bold text-cyan-400 mt-2">{analytics.totalIdeas}</p>
-            </div>
-            <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-              <p className="text-sm text-gray-400">Requirements</p>
-              <p className="text-3xl font-bold text-orange-400 mt-2">{analytics.totalRequirements}</p>
-            </div>
-          </div>
-
-          <div className="bg-white/5 border border-white/10 rounded-xl p-6">
-            <h3 className="text-lg font-semibold text-white mb-4">Engagement Overview</h3>
-            <div className="space-y-4">
-              {[
-                { label: 'Portal Logins', value: analytics.totalLogins, color: 'bg-blue-500' },
-                { label: 'Messages', value: analytics.totalMessages, color: 'bg-green-500' },
-                { label: 'Files', value: analytics.totalFiles, color: 'bg-purple-500' },
-                { label: 'Ideas', value: analytics.totalIdeas, color: 'bg-cyan-500' },
-                { label: 'Requirements', value: analytics.totalRequirements, color: 'bg-orange-500' },
-              ].map((item, index) => {
-                const maxValue = Math.max(...[
-                  analytics.totalLogins,
-                  analytics.totalMessages,
-                  analytics.totalFiles,
-                  analytics.totalIdeas,
-                  analytics.totalRequirements,
-                ], 1)
-                return (
-                  <div key={index}>
-                    <div className="flex justify-between text-sm mb-1">
-                      <span className="text-gray-400">{item.label}</span>
-                      <span className="text-white font-medium">{item.value}</span>
-                    </div>
-                    <div className="h-4 bg-white/5 rounded-lg overflow-hidden">
-                      <div
-                        className={`h-full ${item.color} rounded-lg`}
-                        style={{ width: `${(item.value / maxValue) * 100}%` }}
-                      />
-                    </div>
-                  </div>
-                )
-              })}
             </div>
           </div>
         </div>
