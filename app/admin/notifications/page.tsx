@@ -29,20 +29,16 @@ export default function AdminNotificationsPage() {
   const [statusFilter, setStatusFilter] = useState('all')
   const [channelFilter, setChannelFilter] = useState('all')
   
-  // Pagination
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [paginatedNotifications, setPaginatedNotifications] = useState<Notification[]>([])
   
-  // Bulk selection
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   
-  // Modal states
   const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null)
   const [showDetailModal, setShowDetailModal] = useState(false)
   const [showCreateModal, setShowCreateModal] = useState(false)
   
-  // Form states
   const [formTitle, setFormTitle] = useState('')
   const [formMessage, setFormMessage] = useState('')
   const [formType, setFormType] = useState('general')
@@ -50,13 +46,10 @@ export default function AdminNotificationsPage() {
   const [formClientId, setFormClientId] = useState('')
   const [formSendToAll, setFormSendToAll] = useState(false)
   
-  // Data
   const [clients, setClients] = useState<any[]>([])
   
-  // UI states
   const [sending, setSending] = useState(false)
   
-  // Stats
   const [stats, setStats] = useState({
     total: 0,
     unread: 0,
@@ -86,14 +79,12 @@ export default function AdminNotificationsPage() {
   const fetchData = useCallback(async () => {
     setLoading(true)
     try {
-      // Fetch clients
       const { data: clientsData } = await supabase
         .from('clients')
         .select('id, full_name, company')
         .order('created_at', { ascending: false })
       setClients(clientsData || [])
 
-      // Fetch notifications
       const { data: notificationsData } = await supabase
         .from('notifications')
         .select('*')
@@ -247,7 +238,6 @@ export default function AdminNotificationsPage() {
     setSending(true)
     try {
       if (formSendToAll) {
-        // Send to all clients
         for (const client of clients) {
           await supabase.from('notifications').insert({
             user_id: client.id,
@@ -261,7 +251,6 @@ export default function AdminNotificationsPage() {
           })
         }
       } else {
-        // Send to specific client
         await supabase.from('notifications').insert({
           user_id: formClientId,
           type: formType,
@@ -274,7 +263,6 @@ export default function AdminNotificationsPage() {
         })
       }
 
-      // Create activity log
       await supabase.from('activity_logs').insert({
         user_id: formClientId || null,
         action_type: 'notification_sent',
@@ -360,7 +348,7 @@ export default function AdminNotificationsPage() {
   }
 
   function formatDate(date: string) {
-    if (!date) return '—'
+    if (!date) return '-'
     return new Date(date).toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
@@ -380,13 +368,12 @@ export default function AdminNotificationsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-white">Notifications</h1>
           <p className="text-sm text-gray-400 mt-1">
             {filteredNotifications.length} total notifications
-            {stats.unread > 0 && ` • ${stats.unread} unread`}
+            {stats.unread > 0 && ` - ${stats.unread} unread`}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -415,7 +402,6 @@ export default function AdminNotificationsPage() {
         </div>
       </div>
 
-      {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white/5 border border-white/10 rounded-xl p-4">
           <p className="text-sm text-gray-400">Total</p>
@@ -435,7 +421,6 @@ export default function AdminNotificationsPage() {
         </div>
       </div>
 
-      {/* Channel Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-white/5 border border-white/10 rounded-xl p-4">
           <p className="text-sm text-gray-400">In-App</p>
@@ -451,7 +436,6 @@ export default function AdminNotificationsPage() {
         </div>
       </div>
 
-      {/* Search & Filters */}
       <div className="flex flex-col sm:flex-row gap-4">
         <input
           type="text"
@@ -505,7 +489,6 @@ export default function AdminNotificationsPage() {
         </select>
       </div>
 
-      {/* Notifications Table */}
       <div className="bg-white/5 border border-white/10 rounded-xl overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
@@ -531,7 +514,7 @@ export default function AdminNotificationsPage() {
             {paginatedNotifications.length === 0 ? (
               <tr>
                 <td colSpan={8} className="py-12 text-center">
-                  <div className="text-4xl mb-3">🔔</div>
+                  <div className="text-4xl mb-3">[ ]</div>
                   <p className="text-gray-500">No notifications found</p>
                   <p className="text-gray-600 text-xs mt-1">Notifications will appear here</p>
                 </td>
@@ -598,7 +581,6 @@ export default function AdminNotificationsPage() {
         </table>
       </div>
 
-      {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
           <div className="text-sm text-gray-400">
@@ -636,7 +618,6 @@ export default function AdminNotificationsPage() {
         </div>
       )}
 
-      {/* Detail Modal */}
       {showDetailModal && selectedNotification && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
           <div className="bg-gray-900 rounded-2xl max-w-md w-full p-6 border border-white/10">
@@ -652,7 +633,7 @@ export default function AdminNotificationsPage() {
                   </span>
                 </div>
               </div>
-              <button onClick={() => setShowDetailModal(false)} className="p-1 rounded-lg hover:bg-white/10 text-white">✕</button>
+              <button onClick={() => setShowDetailModal(false)} className="p-1 rounded-lg hover:bg-white/10 text-white">X</button>
             </div>
 
             <div className="space-y-4">
@@ -687,13 +668,12 @@ export default function AdminNotificationsPage() {
         </div>
       )}
 
-      {/* Send Notification Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
           <div className="bg-gray-900 rounded-2xl max-w-lg w-full p-6 border border-white/10 max-h-[85vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-lg font-bold text-white">Send Notification</h2>
-              <button onClick={() => setShowCreateModal(false)} className="p-1 rounded-lg hover:bg-white/10 text-white">✕</button>
+              <button onClick={() => setShowCreateModal(false)} className="p-1 rounded-lg hover:bg-white/10 text-white">X</button>
             </div>
             <div className="space-y-4">
               <div>
