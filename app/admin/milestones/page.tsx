@@ -7,6 +7,7 @@ import Link from 'next/link'
 interface Milestone {
   id: string
   project_id: string
+  client_id: string | null
   title: string
   description: string
   status: string
@@ -99,6 +100,7 @@ export default function AdminMilestonesPage() {
             ...milestone,
             project_name: project?.name || 'Unknown Project',
             client_name: clientName,
+            client_id: project?.client_id || null,
           }
         })
       )
@@ -189,7 +191,7 @@ export default function AdminMilestonesPage() {
     fetchData()
   }
 
-  async function handleStatusChange(milestoneId: string, newStatus: string) {
+    async function handleStatusChange(milestoneId: string, newStatus: string) {
     const milestone = milestones.find(m => m.id === milestoneId)
 
     // If approving, record who approved and when
