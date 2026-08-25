@@ -25,8 +25,8 @@ export default function BlogPostPage({ params }: { params: { slug: string } }) {
   }
 
   return (
-    <div className="bg-white pt-32 pb-24 px-6 lg:px-8">
-      <article className="max-w-3xl mx-auto">
+<div className="bg-gray-950 text-white min-h-screen pt-32 pb-24 px-6 lg:px-8">
+        <article className="max-w-3xl mx-auto">
         <Link href="/blog" className="text-indigo-600 hover:text-indigo-700 font-medium text-sm mb-8 inline-block">
           ← Back to Blog
         </Link>
@@ -48,14 +48,14 @@ export default function BlogPostPage({ params }: { params: { slug: string } }) {
             </div>
             <div>
               <p className="text-sm font-medium text-gray-900">{post.author}</p>
-              <p className="text-xs text-gray-500">Founder, Omnix Lab</p>
+              <p className="text-xs text-gray-400">Founder, Omnix Lab</p>
             </div>
           </div>
         </div>
 
         <div className="prose prose-lg max-w-none">
           {post.content.split('\n\n').map((paragraph, i) => (
-            <p key={i} className="text-gray-700 leading-relaxed mb-4">
+            <p key={i} className="text-gray-300 leading-relaxed mb-4">
               {paragraph}
             </p>
           ))}
