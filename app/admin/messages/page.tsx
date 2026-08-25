@@ -277,6 +277,8 @@ export default function AdminMessagesPage() {
   async function handleSendMessage() {
     if (!selectedConversation || (!newMessage.trim() && !attachment)) return
 
+    const messageText = newMessage.trim()
+
     setSending(true)
     try {
       const { data: { user } } = await supabase.auth.getUser()
@@ -304,14 +306,14 @@ export default function AdminMessagesPage() {
         attachmentName = attachment.name
       }
 
-      const { data: newMessage } = await supabase
+      const { data: insertedMessage } = await supabase
         .from('messages')
         .insert({
           conversation_id: selectedConversation.id,
           sender_id: user?.id,
           sender_type: 'admin',
           sender_name: 'Admin',
-          content: newMessage.trim(),
+          content: messageText,
           attachment_url: attachmentUrl,
           attachment_name: attachmentName,
           is_read: false,
@@ -325,7 +327,7 @@ export default function AdminMessagesPage() {
       await supabase
         .from('conversations')
         .update({
-          last_message: isInternalNote ? '[Internal Note]' : newMessage.trim(),
+          last_message: isInternalNote ? '[Internal Note]' : messageText,
           last_message_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
           status: selectedConversation.status === 'archived' ? 'open' : selectedConversation.status,
@@ -333,7 +335,7 @@ export default function AdminMessagesPage() {
         .eq('id', selectedConversation.id)
 
       // Add to local messages
-      setMessages(prev => [...prev, newMessage])
+      setMessages(prev => [...prev, insertedMessage])
       setNewMessage('')
       setAttachment(null)
       setIsInternalNote(false)
