@@ -283,7 +283,7 @@ export default function AdminSupportPage() {
         attachmentName = attachment.name
       }
 
-      const { data: newMessage } = await supabase
+      const { data: insertedMessage } = await supabase
         .from('ticket_messages')
         .insert({
           ticket_id: selectedTicket.id,
@@ -316,7 +316,20 @@ export default function AdminSupportPage() {
         .eq('id', selectedTicket.id)
 
       // Add to local messages
-      setMessages(prev => [...prev, newMessage])
+      const newTicketMessage: TicketMessage = {
+        id: insertedMessage?.id ?? crypto.randomUUID(),
+        ticket_id: selectedTicket.id,
+        sender_id: user?.id ?? '',
+        sender_type: 'admin',
+        sender_name: 'Admin',
+        content: newMessage.trim(),
+        attachment_url: attachmentUrl,
+        attachment_name: attachmentName,
+        is_read: false,
+        is_internal_note: isInternalNote,
+        created_at: new Date().toISOString(),
+      }
+      setMessages(prev => [...prev, newTicketMessage])
       setNewMessage('')
       setAttachment(null)
       setIsInternalNote(false)
