@@ -12,8 +12,9 @@ import VisitorTracker from '@/components/VisitorTracker'
 export default function ConditionalLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const isPortal = pathname.startsWith('/portal')
+  const isAdmin = pathname.startsWith('/admin')
 
-  if (isPortal) {
+  if (isPortal || isAdmin) {
     // No public navbar, footer, or marketing widgets
     return <>{children}</>
   }
