@@ -288,34 +288,35 @@ export default function AdminNotificationsPage() {
   }
 
   function getTypeColor(type: string) {
-    const map: Record<string, string> = {
-      new_message: 'bg-blue-500/20 text-blue-300',
-      new_project: 'bg-purple-500/20 text-purple-300',
-      requirement_submitted: 'bg-cyan-500/20 text-cyan-300',
-      requirement_approved: 'bg-green-500/20 text-green-300',
-      invoice_created: 'bg-yellow-500/20 text-yellow-300',
-      payment_received: 'bg-green-500/20 text-green-300',
-      payment_failed: 'bg-red-500/20 text-red-300',
-      payment_overdue: 'bg-orange-500/20 text-orange-300',
-      file_uploaded: 'bg-blue-500/20 text-blue-300',
-      idea_submitted: 'bg-purple-500/20 text-purple-300',
-      milestone_completed: 'bg-emerald-500/20 text-emerald-300',
-      offer_accepted: 'bg-green-500/20 text-green-300',
-      support_ticket_created: 'bg-yellow-500/20 text-yellow-300',
-      general: 'bg-gray-500/20 text-gray-300',
-    }
-    return map[type.toLowerCase()] || 'bg-gray-500/20 text-gray-300'
+  const safeType = (type || '').toLowerCase()
+  const map: Record<string, string> = {
+    new_message: 'bg-blue-500/20 text-blue-300',
+    new_project: 'bg-purple-500/20 text-purple-300',
+    requirement_submitted: 'bg-cyan-500/20 text-cyan-300',
+    requirement_approved: 'bg-green-500/20 text-green-300',
+    invoice_created: 'bg-yellow-500/20 text-yellow-300',
+    payment_received: 'bg-green-500/20 text-green-300',
+    payment_failed: 'bg-red-500/20 text-red-300',
+    payment_overdue: 'bg-orange-500/20 text-orange-300',
+    file_uploaded: 'bg-blue-500/20 text-blue-300',
+    idea_submitted: 'bg-purple-500/20 text-purple-300',
+    milestone_completed: 'bg-emerald-500/20 text-emerald-300',
+    offer_accepted: 'bg-green-500/20 text-green-300',
+    support_ticket_created: 'bg-yellow-500/20 text-yellow-300',
+    general: 'bg-gray-500/20 text-gray-300',
   }
+return map[(status || '').toLowerCase()] || 'bg-gray-500/20 text-gray-300'}
 
-  function getDeliveryStatusColor(status: string) {
-    const map: Record<string, string> = {
-      delivered: 'bg-green-500/20 text-green-300',
-      pending: 'bg-yellow-500/20 text-yellow-300',
-      failed: 'bg-red-500/20 text-red-300',
-      sent: 'bg-blue-500/20 text-blue-300',
-    }
-    return map[status.toLowerCase()] || 'bg-gray-500/20 text-gray-300'
+function getDeliveryStatusColor(status: string) {
+  const safeStatus = (status || '').toLowerCase()
+  const map: Record<string, string> = {
+    delivered: 'bg-green-500/20 text-green-300',
+    pending: 'bg-yellow-500/20 text-yellow-300',
+    failed: 'bg-red-500/20 text-red-300',
+    sent: 'bg-blue-500/20 text-blue-300',
   }
+  return map[safeStatus] || 'bg-gray-500/20 text-gray-300'
+}
 
   function getTypeLabel(type: string) {
     const map: Record<string, string> = {
