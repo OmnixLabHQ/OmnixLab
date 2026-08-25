@@ -47,36 +47,29 @@ export default function AdminSupportPage() {
   const [categoryFilter, setCategoryFilter] = useState('all')
   const [assignmentFilter, setAssignmentFilter] = useState('all')
   
-  // Pagination
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [paginatedTickets, setPaginatedTickets] = useState<SupportTicket[]>([])
   
-  // Selected ticket
   const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(null)
   const [messages, setMessages] = useState<TicketMessage[]>([])
   const [loadingMessages, setLoadingMessages] = useState(false)
   
-  // Message composition
   const [newMessage, setNewMessage] = useState('')
   const [isInternalNote, setIsInternalNote] = useState(false)
   const [attachment, setAttachment] = useState<File | null>(null)
   const [sending, setSending] = useState(false)
   
-  // Modals
   const [showAssignModal, setShowAssignModal] = useState(false)
   const [showPriorityModal, setShowPriorityModal] = useState(false)
   const [assignToId, setAssignToId] = useState('')
   const [newPriority, setNewPriority] = useState('')
   
-  // Team members
   const [teamMembers, setTeamMembers] = useState<any[]>([])
   
-  // Refs
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   
-  // Stats
   const [stats, setStats] = useState({
     total: 0,
     open: 0,
@@ -104,14 +97,12 @@ export default function AdminSupportPage() {
   const fetchData = useCallback(async () => {
     setLoading(true)
     try {
-      // Fetch team members
       const { data: teamData } = await supabase
         .from('admin_users')
         .select('id, full_name, email')
         .order('full_name', { ascending: true })
       setTeamMembers(teamData || [])
 
-      // Fetch tickets
       const { data: ticketsData } = await supabase
         .from('support_tickets')
         .select('*')
@@ -169,7 +160,6 @@ export default function AdminSupportPage() {
       setLoadingMessages(false)
       scrollToBottom()
 
-      // Mark messages as read
       await supabase
         .from('ticket_messages')
         .update({ is_read: true })
@@ -177,7 +167,6 @@ export default function AdminSupportPage() {
         .eq('sender_type', 'client')
         .eq('is_read', false)
 
-      // Update ticket unread count
       await supabase
         .from('support_tickets')
         .update({ unread_count: 0 })
@@ -300,7 +289,6 @@ export default function AdminSupportPage() {
         .select()
         .single()
 
-      // Update ticket
       const newStatus = isInternalNote 
         ? selectedTicket.status 
         : selectedTicket.status === 'open' 
@@ -315,7 +303,6 @@ export default function AdminSupportPage() {
         })
         .eq('id', selectedTicket.id)
 
-      // Add to local messages
       const newTicketMessage: TicketMessage = {
         id: insertedMessage?.id ?? crypto.randomUUID(),
         ticket_id: selectedTicket.id,
@@ -388,7 +375,6 @@ export default function AdminSupportPage() {
       })
       .eq('id', selectedTicket.id)
 
-    // Create notification if resolved
     if (status === 'resolved') {
       await supabase.from('notifications').insert({
         user_id: selectedTicket.client_id,
@@ -425,7 +411,7 @@ export default function AdminSupportPage() {
   }
 
   function formatDate(date: string) {
-    if (!date) return '—'
+    if (!date) return '-'
     return new Date(date).toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
@@ -434,7 +420,7 @@ export default function AdminSupportPage() {
   }
 
   function formatTime(date: string) {
-    if (!date) return '—'
+    if (!date) return '-'
     return new Date(date).toLocaleTimeString('en-US', {
       hour: '2-digit',
       minute: '2-digit',
@@ -451,18 +437,16 @@ export default function AdminSupportPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-white">Support</h1>
           <p className="text-sm text-gray-400 mt-1">
             {filteredTickets.length} total tickets
-            {stats.open > 0 && ` • ${stats.open} open`}
+            {stats.open > 0 && ` - ${stats.open} open`}
           </p>
         </div>
       </div>
 
-      {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <div className="bg-white/5 border border-white/10 rounded-xl p-4">
           <p className="text-sm text-gray-400">Total</p>
@@ -486,7 +470,6 @@ export default function AdminSupportPage() {
         </div>
       </div>
 
-      {/* Search & Filters */}
       <div className="flex flex-col sm:flex-row gap-4">
         <input
           type="text"
@@ -545,9 +528,7 @@ export default function AdminSupportPage() {
         </select>
       </div>
 
-      {/* Support Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Ticket List */}
         <div className="lg:col-span-1 bg-white/5 border border-white/10 rounded-xl overflow-hidden">
           <div className="p-4 border-b border-white/10">
             <h2 className="text-sm font-semibold text-white">Tickets</h2>
@@ -555,7 +536,7 @@ export default function AdminSupportPage() {
           <div className="overflow-y-auto max-h-[600px]">
             {paginatedTickets.length === 0 ? (
               <div className="p-8 text-center">
-                <div className="text-4xl mb-3">🎫</div>
+                <div className="text-4xl mb-3">[ ]</div>
                 <p className="text-gray-500">No tickets found</p>
               </div>
             ) : (
@@ -590,14 +571,13 @@ export default function AdminSupportPage() {
                     </div>
                   </div>
                   <p className="text-xs text-gray-500 mt-2">
-                    {ticket.assigned_to_name} • {formatDate(ticket.created_at)}
+                    {ticket.assigned_to_name} - {formatDate(ticket.created_at)}
                   </p>
                 </button>
               ))
             )}
           </div>
           
-          {/* Pagination */}
           {totalPages > 1 && (
             <div className="p-4 border-t border-white/10 flex items-center justify-between">
               <button
@@ -621,18 +601,16 @@ export default function AdminSupportPage() {
           )}
         </div>
 
-        {/* Ticket Detail */}
         <div className="lg:col-span-2 bg-white/5 border border-white/10 rounded-xl overflow-hidden flex flex-col">
           {!selectedTicket ? (
             <div className="flex-1 flex items-center justify-center p-8">
               <div className="text-center">
-                <div className="text-4xl mb-3">🎫</div>
+                <div className="text-4xl mb-3">[ ]</div>
                 <p className="text-gray-500">Select a ticket to view details</p>
               </div>
             </div>
           ) : (
             <>
-              {/* Ticket Header */}
               <div className="p-4 border-b border-white/10">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
@@ -667,11 +645,11 @@ export default function AdminSupportPage() {
                   <span className="text-xs text-gray-500">
                     Assigned: {selectedTicket.assigned_to_name}
                   </span>
-                  <span className="text-xs text-gray-500">•</span>
+                  <span className="text-xs text-gray-500">|</span>
                   <span className="text-xs text-gray-500">
                     Category: {selectedTicket.category}
                   </span>
-                  <span className="text-xs text-gray-500">•</span>
+                  <span className="text-xs text-gray-500">|</span>
                   <span className="text-xs text-gray-500">
                     Created: {formatDate(selectedTicket.created_at)}
                   </span>
@@ -704,7 +682,6 @@ export default function AdminSupportPage() {
                 </div>
               </div>
 
-              {/* Messages */}
               <div className="flex-1 overflow-y-auto p-4 space-y-4 max-h-[400px]">
                 {loadingMessages ? (
                   <div className="flex items-center justify-center py-8">
@@ -731,7 +708,7 @@ export default function AdminSupportPage() {
                       >
                         {message.is_internal_note && (
                           <div className="flex items-center gap-1 mb-1">
-                            <span className="text-xs text-yellow-400">🔒 Internal Note</span>
+                            <span className="text-xs text-yellow-400">[INTERNAL]</span>
                           </div>
                         )}
                         <p className="text-sm">{message.content}</p>
@@ -742,12 +719,12 @@ export default function AdminSupportPage() {
                             rel="noopener noreferrer"
                             className={`block mt-2 text-xs ${message.sender_type === 'admin' ? 'text-blue-200' : 'text-blue-400'} hover:underline`}
                           >
-                            📎 {message.attachment_name}
+                            [Attachment] {message.attachment_name}
                           </a>
                         )}
                         <div className="flex items-center gap-2 mt-1">
                           <span className={`text-xs ${message.sender_type === 'admin' ? 'text-blue-200' : 'text-gray-400'}`}>
-                            {message.sender_name} • {formatTime(message.created_at)}
+                            {message.sender_name} - {formatTime(message.created_at)}
                           </span>
                         </div>
                       </div>
@@ -757,7 +734,6 @@ export default function AdminSupportPage() {
                 <div ref={messagesEndRef} />
               </div>
 
-              {/* Message Input */}
               <div className="p-4 border-t border-white/10">
                 <div className="flex items-end gap-2">
                   <div className="flex-1">
@@ -787,7 +763,7 @@ export default function AdminSupportPage() {
                       className="px-3 py-2 bg-white/10 text-white text-sm rounded-lg hover:bg-white/20"
                       title="Attach file"
                     >
-                      📎
+                      Attach
                     </button>
                     <button
                       onClick={() => setIsInternalNote(!isInternalNote)}
@@ -798,7 +774,7 @@ export default function AdminSupportPage() {
                       }`}
                       title="Toggle internal note"
                     >
-                      🔒
+                      Note
                     </button>
                   </div>
                   <button
@@ -811,7 +787,7 @@ export default function AdminSupportPage() {
                 </div>
                 {attachment && (
                   <div className="flex items-center gap-2 mt-2">
-                    <span className="text-xs text-gray-400">📎 {attachment.name}</span>
+                    <span className="text-xs text-gray-400">{attachment.name}</span>
                     <button
                       onClick={() => {
                         setAttachment(null)
@@ -829,13 +805,12 @@ export default function AdminSupportPage() {
         </div>
       </div>
 
-      {/* Assign Modal */}
       {showAssignModal && selectedTicket && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
           <div className="bg-gray-900 rounded-2xl max-w-md w-full p-6 border border-white/10">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-lg font-bold text-white">Assign Ticket</h2>
-              <button onClick={() => setShowAssignModal(false)} className="p-1 rounded-lg hover:bg-white/10 text-white">✕</button>
+              <button onClick={() => setShowAssignModal(false)} className="p-1 rounded-lg hover:bg-white/10 text-white">X</button>
             </div>
             <div className="space-y-3">
               <div>
@@ -865,13 +840,12 @@ export default function AdminSupportPage() {
         </div>
       )}
 
-      {/* Priority Modal */}
       {showPriorityModal && selectedTicket && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
           <div className="bg-gray-900 rounded-2xl max-w-md w-full p-6 border border-white/10">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-lg font-bold text-white">Set Priority</h2>
-              <button onClick={() => setShowPriorityModal(false)} className="p-1 rounded-lg hover:bg-white/10 text-white">✕</button>
+              <button onClick={() => setShowPriorityModal(false)} className="p-1 rounded-lg hover:bg-white/10 text-white">X</button>
             </div>
             <div className="space-y-3">
               <div>
