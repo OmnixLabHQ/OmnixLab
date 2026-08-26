@@ -17,10 +17,18 @@ interface PaymentMethodSelectorProps {
   disabled?: boolean
 }
 
-export default function PaymentMethodSelector({ 
-  selectedMethod, 
-  onSelect, 
-  disabled = false 
+const C = {
+  surface: '#0D1117',
+  border: '#1E293B',
+  text: '#F8FAFC',
+  text2: '#94A3B8',
+  blue: '#38BDF8',
+}
+
+export default function PaymentMethodSelector({
+  selectedMethod,
+  onSelect,
+  disabled = false,
 }: PaymentMethodSelectorProps) {
   const [methods, setMethods] = useState<PaymentMethod[]>([])
   const [loading, setLoading] = useState(true)
@@ -37,12 +45,7 @@ export default function PaymentMethodSelector({
         .eq('active', true)
         .order('id', { ascending: true })
 
-      if (error) {
-        console.error('Fetch methods error:', error)
-        setLoading(false)
-        return
-      }
-
+      if (error) throw error
       setMethods(data || [])
       setLoading(false)
     } catch (err) {
@@ -51,13 +54,13 @@ export default function PaymentMethodSelector({
     }
   }
 
-  const getMethodIcon = (type: string) => {
-    if (type === 'gateway') return '[CARD]'
-    if (type === 'crypto') return '[USDT]'
-    return '[BANK]'
+  const getIcon = (type: string) => {
+    if (type === 'gateway') return '💳'
+    if (type === 'crypto') return '🪙'
+    return '🏦'
   }
 
-  const getMethodDescription = (type: string) => {
+  const getDescription = (type: string) => {
     if (type === 'gateway') return 'Fast online payment. Cards and supported payment methods.'
     if (type === 'crypto') return 'Crypto payment. Manual verification required.'
     return 'Manual verification. Processing usually within 1 business day.'
@@ -70,7 +73,7 @@ export default function PaymentMethodSelector({
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-8">
+      <div style={{ display: 'flex', justifyContent: 'center', padding: '32px' }}>
         <div className="animate-spin h-6 w-6 border-4 border-blue-500 border-t-transparent rounded-full"></div>
       </div>
     )
@@ -78,48 +81,64 @@ export default function PaymentMethodSelector({
 
   if (methods.length === 0) {
     return (
-      <div className="bg-white/5 border border-white/10 rounded-xl p-6 text-center">
-        <p className="text-gray-500">No payment methods available</p>
+      <div style={{
+        background: C.surface, border: `1px solid ${C.border}`,
+        borderRadius: '12px', padding: '24px', textAlign: 'center',
+      }}>
+        <p style={{ color: C.text2, margin: 0 }}>No payment methods available</p>
       </div>
     )
   }
 
   return (
-    <div className="space-y-3">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
       {methods.map((method) => (
         <button
           key={method.id}
           onClick={() => onSelect(method.name)}
           disabled={disabled}
-          className={`w-full text-left p-5 rounded-xl border transition-colors ${
-            selectedMethod === method.name
-              ? 'bg-blue-500/20 border-blue-500'
-              : 'bg-white/5 border-white/10 hover:bg-white/10'
-          } disabled:opacity-50 disabled:cursor-not-allowed`}
+          style={{
+            background: selectedMethod === method.name ? 'rgba(56,189,248,0.15)' : C.surface,
+            border: selectedMethod === method.name ? `1px solid ${C.blue}` : `1px solid ${C.border}`,
+            borderRadius: '12px',
+            padding: '20px',
+            cursor: disabled ? 'not-allowed' : 'pointer',
+            opacity: disabled ? 0.5 : 1,
+            textAlign: 'left',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            gap: '12px',
+          }}
         >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <span className="w-12 h-12 bg-white/10 rounded-lg flex items-center justify-center text-sm shrink-0">
-                {getMethodIcon(method.type)}
-              </span>
-              <div>
-                <p className="text-white font-semibold">{method.name}</p>
-                <p className="text-xs text-gray-400 mt-1">
-                  {getMethodDescription(method.type)}
-                </p>
-                <p className="text-xs text-gray-500 mt-1">
-                  Estimated processing: {getProcessingTime(method.type)}
-                </p>
-              </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <span style={{ fontSize: '28px' }}>{getIcon(method.type)}</span>
+            <div>
+              <p style={{ fontSize: '16px', fontWeight: '600', color: C.text, margin: 0 }}>
+                {method.name}
+              </p>
+              <p style={{ fontSize: '13px', color: C.text2, margin: '4px 0 0 0' }}>
+                {getDescription(method.type)}
+              </p>
+              <p style={{ fontSize: '12px', color: C.text2, margin: '4px 0 0 0', opacity: 0.7 }}>
+                Estimated processing: {getProcessingTime(method.type)}
+              </p>
             </div>
-            {selectedMethod === method.name ? (
-              <span className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center text-white text-xs shrink-0">
-                [OK]
-              </span>
-            ) : (
-              <span className="w-6 h-6 border-2 border-white/20 rounded-full shrink-0"></span>
-            )}
           </div>
+          {selectedMethod === method.name ? (
+            <span style={{
+              width: '24px', height: '24px', background: C.blue, borderRadius: '50%',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: '#000', fontSize: '12px', fontWeight: '700', flexShrink: 0,
+            }}>
+              ✓
+            </span>
+          ) : (
+            <span style={{
+              width: '24px', height: '24px', border: `2px solid ${C.border}`,
+              borderRadius: '50%', flexShrink: 0,
+            }} />
+          )}
         </button>
       ))}
     </div>

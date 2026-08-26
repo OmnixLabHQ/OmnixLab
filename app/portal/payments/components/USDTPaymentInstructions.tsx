@@ -32,6 +32,15 @@ const USDT_WALLETS: USDTWallet[] = [
   },
 ]
 
+const C = {
+  surface: '#0D1117',
+  border: '#1E293B',
+  text: '#F8FAFC',
+  text2: '#94A3B8',
+  blue: '#38BDF8',
+  red: '#EF4444',
+}
+
 export default function USDTPaymentInstructions() {
   const [selectedNetwork, setSelectedNetwork] = useState(USDT_WALLETS[0].network)
   const [copied, setCopied] = useState('')
@@ -45,20 +54,25 @@ export default function USDTPaymentInstructions() {
   }
 
   return (
-    <div className="space-y-4">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
       {/* Network Selector */}
       <div>
-        <label className="block text-sm text-gray-300 mb-2">Select Network</label>
-        <div className="grid grid-cols-3 gap-2">
+        <p style={{ fontSize: '13px', color: C.text2, margin: '0 0 8px 0' }}>Select Network</p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
           {USDT_WALLETS.map((wallet) => (
             <button
               key={wallet.network}
               onClick={() => setSelectedNetwork(wallet.network)}
-              className={`px-3 py-2.5 text-sm font-medium rounded-lg transition-colors ${
-                selectedWallet?.network === wallet.network
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-white/10 text-gray-300 hover:bg-white/20'
-              }`}
+              style={{
+                padding: '10px',
+                background: selectedWallet?.network === wallet.network ? C.blue : C.surface,
+                border: `1px solid ${selectedWallet?.network === wallet.network ? C.blue : C.border}`,
+                borderRadius: '8px',
+                cursor: 'pointer',
+                color: selectedWallet?.network === wallet.network ? '#000' : C.text2,
+                fontSize: '13px',
+                fontWeight: '600',
+              }}
             >
               {wallet.network.split(' ')[0]}
             </button>
@@ -68,50 +82,74 @@ export default function USDTPaymentInstructions() {
 
       {/* QR Code and Wallet Address */}
       {selectedWallet && (
-        <div className="bg-white/5 border border-white/10 rounded-xl p-6 text-center">
-          <p className="text-sm text-gray-400 mb-4">Scan QR Code to Pay</p>
+        <div style={{
+          background: C.surface, border: `1px solid ${C.border}`,
+          borderRadius: '12px', padding: '24px', textAlign: 'center',
+        }}>
+          <p style={{ fontSize: '13px', color: C.text2, margin: '0 0 16px 0' }}>
+            Scan QR Code to Pay
+          </p>
 
           {selectedWallet.qr_code_url && (
-            <div className="bg-white rounded-xl p-4 inline-block mb-4">
+            <div style={{
+              background: '#fff', borderRadius: '12px', padding: '16px',
+              display: 'inline-block', marginBottom: '16px',
+            }}>
               <img
                 src={selectedWallet.qr_code_url}
                 alt={`USDT ${selectedWallet.network} QR Code`}
                 width={200}
                 height={200}
-                className="rounded-lg"
+                style={{ borderRadius: '8px', display: 'block' }}
               />
             </div>
           )}
 
-          <p className="text-sm text-gray-400 mb-2">Or copy wallet address</p>
-          <div className="flex items-center gap-2 bg-white/10 border border-white/20 rounded-lg p-3">
-            <code className="flex-1 text-sm text-white break-all">
+          <p style={{ fontSize: '13px', color: C.text2, margin: '0 0 8px 0' }}>
+            Or copy wallet address
+          </p>
+
+          <div style={{
+            display: 'flex', gap: '8px', background: '#070A0F',
+            border: `1px solid ${C.border}`, borderRadius: '8px', padding: '12px',
+          }}>
+            <code style={{
+              flex: 1, fontSize: '13px', color: C.text,
+              wordBreak: 'break-all', fontFamily: 'monospace',
+            }}>
               {selectedWallet.wallet_address}
             </code>
             <button
               onClick={() => copyToClipboard(selectedWallet.wallet_address)}
-              className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg shrink-0"
+              style={{
+                padding: '8px 12px', background: C.blue, color: '#000',
+                border: 'none', borderRadius: '8px', fontSize: '12px',
+                fontWeight: '600', cursor: 'pointer', flexShrink: 0,
+              }}
             >
               {copied === selectedWallet.wallet_address ? 'Copied!' : 'Copy'}
             </button>
           </div>
 
-          <div className="mt-4 text-left space-y-2">
-            <div className="bg-white/5 border border-white/10 rounded-lg p-3">
-              <p className="text-xs text-gray-400">Network</p>
-              <p className="text-sm text-white font-medium">{selectedWallet.network}</p>
+          <div style={{ textAlign: 'left', marginTop: '16px' }}>
+            <div style={{
+              background: '#070A0F', border: `1px solid ${C.border}`,
+              borderRadius: '8px', padding: '12px',
+            }}>
+              <p style={{ fontSize: '12px', color: C.text2, margin: '0 0 4px 0' }}>Network</p>
+              <p style={{ fontSize: '14px', fontWeight: '600', color: C.text, margin: 0 }}>
+                {selectedWallet.network}
+              </p>
             </div>
-            {selectedWallet.memo_tag && (
-              <div className="bg-white/5 border border-white/10 rounded-lg p-3">
-                <p className="text-xs text-gray-400">Memo/Tag</p>
-                <p className="text-sm text-white font-medium">{selectedWallet.memo_tag}</p>
-              </div>
-            )}
           </div>
 
-          <div className="mt-4 bg-red-500/10 border border-red-500/30 rounded-lg p-3">
-            <p className="text-xs text-red-400 font-medium">
-              IMPORTANT: Send only USDT using the selected network ({selectedWallet.network}). 
+          <div style={{
+            marginTop: '16px', background: 'rgba(239,68,68,0.1)',
+            border: '1px solid rgba(239,68,68,0.3)', borderRadius: '8px', padding: '12px',
+            textAlign: 'left',
+          }}>
+            <p style={{ fontSize: '12px', color: C.red, margin: 0, fontWeight: '500' }}>
+              IMPORTANT: Send only USDT using the selected network ({selectedWallet.network}).
               Sending other tokens or using the wrong network will result in permanent loss of funds.
             </p>
           </div>
