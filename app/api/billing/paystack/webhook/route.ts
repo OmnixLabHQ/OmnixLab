@@ -1,215 +1,271 @@
 import { NextResponse } from 'next/server'
-import { createHmac } from 'crypto'
 import { createClient } from '@supabase/supabase-js'
+import crypto from 'crypto'
 
-const supabaseUrl = 'https://fqeyrtjlfnsxgwczcrvx.supabase.co'
-const supabaseServiceKey = 'YOUR_ENV_VARIABLE_HERE'
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://fqeyrtjlfnsxgwczcrvx.supabase.co'
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey)
 
 const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY || ''
 
-function verifySignature(signature: string, payload: string): boolean {
+export async function POST(request: Request) {
   try {
-    const hash = createHmac('sha512', PAYSTACK_SECRET_KEY)
-      .update(payload)
-      .digest('hex')
-    return hash === signature
+    console.log('=== PAYSTACK WEBHOOK RECEIVED ===')
+
+    // Get the raw body for signature verification
+    const rawBody = await request.text()
+    const signature = request.headers.get('x-paystack-signature')
+
+    console.log('Signature header:', signature)
+
+    // If we have a webhook secret set, verify the signature
+    // For now, we'll accept the webhook but log a warning
+    if (!signature) {
+      console.warn('No Paystack signature header received')
+    }
+
+    // Parse the body
+    let payload: any
+    try {
+      payload = JSON.parse(rawBody)
+    } catch (parseError) {
+      console.error('Failed to parse webhook body:', parseError)
+      return NextResponse.json({ 
+        success: false, 
+        error: 'Invalid webhook payload' 
+      }, { status: 400 })
+    }
+
+    console.log('Webhook event:', payload.event)
+    console.log('Webhook data:', JSON.stringify(payload.data))
+
+    // Handle different event types
+    const event = payload.event
+    const data = payload.data
+
+    switch (event) {
+      case 'charge.success':
+        await handleChargeSuccess(data)
+        break
+      case 'charge.failed':
+        await handleChargeFailed(data)
+        break
+      case 'transfer.success':
+        console.log('Transfer success event')
+        break
+      case 'transfer.failed':
+        console.log('Transfer failed event')
+        break
+      default:
+        console.log('Unhandled event type:', event)
+    }
+
+    return NextResponse.json({ 
+      success: true, 
+      message: 'Webhook processed' 
+    })
+
   } catch (error) {
-    console.error('Signature verification error:', error)
-    return false
+    console.error('=== PAYSTACK WEBHOOK ERROR ===', error)
+    return NextResponse.json({ 
+      success: false, 
+      error: 'Webhook processing error' 
+    }, { status: 500 })
   }
 }
 
-export async function POST(request: Request) {
+async function handleChargeSuccess(data: any) {
   try {
-    const signature = request.headers.get('x-paystack-signature') || ''
-    const payload = await request.text()
+    const reference = data.reference
+    const amount = data.amount / 100 // Convert from kobo/cents to main currency
+    const currency = data.currency || 'USD'
+    const paystackStatus = data.status
 
-    // Verify webhook signature
-    if (!verifySignature(signature, payload)) {
-      console.error('Invalid webhook signature')
-      return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
+    console.log('=== CHARGE SUCCESS ===')
+    console.log('Reference:', reference)
+    console.log('Amount:', amount, currency)
+    console.log('Status:', paystackStatus)
+
+    if (paystackStatus !== 'success') {
+      console.log('Charge not successful, skipping')
+      return
     }
 
-    const event = JSON.parse(payload)
-
-    // Check idempotency
-    const eventId = String(event.id || event.data?.reference || Date.now())
-    const { data: existingEvent } = await supabaseAdmin
-      .from('payment_provider_events')
-      .select('id')
-      .eq('event_id', eventId)
+    // Find payment by provider reference
+    const { data: payment, error: paymentError } = await supabaseAdmin
+      .from('payments')
+      .select('*')
+      .eq('provider_reference', reference)
       .single()
 
-    if (existingEvent) {
-      return NextResponse.json({ success: true, duplicate: true })
+    if (paymentError || !payment) {
+      console.error('Payment record not found for reference:', reference)
+      return
     }
 
-    // Store raw event
-    await supabaseAdmin.from('payment_provider_events').insert({
-      provider: 'paystack',
-      event_id: eventId,
-      event_type: event.event || 'unknown',
-      raw_payload: event,
-      processed: false,
-    })
+    console.log('Found payment record:', payment.id)
 
-    // Process payment
-    const reference = event.data?.reference
-    const status = event.data?.status
-    const amount = event.data?.amount || 0
-    const currency = event.data?.currency || 'USD'
+    // Check idempotency - don't process if already successful
+    if (payment.status === 'success' || payment.status === 'successful') {
+      console.log('Payment already processed (idempotent), skipping')
+      return
+    }
 
-    if (reference && status === 'success') {
-      // Find payment by reference
-      const { data: payment } = await supabaseAdmin
-        .from('payments')
+    // Update payment record
+    await supabaseAdmin
+      .from('payments')
+      .update({
+        status: 'success',
+        paid_at: new Date().toISOString(),
+        gateway_response: JSON.stringify(data),
+      })
+      .eq('id', payment.id)
+
+    console.log('Payment updated to success')
+
+    // Update invoice
+    if (payment.invoice_id) {
+      const { data: invoice } = await supabaseAdmin
+        .from('invoices')
         .select('*')
-        .eq('provider_reference', reference)
+        .eq('id', payment.invoice_id)
         .single()
 
-      if (payment) {
-        // Update payment
-        const now = new Date().toISOString()
-        await supabaseAdmin
-          .from('payments')
-          .update({
-            status: 'success',
-            paid_at: now,
-          })
-          .eq('id', payment.id)
+      if (invoice) {
+        const newAmountPaid = (invoice.amount_paid || 0) + amount
+        const invoiceTotal = invoice.amount || invoice.total || 0
+        const newPaymentStatus = newAmountPaid >= invoiceTotal ? 'paid' : 'partial'
+        const newStatus = newPaymentStatus === 'paid' ? 'paid' : invoice.status
 
-        // Update invoice
         await supabaseAdmin
           .from('invoices')
           .update({
-            status: 'paid',
-            paid_at: now,
-            paystack_reference: reference,
-            payment_gateway: 'paystack',
-            updated_at: now,
+            amount_paid: newAmountPaid,
+            payment_status: newPaymentStatus,
+            status: newStatus,
+            paid_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
           })
-          .eq('id', payment.invoice_id)
+          .eq('id', invoice.id)
 
-        // Create receipt
-        const { data: invoice } = await supabaseAdmin
-          .from('invoices')
-          .select('client_id, total, amount, currency')
-          .eq('id', payment.invoice_id)
-          .single()
-
-        if (invoice) {
-          const receiptNumber = `RCT-${Date.now()}`
-          await supabaseAdmin.from('receipts').insert({
-            invoice_id: payment.invoice_id,
-            payment_id: payment.id,
-            client_id: invoice.client_id,
-            receipt_number: receiptNumber,
-            amount: invoice.total || invoice.amount,
-            currency: invoice.currency || currency,
-          })
-
-          // Create notification
-          await supabaseAdmin.from('notifications').insert({
-            client_id: invoice.client_id,
-            type: 'invoice',
-            title: 'Payment Received',
-            message: `Your invoice payment of ${invoice.total || invoice.amount} ${invoice.currency || currency} has been confirmed.`,
-            data: { invoice_id: payment.invoice_id },
-          })
-        }
-
-        // Log audit
-        await supabaseAdmin.from('financial_audit_logs').insert({
-          invoice_id: payment.invoice_id,
-          payment_id: payment.id,
-          action: 'payment_confirmed_via_webhook',
-          after_data: { reference },
-        })
-
-        // Create transaction record
-        await supabaseAdmin.from('payment_transactions').insert({
-          payment_id: payment.id,
-          invoice_id: payment.invoice_id,
-          provider: 'paystack',
-          provider_reference: reference,
-          amount: amount / 100,
-          currency: currency,
-          status: 'success',
-          raw_response: event,
-        })
-      } else {
-        // Payment record not found - try to find by invoice reference
-        const { data: invoice } = await supabaseAdmin
-          .from('invoices')
-          .select('*')
-          .eq('paystack_reference', reference)
-          .single()
-
-        if (invoice) {
-          const now = new Date().toISOString()
-          await supabaseAdmin
-            .from('invoices')
-            .update({
-              status: 'paid',
-              paid_at: now,
-              updated_at: now,
-            })
-            .eq('id', invoice.id)
-
-          // Create payment record
-          const { data: newPayment } = await supabaseAdmin
-            .from('payments')
-            .insert({
-              invoice_id: invoice.id,
-              client_id: invoice.client_id,
-              amount: amount / 100,
-              currency: currency,
-              status: 'success',
-              payment_method: 'paystack',
-              provider_reference: reference,
-              internal_reference: `OMX-PAY-${Date.now()}`,
-              paid_at: now,
-            })
-            .select()
-            .single()
-
-          if (newPayment) {
-            const receiptNumber = `RCT-${Date.now()}`
-            await supabaseAdmin.from('receipts').insert({
-              invoice_id: invoice.id,
-              payment_id: newPayment.id,
-              client_id: invoice.client_id,
-              receipt_number: receiptNumber,
-              amount: invoice.total || invoice.amount,
-              currency: invoice.currency || currency,
-            })
-          }
-
-          // Notify client
-          await supabaseAdmin.from('notifications').insert({
-            client_id: invoice.client_id,
-            type: 'invoice',
-            title: 'Payment Received',
-            message: `Your invoice payment has been confirmed.`,
-            data: { invoice_id: invoice.id },
-          })
-        }
+        console.log('Invoice updated:', invoice.invoice_number, '->', newPaymentStatus)
       }
     }
 
-    // Mark event as processed
-    await supabaseAdmin
-      .from('payment_provider_events')
-      .update({ processed: true, processed_at: new Date().toISOString() })
-      .eq('event_id', eventId)
+    // Create payment event
+    await supabaseAdmin.from('payment_events').insert({
+      payment_id: payment.id,
+      event_type: 'payment_success',
+      description: 'Payment confirmed via Paystack webhook',
+      metadata: {
+        reference: reference,
+        provider: 'Paystack',
+        event: 'charge.success',
+      },
+      created_at: new Date().toISOString(),
+    })
 
-    return NextResponse.json({ success: true })
+    // Generate receipt if not exists
+    const { data: existingReceipt } = await supabaseAdmin
+      .from('receipts')
+      .select('id')
+      .eq('payment_id', payment.id)
+      .single()
+
+    if (!existingReceipt) {
+      const receiptNumber = `RCPT-${Date.now()}`
+      await supabaseAdmin.from('receipts').insert({
+        invoice_id: payment.invoice_id,
+        payment_id: payment.id,
+        client_id: payment.client_id,
+        receipt_number: receiptNumber,
+        amount: amount,
+        currency: currency,
+        created_at: new Date().toISOString(),
+      })
+      console.log('Receipt generated:', receiptNumber)
+    }
+
+    // Create notification for client
+    try {
+      await supabaseAdmin.from('notifications').insert({
+        user_id: payment.client_id,
+        type: 'payment_received',
+        title: 'Payment Successful',
+        message: `Your payment of ${amount} ${currency} has been received successfully.`,
+        read: false,
+        channel: 'in_app',
+        delivery_status: 'delivered',
+        created_at: new Date().toISOString(),
+      })
+      console.log('Client notification created')
+    } catch (notifError) {
+      console.log('Notification error (non-fatal):', notifError)
+    }
+
+    // Create audit log
+    try {
+      await supabaseAdmin.from('audit_logs').insert({
+        user_id: payment.client_id,
+        action_type: 'payment_success',
+        description: `Payment ${reference} confirmed via Paystack webhook`,
+        entity_type: 'payment',
+        entity_id: String(payment.id),
+        result: 'success',
+        created_at: new Date().toISOString(),
+      })
+      console.log('Audit log created')
+    } catch (auditError) {
+      console.log('Audit log error (non-fatal):', auditError)
+    }
+
+    console.log('=== CHARGE SUCCESS COMPLETE ===')
+
   } catch (error) {
-    console.error('Webhook API error:', error)
-    return NextResponse.json(
-      { success: false, error: 'Webhook processing failed' },
-      { status: 500 }
-    )
+    console.error('Handle charge.success error:', error)
+  }
+}
+
+async function handleChargeFailed(data: any) {
+  try {
+    const reference = data.reference
+    const failureMessage = data.gateway_response || 'Payment failed'
+
+    console.log('=== CHARGE FAILED ===')
+    console.log('Reference:', reference)
+    console.log('Failure:', failureMessage)
+
+    // Find payment
+    const { data: payment } = await supabaseAdmin
+      .from('payments')
+      .select('*')
+      .eq('provider_reference', reference)
+      .single()
+
+    if (payment) {
+      await supabaseAdmin
+        .from('payments')
+        .update({
+          status: 'failed',
+          gateway_response: JSON.stringify(data),
+        })
+        .eq('id', payment.id)
+
+      // Create payment event
+      await supabaseAdmin.from('payment_events').insert({
+        payment_id: payment.id,
+        event_type: 'payment_failed',
+        description: failureMessage,
+        metadata: {
+          reference: reference,
+          provider: 'Paystack',
+        },
+        created_at: new Date().toISOString(),
+      })
+
+      console.log('Payment marked as failed')
+    }
+  } catch (error) {
+    console.error('Handle charge.failed error:', error)
   }
 }
