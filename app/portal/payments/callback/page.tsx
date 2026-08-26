@@ -3,10 +3,20 @@
 import { useEffect, Suspense, useState } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 
+const C = {
+  bg: '#070A0F',
+  surface: '#0D1117',
+  border: '#1E293B',
+  text: '#F8FAFC',
+  text2: '#94A3B8',
+  red: '#EF4444',
+  blue: '#38BDF8',
+}
+
 function CallbackContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
-  
+
   const reference = searchParams.get('reference') || searchParams.get('trxref') || ''
   const [verifying, setVerifying] = useState(true)
   const [error, setError] = useState('')
@@ -28,52 +38,66 @@ function CallbackContent() {
       const data = await response.json()
 
       if (data.success) {
-        // Payment verified successfully
         router.push(`/portal/payments/success?reference=${encodeURIComponent(ref)}`)
       } else {
-        // Payment verification failed
         setError(data.error || 'Payment verification failed')
+        setVerifying(false)
         setTimeout(() => {
           router.push(`/portal/payments/failed?reference=${encodeURIComponent(ref)}`)
-        }, 2000)
+        }, 2500)
       }
     } catch (err) {
       console.error('Verify payment error:', err)
       setError('Failed to verify payment')
+      setVerifying(false)
       setTimeout(() => {
         router.push(`/portal/payments/failed?reference=${encodeURIComponent(ref)}`)
-      }, 2000)
-    } finally {
-      setVerifying(false)
+      }, 2500)
     }
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4">
-      <div className="bg-white/5 border border-white/10 rounded-2xl p-8 max-w-md w-full text-center">
+    <div style={{ minHeight: '100vh', background: C.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+      <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: '16px', padding: '32px', maxWidth: '450px', width: '100%', textAlign: 'center' }}>
         {verifying ? (
           <>
-            <div className="animate-spin h-10 w-10 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-            <h1 className="text-xl font-bold text-white mb-2">Verifying Payment...</h1>
-            <p className="text-sm text-gray-400">
+            <div className="animate-spin" style={{
+              width: '48px', height: '48px', border: '4px solid rgba(56,189,248,0.2)',
+              borderTopColor: C.blue, borderRadius: '50%', margin: '0 auto 16px',
+            }} />
+            <h1 style={{ fontSize: '22px', fontWeight: '700', color: C.text, margin: '0 0 8px 0' }}>
+              Verifying Payment...
+            </h1>
+            <p style={{ fontSize: '14px', color: C.text2, margin: '0 0 16px 0' }}>
               Please wait while we confirm your payment with Paystack.
             </p>
             {reference && (
-              <p className="text-xs text-gray-500 mt-4 font-mono">
-                Reference: {reference}
-              </p>
+              <div style={{ background: C.bg, border: `1px solid ${C.border}`, borderRadius: '8px', padding: '12px' }}>
+                <p style={{ fontSize: '12px', color: C.text2, margin: '0 0 4px 0' }}>Reference</p>
+                <p style={{ fontSize: '13px', color: C.text, fontFamily: 'monospace', margin: 0 }}>{reference}</p>
+              </div>
             )}
           </>
         ) : (
           <>
-            <div className="w-14 h-14 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-              <span className="text-2xl text-red-400">[X]</span>
+            <div style={{
+              width: '56px', height: '56px', background: 'rgba(239,68,68,0.2)', borderRadius: '50%',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px',
+            }}>
+              <span style={{ fontSize: '28px', color: C.red }}>✕</span>
             </div>
-            <h1 className="text-xl font-bold text-white mb-2">Verification Failed</h1>
-            <p className="text-sm text-red-400 mb-4">{error || 'Something went wrong'}</p>
+            <h1 style={{ fontSize: '22px', fontWeight: '700', color: C.text, margin: '0 0 8px 0' }}>
+              Verification Failed
+            </h1>
+            <p style={{ fontSize: '14px', color: C.red, margin: '0 0 16px 0' }}>
+              {error || 'Something went wrong'}
+            </p>
             <button
               onClick={() => router.push('/portal/payments/failed')}
-              className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl"
+              style={{
+                width: '100%', padding: '14px', background: C.blue, color: '#000',
+                border: 'none', borderRadius: '12px', fontSize: '15px', fontWeight: '600', cursor: 'pointer',
+              }}
             >
               Continue
             </button>
@@ -87,7 +111,7 @@ function CallbackContent() {
 export default function CallbackPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center">
+      <div style={{ minHeight: '100vh', background: '#070A0F', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full"></div>
       </div>
     }>
