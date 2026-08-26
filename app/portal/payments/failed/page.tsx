@@ -1,57 +1,52 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
-import Link from 'next/link'
 
-export default function PaymentFailedPage() {
+function FailedContent() {
+  const router = useRouter()
   const searchParams = useSearchParams()
-  const [reference, setReference] = useState('')
-
-  useEffect(() => {
-    const ref = searchParams?.get('reference') || searchParams?.get('trxref') || ''
-    setReference(ref)
-  }, [searchParams])
+  const reference = searchParams.get('reference') || ''
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
-      <div className="bg-white border border-gray-200 rounded-2xl shadow-xl max-w-md w-full p-8 text-center">
-        <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
-          <span className="text-4xl">❌</span>
+    <div className="min-h-screen flex items-center justify-center px-4">
+      <div className="bg-white/5 border border-white/10 rounded-2xl p-8 max-w-md w-full text-center">
+        <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+          <span className="text-3xl text-red-400">[X]</span>
         </div>
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Payment Unsuccessful</h1>
-        <p className="text-gray-600 mb-6">
-          We couldn't complete your payment. This could be due to insufficient funds, bank decline, or network issues.
+        <h1 className="text-2xl font-bold text-white mb-2">Payment Failed</h1>
+        <p className="text-gray-400 mb-4">
+          Your payment could not be processed. Please try again.
         </p>
-
         {reference && (
-          <div className="bg-gray-50 rounded-xl p-4 mb-6">
-            <p className="text-xs text-gray-500">Reference</p>
-            <p className="font-mono text-sm text-gray-700">{reference}</p>
-          </div>
+          <p className="text-xs text-gray-500 mb-6">
+            Reference: {reference}
+          </p>
         )}
-
-        <div className="space-y-3">
-          <Link
-            href="/portal/payments/make"
-            className="block w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-colors"
+        <div className="flex gap-3">
+          <button
+            onClick={() => router.back()}
+            className="flex-1 py-3 bg-white/10 hover:bg-white/20 text-white font-semibold rounded-xl"
           >
             Try Again
-          </Link>
-          <Link
-            href="/portal/payments/methods"
-            className="block w-full py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-xl transition-colors"
-          >
-            Choose Another Method
-          </Link>
-          <Link
-            href="/portal/invoices"
-            className="block w-full py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-xl transition-colors"
+          </button>
+          <button
+            onClick={() => router.push('/portal/invoices')}
+            className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl"
           >
             Back to Invoices
-          </Link>
+          </button>
         </div>
       </div>
     </div>
+  )
+}
+
+export default function FailedPage() {
+  return (
+    <Suspense fallback={<div className="py-20 text-center">Loading...</div>}>
+      <FailedContent />
+    </Suspense>
   )
 }
