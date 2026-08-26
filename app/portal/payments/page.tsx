@@ -214,10 +214,10 @@ export default function PaymentsPage() {
       successful: 'bg-green-500/20 text-green-300',
       paid: 'bg-green-500/20 text-green-300',
       failed: 'bg-red-500/20 text-red-300',
-      cancelled: 'bg-gray-500/20 text-gray-300',
+      cancelled: 'bg-gray-500/20 text-gray-600',
       refunded: 'bg-orange-500/20 text-orange-300',
     }
-    return map[status?.toLowerCase()] || 'bg-gray-500/20 text-gray-300'
+    return map[status?.toLowerCase()] || 'bg-gray-500/20 text-gray-600'
   }
 
   function getMethodIcon(type: string) {
@@ -241,7 +241,7 @@ export default function PaymentsPage() {
         <p className="text-red-400 mb-4">{error}</p>
         <button
           onClick={fetchPaymentCenter}
-          className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl"
+          className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-gray-900 font-semibold rounded-xl"
         >
           Try Again
         </button>

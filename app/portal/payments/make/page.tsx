@@ -1,190 +1,180 @@
 'use client'
 
-import { useState, useEffect, Suspense, useCallback } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import Link from 'next/link'
 
-interface Invoice {
-  id: number
-  invoice_number: string
-  amount: number
-  total: number
-  currency: string
-  status: string
-  payment_status: string
-  amount_paid: number
-  due_date: string
-  project_name: string
-}
-
-interface PaymentMethod {
-  id: number
-  name: string
-  type: string
-  instructions: string
-  active: boolean
-}
-
-const QR_CODE_BASE_URL = 'https://fqeyrtjlfnsxgwczcrvx.supabase.co/storage/v1/object/public/payment-qr-codes'
-
-const USDT_WALLETS = [
-  { network: 'ERC20 (Ethereum)', wallet_address: '0x05cc5992a2ac3380a8c4eac0563323191b3e7b04', memo_tag: '', qr_code_url: `${QR_CODE_BASE_URL}/usdt-erc20.jpg` },
-  { network: 'TRC20 (TRON)', wallet_address: 'TDsAEYnpqtzh6Mj19ASY5nV2THKF3xYnDn', memo_tag: '', qr_code_url: `${QR_CODE_BASE_URL}/usdt-trc20.jpg` },
-  { network: 'BEP20 (BSC)', wallet_address: '0x05cc5992a2ac3380a8c4eac0563323191b3e7b04', memo_tag: '', qr_code_url: `${QR_CODE_BASE_URL}/usdt-bep20.jpg` },
+const PAYMENT_METHODS = [
+  { id: 'paystack', label: 'Pay Online (Paystack)', icon: '[CARD]', description: 'Secure card or bank payment', type: 'automated' },
+  { id: 'bank_transfer', label: 'Bank Transfer', icon: '[BANK]', description: 'Direct bank transfer', type: 'manual' },
+  { id: 'wire_transfer', label: 'Wire Transfer', icon: '[WIRE]', description: 'International wire transfer', type: 'manual' },
+  { id: 'fedwire', label: 'FedWire', icon: '[FED]', description: 'US domestic wire', type: 'manual' },
+  { id: 'local_wire', label: 'Local Wire Transfer', icon: '[LOCAL]', description: 'Local wire transfer', type: 'manual' },
+  { id: 'remitly', label: 'Remitly', icon: '[REM]', description: 'Send via Remitly', type: 'manual' },
+  { id: 'worldremit', label: 'WorldRemit', icon: '[WORLD]', description: 'Send via WorldRemit', type: 'manual' },
+  { id: 'western_union', label: 'Western Union', icon: '[WU]', description: 'Send via Western Union', type: 'manual' },
+  { id: 'moneygram', label: 'MoneyGram', icon: '[MG]', description: 'Send via MoneyGram', type: 'manual' },
+  { id: 'usdt', label: 'USDT (Crypto)', icon: '[USDT]', description: 'Pay with USDT', type: 'manual' },
 ]
 
-const C = {
-  bg: '#070A0F',
-  surface: '#0D1117',
-  border: '#1E293B',
-  text: '#F8FAFC',
-  text2: '#94A3B8',
-  accent: '#E11D2E',
-  accentHover: '#F43F5E',
-  green: '#22C55E',
-  yellow: '#F59E0B',
-  red: '#EF4444',
-  blue: '#38BDF8',
-}
-
-function MakePaymentContent() {
+function PaymentContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
-  const initialInvoiceId = searchParams.get('invoiceId') || ''
-  const initialMethod = searchParams.get('method') || ''
+  const invoiceId = searchParams.get('invoiceId') || ''
+  const presetMethod = searchParams.get('method') || ''
 
-  const [invoices, setInvoices] = useState<Invoice[]>([])
-  const [methods, setMethods] = useState<PaymentMethod[]>([])
-  const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null)
-  const [selectedMethod, setSelectedMethod] = useState('')
-  const [selectedNetwork, setSelectedNetwork] = useState(USDT_WALLETS[0].network)
+  const [invoice, setInvoice] = useState<any>(null)
+  const [selectedMethod, setSelectedMethod] = useState(presetMethod || 'paystack')
+  const [instructions, setInstructions] = useState<any>(null)
+  const [selectedNetwork, setSelectedNetwork] = useState('')
   const [loading, setLoading] = useState(true)
   const [processing, setProcessing] = useState(false)
   const [error, setError] = useState('')
   const [copied, setCopied] = useState('')
-
-  const [paymentDate, setPaymentDate] = useState('')
-  const [senderName, setSenderName] = useState('')
-  const [transactionReference, setTransactionReference] = useState('')
-  const [notes, setNotes] = useState('')
   const [proofFile, setProofFile] = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
-
-  useEffect(() => { fetchData() }, [])
-
-  useEffect(() => {
-    if (initialInvoiceId && invoices.length > 0) {
-      const inv = invoices.find(i => i.id === Number(initialInvoiceId))
-      if (inv) setSelectedInvoice(inv)
-    }
-  }, [initialInvoiceId, invoices])
+  const [paymentReference, setPaymentReference] = useState('')
+  const [senderName, setSenderName] = useState('')
 
   useEffect(() => {
-    if (initialMethod && methods.length > 0) {
-      const m = methods.find(m => m.name.toLowerCase().replace(/\s+/g, '_') === initialMethod.toLowerCase())
-      if (m) setSelectedMethod(m.name)
+    if (invoiceId) {
+      fetchInvoice()
+    } else {
+      setError('No invoice specified')
+      setLoading(false)
     }
-  }, [initialMethod, methods])
+  }, [invoiceId])
 
-  const fetchData = useCallback(async () => {
-    setLoading(true)
-    setError('')
+  useEffect(() => {
+    if (presetMethod && presetMethod !== 'paystack') {
+      fetchInstructions(presetMethod)
+    }
+  }, [presetMethod])
+
+  const fetchInvoice = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { router.push('/portal/login'); return }
+      if (!user) {
+        router.push('/portal/login')
+        return
+      }
 
-      const { data: invoicesData } = await supabase
-        .from('invoices').select('*').eq('client_id', user.id).order('created_at', { ascending: false })
+      const { data, error } = await supabase
+        .from('invoices')
+        .select('*')
+        .eq('id', Number(invoiceId))
+        .eq('client_id', user.id)
+        .single()
 
-      const unpaid = (invoicesData || []).filter(inv =>
-        ['unpaid', 'viewed', 'sent', 'partial', 'pending'].includes(inv.payment_status || inv.status || '')
-      )
+      if (error || !data) {
+        setError('Invoice not found')
+        setLoading(false)
+        return
+      }
 
-      const withProjects = await Promise.all(unpaid.map(async (inv) => {
-        let projectName = 'General'
-        if (inv.project_id) {
-          const { data: p } = await supabase.from('projects').select('name').eq('id', inv.project_id).single()
-          projectName = p?.name || 'General'
-        }
-        return { ...inv, project_name: projectName }
-      }))
-
-      setInvoices(withProjects)
-
-      const { data: methodsData } = await supabase
-        .from('payment_methods').select('*').eq('active', true).order('id', { ascending: true })
-
-      setMethods(methodsData || [])
+      setInvoice(data)
       setLoading(false)
-    } catch (err: any) {
-      setError(err?.message || 'Failed to load')
+    } catch (err) {
+      console.error('Fetch invoice error:', err)
+      setError('Failed to load invoice')
       setLoading(false)
     }
-  }, [router])
+  }
 
-  const handlePaystack = async () => {
-    if (!selectedInvoice) return
+  const fetchInstructions = async (method: string) => {
+    try {
+      const response = await fetch(`/api/billing/payment-instructions?method=${method}`)
+      const data = await response.json()
+      if (data.success && data.instructions) {
+        setInstructions(data.instructions)
+        if (method === 'usdt' && data.instructions.wallets?.length > 0) {
+          setSelectedNetwork(data.instructions.wallets[0].network)
+        }
+      }
+    } catch (err) {
+      console.error('Fetch instructions error:', err)
+    }
+  }
+
+  const handleMethodSelect = (method: string) => {
+    setSelectedMethod(method)
+    setInstructions(null)
+    setError('')
+
+    if (method !== 'paystack') {
+      fetchInstructions(method)
+    }
+  }
+
+  const handlePaystackPayment = async () => {
+    if (!invoice) return
     setProcessing(true)
     setError('')
+
     try {
-      const res = await fetch('/api/billing/paystack/initialize', {
+      const response = await fetch('/api/billing/paystack/initialize', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ invoiceId: selectedInvoice.id }),
+        body: JSON.stringify({ invoiceId: invoice.id }),
       })
-      const data = await res.json()
-      if (data.success && data.authorization_url) {
-        window.location.href = data.authorization_url
+      const result = await response.json()
+
+      if (result.success && result.authorization_url) {
+        window.location.href = result.authorization_url
       } else {
-        setError(data.error || 'Failed to initialize')
-        setProcessing(false)
+        setError(result.error || 'Failed to initialize payment')
       }
-    } catch (e) {
+    } catch (err) {
+      console.error('Paystack error:', err)
       setError('Failed to initialize payment')
+    } finally {
       setProcessing(false)
     }
   }
 
-  const handleManualSubmit = async () => {
-    if (!selectedInvoice) return
-    if (!proofFile) { setError('Please upload proof of payment'); return }
+  const handleSubmitProof = async () => {
+    if (!invoice || !proofFile) {
+      alert('Please upload proof of payment')
+      return
+    }
+
     setUploading(true)
-    setError('')
     try {
       const fileName = `${Date.now()}-${proofFile.name}`
-      const { error: upErr } = await supabase.storage.from('payment-proofs').upload(fileName, proofFile)
-      if (upErr) { setError('Upload failed: ' + upErr.message); setUploading(false); return }
+      const { error: uploadError } = await supabase.storage
+        .from('payment-proofs')
+        .upload(fileName, proofFile)
 
-      const { data: urlData } = supabase.storage.from('payment-proofs').getPublicUrl(fileName)
-      const total = selectedInvoice.amount || selectedInvoice.total || 0
-      const paid = selectedInvoice.amount_paid || 0
-      const amountToPay = Math.max(0, total - paid)
-
-      const res = await fetch('/api/billing/upload-proof', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          invoiceId: selectedInvoice.id,
-          method: selectedMethod,
-          amount: amountToPay,
-          paymentDate: paymentDate || new Date().toISOString().split('T')[0],
-          senderName,
-          transactionReference,
-          notes,
-          proofUrl: urlData?.publicUrl,
-          proofFileName: proofFile.name,
-          proofFileSize: proofFile.size,
-        }),
-      })
-      const data = await res.json()
-      if (data.success) {
-        alert('Payment submitted! We will verify shortly.')
-        router.push('/portal/payments')
-      } else {
-        setError(data.error || 'Failed to submit')
+      if (uploadError) {
+        alert('Failed to upload proof: ' + uploadError.message)
+        setUploading(false)
+        return
       }
-    } catch (e) {
-      setError('Failed to submit payment')
+
+      const { data: urlData } = supabase.storage
+        .from('payment-proofs')
+        .getPublicUrl(fileName)
+
+      // Create payment record
+      await supabase.from('payments').insert({
+        invoice_id: invoice.id,
+        client_id: invoice.client_id,
+        amount: invoice.total || invoice.amount || 0,
+        currency: invoice.currency || 'USD',
+        method: selectedMethod,
+        payment_method: selectedMethod,
+        status: 'pending',
+        provider_reference: paymentReference || `MANUAL-${Date.now()}`,
+        proof_url: urlData?.publicUrl || null,
+        created_at: new Date().toISOString(),
+      })
+
+      alert('Payment proof submitted successfully! We will verify your payment shortly.')
+      router.push('/portal/payments')
+    } catch (err) {
+      console.error('Upload proof error:', err)
+      alert('Failed to submit payment proof')
     } finally {
       setUploading(false)
     }
@@ -196,150 +186,156 @@ function MakePaymentContent() {
     setTimeout(() => setCopied(''), 2000)
   }
 
-  const fmt = (n: number, c: string = 'USD') => new Intl.NumberFormat('en-US', { style: 'currency', currency: c }).format(n || 0)
-
-  if (loading) {
-    return <div style={{ minHeight: '100vh', background: C.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full"></div>
-    </div>
+  function formatCurrency(amount: number, currency: string) {
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: currency || 'USD' }).format(amount || 0)
   }
 
-  const invoiceTotal = selectedInvoice ? (selectedInvoice.amount || selectedInvoice.total || 0) : 0
-  const invoicePaid = selectedInvoice ? (selectedInvoice.amount_paid || 0) : 0
-  const remaining = Math.max(0, invoiceTotal - invoicePaid)
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full"></div>
+      </div>
+    )
+  }
+
+  if (error && !invoice) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">{error}</p>
+          <Link href="/portal/invoices" className="text-blue-600 hover:underline">Back to Invoices</Link>
+        </div>
+      </div>
+    )
+  }
 
   return (
-    <div style={{ minHeight: '100vh', background: C.bg, padding: '2rem 1rem' }}>
-      <div style={{ maxWidth: '700px', margin: '0 auto' }}>
-        <button onClick={() => router.back()} style={{ background: 'none', border: 'none', color: C.text2, fontSize: '14px', cursor: 'pointer', marginBottom: '16px' }}>
-          &larr; Back
-        </button>
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-2xl mx-auto px-4 py-8">
+        <Link href="/portal/invoices" className="text-gray-600 hover:text-gray-900 text-sm mb-6 inline-block">
+          &larr; Back to Invoices
+        </Link>
 
-        <h1 style={{ fontSize: '28px', fontWeight: '700', color: C.text, margin: '0 0 24px 0' }}>Make a Payment</h1>
+        <h1 className="text-2xl font-bold text-gray-900 mb-6">Make Payment</h1>
 
-        {/* Step 1: Invoice */}
-        <div style={{ marginBottom: '24px' }}>
-          <p style={{ fontSize: '13px', fontWeight: '600', color: C.text2, margin: '0 0 12px 0' }}>STEP 1: Choose invoice</p>
-          {invoices.length === 0 ? (
-            <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: '12px', padding: '24px', textAlign: 'center' }}>
-              <p style={{ color: C.text2, margin: 0 }}>No outstanding invoices</p>
-            </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {invoices.map((inv) => {
-                const t = inv.amount || inv.total || 0
-                const p = inv.amount_paid || 0
-                const r = Math.max(0, t - p)
-                return (
-                  <button key={inv.id} onClick={() => setSelectedInvoice(inv)}
-                    style={{
-                      background: selectedInvoice?.id === inv.id ? 'rgba(56,189,248,0.15)' : C.surface,
-                      border: selectedInvoice?.id === inv.id ? `1px solid ${C.blue}` : `1px solid ${C.border}`,
-                      borderRadius: '12px', padding: '16px', cursor: 'pointer', textAlign: 'left',
-                      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                    }}>
-                    <div>
-                      <p style={{ fontSize: '15px', fontWeight: '600', color: C.text, margin: 0 }}>{inv.invoice_number}</p>
-                      <p style={{ fontSize: '13px', color: C.text2, margin: '4px 0 0 0' }}>{inv.project_name}</p>
-                    </div>
-                    <div style={{ textAlign: 'right' }}>
-                      <p style={{ fontSize: '16px', fontWeight: '700', color: C.text, margin: 0 }}>{fmt(r, inv.currency)}</p>
-                      <p style={{ fontSize: '12px', color: C.text2, margin: '4px 0 0 0' }}>Outstanding</p>
-                    </div>
-                  </button>
-                )
-              })}
-            </div>
-          )}
-        </div>
-
-        {/* Amount Display */}
-        {selectedInvoice && (
-          <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: '12px', padding: '20px', marginBottom: '24px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+        {/* Invoice Summary */}
+        {invoice && (
+          <div className="bg-white border border-gray-200 rounded-xl p-6 mb-6">
+            <div className="flex items-center justify-between">
               <div>
-                <p style={{ fontSize: '13px', color: C.text2, margin: 0 }}>Invoice balance</p>
-                <p style={{ fontSize: '20px', fontWeight: '700', color: C.text, margin: '4px 0 0 0' }}>{fmt(remaining, selectedInvoice.currency)}</p>
+                <p className="text-sm text-gray-600">Invoice</p>
+                <p className="text-lg font-bold text-gray-900">{invoice.invoice_number}</p>
               </div>
-              <div style={{ textAlign: 'right' }}>
-                <p style={{ fontSize: '13px', color: C.text2, margin: 0 }}>Amount to pay</p>
-                <p style={{ fontSize: '20px', fontWeight: '700', color: C.green, margin: '4px 0 0 0' }}>{fmt(remaining, selectedInvoice.currency)}</p>
+              <div className="text-right">
+                <p className="text-sm text-gray-600">Amount Due</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {formatCurrency(invoice.total || invoice.amount || 0, invoice.currency)}
+                </p>
               </div>
             </div>
           </div>
         )}
 
-        {/* Step 2: Method */}
-        <div style={{ marginBottom: '24px' }}>
-          <p style={{ fontSize: '13px', fontWeight: '600', color: C.text2, margin: '0 0 12px 0' }}>STEP 2: Choose payment method</p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {methods.map((m) => (
-              <button key={m.id} onClick={() => setSelectedMethod(m.name)} disabled={!selectedInvoice}
-                style={{
-                  background: selectedMethod === m.name ? 'rgba(56,189,248,0.15)' : C.surface,
-                  border: selectedMethod === m.name ? `1px solid ${C.blue}` : `1px solid ${C.border}`,
-                  borderRadius: '12px', padding: '16px', cursor: selectedInvoice ? 'pointer' : 'not-allowed', textAlign: 'left',
-                  opacity: selectedInvoice ? 1 : 0.5,
-                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <span style={{ fontSize: '24px' }}>{m.type === 'gateway' ? '💳' : m.type === 'crypto' ? '🪙' : '🏦'}</span>
+        {/* Error */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+            <p className="text-sm text-red-600">{error}</p>
+          </div>
+        )}
+
+        {/* Payment Methods */}
+        <div className="space-y-2 mb-6">
+          <h2 className="text-sm font-semibold text-gray-700 mb-3">Select Payment Method</h2>
+          {PAYMENT_METHODS.map((method) => (
+            <button
+              key={method.id}
+              onClick={() => handleMethodSelect(method.id)}
+              disabled={processing || uploading}
+              className={`w-full p-4 rounded-xl border-2 transition-colors text-left bg-white ${
+                selectedMethod === method.id
+                  ? 'border-blue-600'
+                  : 'border-gray-200 hover:border-gray-300'
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-gray-600">{method.icon}</span>
                   <div>
-                    <p style={{ fontSize: '15px', fontWeight: '600', color: C.text, margin: 0 }}>{m.name}</p>
-                    <p style={{ fontSize: '12px', color: C.text2, margin: '4px 0 0 0' }}>
-                      {m.type === 'gateway' ? 'Instant processing' : 'Manual verification'}
-                    </p>
+                    <p className="font-medium text-gray-900">{method.label}</p>
+                    <p className="text-xs text-gray-600">{method.description}</p>
                   </div>
                 </div>
-                {m.type === 'gateway' && (
-                  <span style={{ padding: '4px 12px', borderRadius: '9999px', fontSize: '11px', background: 'rgba(34,197,94,0.2)', color: C.green }}>
-                    Instant
-                  </span>
+                {method.type === 'automated' && (
+                  <span className="px-2 py-0.5 bg-green-100 text-green-800 text-xs rounded-full">Instant</span>
                 )}
-              </button>
-            ))}
-          </div>
+              </div>
+            </button>
+          ))}
         </div>
 
+        {/* Paystack Button */}
+        {selectedMethod === 'paystack' && (
+          <button
+            onClick={handlePaystackPayment}
+            disabled={processing}
+            className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-gray-900 text-lg font-semibold rounded-xl transition-colors disabled:opacity-50"
+          >
+            {processing ? 'Processing...' : 'Continue to Paystack'}
+          </button>
+        )}
+
         {/* USDT Instructions */}
-        {selectedMethod === 'USDT' && selectedInvoice && (
-          <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: '12px', padding: '24px', marginBottom: '24px' }}>
-            <h3 style={{ fontSize: '18px', fontWeight: '600', color: C.text, margin: '0 0 16px 0' }}>USDT Payment Instructions</h3>
-            <p style={{ fontSize: '13px', color: C.text2, margin: '0 0 8px 0' }}>Select Network</p>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '16px' }}>
-              {USDT_WALLETS.map((w) => (
-                <button key={w.network} onClick={() => setSelectedNetwork(w.network)}
-                  style={{
-                    background: selectedNetwork === w.network ? C.blue : C.surface,
-                    border: `1px solid ${selectedNetwork === w.network ? C.blue : C.border}`,
-                    borderRadius: '8px', padding: '10px', cursor: 'pointer',
-                    color: selectedNetwork === w.network ? '#000' : C.text2,
-                    fontSize: '13px', fontWeight: '600',
-                  }}>
-                  {w.network.split(' ')[0]}
+        {selectedMethod === 'usdt' && instructions?.wallets && (
+          <div className="bg-white border border-gray-200 rounded-xl p-6 mb-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">USDT Payment Instructions</h3>
+
+            <label className="block text-sm text-gray-700 mb-2">Select Network</label>
+            <div className="grid grid-cols-3 gap-2 mb-4">
+              {instructions.wallets.map((wallet: any) => (
+                <button
+                  key={wallet.network}
+                  onClick={() => setSelectedNetwork(wallet.network)}
+                  className={`px-3 py-2.5 text-sm font-medium rounded-lg ${
+                    selectedNetwork === wallet.network
+                      ? 'bg-blue-600 text-gray-900'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  {wallet.network.split(' ')[0]}
                 </button>
               ))}
             </div>
-            {USDT_WALLETS.filter(w => w.network === selectedNetwork).map(w => (
-              <div key={w.network} style={{ textAlign: 'center' }}>
-                {w.qr_code_url && (
-                  <div style={{ background: '#fff', borderRadius: '12px', padding: '16px', display: 'inline-block', marginBottom: '16px' }}>
-                    <img src={w.qr_code_url} alt={`${w.network} QR`} width={200} height={200} style={{ borderRadius: '8px' }} />
+
+            {instructions.wallets
+              .filter((w: any) => w.network === selectedNetwork)
+              .map((wallet: any) => (
+                <div key={wallet.network} className="text-center">
+                  {wallet.qr_code_url && (
+                    <div className="bg-gray-100 rounded-xl p-4 inline-block mb-4">
+                      <img
+                        src={wallet.qr_code_url}
+                        alt={`${wallet.network} QR Code`}
+                        width={200}
+                        height={200}
+                        className="rounded-lg"
+                      />
+                    </div>
+                  )}
+                  <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg p-3">
+                    <code className="flex-1 text-sm text-gray-900 break-all">{wallet.wallet_address}</code>
+                    <button
+                      onClick={() => copyToClipboard(wallet.wallet_address)}
+                      className="px-3 py-1.5 bg-blue-600 text-gray-900 text-xs rounded-lg shrink-0"
+                    >
+                      {copied === wallet.wallet_address ? 'Copied!' : 'Copy'}
+                    </button>
                   </div>
-                )}
-                <p style={{ fontSize: '13px', color: C.text2, margin: '0 0 8px 0' }}>Or copy wallet address</p>
-                <div style={{ display: 'flex', gap: '8px', background: C.surface, border: `1px solid ${C.border}`, borderRadius: '8px', padding: '12px' }}>
-                  <code style={{ flex: 1, fontSize: '13px', color: C.text, wordBreak: 'break-all' }}>{w.wallet_address}</code>
-                  <button onClick={() => copyToClipboard(w.wallet_address)}
-                    style={{ background: C.blue, border: 'none', borderRadius: '8px', padding: '8px 12px', color: '#000', fontSize: '12px', cursor: 'pointer', fontWeight: '600' }}>
-                    {copied === w.wallet_address ? 'Copied!' : 'Copy'}
-                  </button>
+                  <p className="text-xs text-gray-500 mt-2">Network: {wallet.network}</p>
                 </div>
-                <p style={{ fontSize: '12px', color: C.text2, margin: '8px 0 0 0' }}>Network: {w.network}</p>
-              </div>
-            ))}
-            <div style={{ marginTop: '16px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '8px', padding: '12px' }}>
-              <p style={{ fontSize: '12px', color: C.red, margin: 0 }}>
+              ))}
+
+            <div className="mt-4 bg-red-50 border border-red-200 rounded-lg p-3">
+              <p className="text-xs text-red-600 font-medium">
                 IMPORTANT: Send only USDT using the selected network. Sending other tokens or using the wrong network will result in permanent loss of funds.
               </p>
             </div>
@@ -347,76 +343,100 @@ function MakePaymentContent() {
         )}
 
         {/* Bank Instructions */}
-        {selectedMethod && selectedMethod !== 'USDT' && selectedMethod !== 'Paystack' && selectedInvoice && (
-          <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: '12px', padding: '24px', marginBottom: '24px' }}>
-            <h3 style={{ fontSize: '18px', fontWeight: '600', color: C.text, margin: '0 0 16px 0' }}>Payment Instructions</h3>
-            {(() => {
-              const m = methods.find(x => x.name === selectedMethod)
-              return m?.instructions ? (
-                <pre style={{ fontSize: '14px', color: C.text2, whiteSpace: 'pre-line', fontFamily: 'inherit', margin: 0 }}>{m.instructions}</pre>
-              ) : <p style={{ color: C.text2, margin: 0 }}>Instructions not available</p>
-            })()}
-          </div>
-        )}
-
-        {/* Manual Form */}
-        {selectedMethod && selectedMethod !== 'Paystack' && selectedMethod !== 'USDT' && selectedInvoice && (
-          <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: '12px', padding: '24px', marginBottom: '24px' }}>
-            <h3 style={{ fontSize: '18px', fontWeight: '600', color: C.text, margin: '0 0 16px 0' }}>Submit Payment Details</h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+        {selectedMethod !== 'paystack' && selectedMethod !== 'usdt' && instructions && (
+          <div className="bg-white border border-gray-200 rounded-xl p-6 mb-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Payment Instructions</h3>
+            <div className="space-y-3">
+              {instructions.bank_name && (
                 <div>
-                  <p style={{ fontSize: '13px', color: C.text2, margin: '0 0 4px 0' }}>Payment Date</p>
-                  <input type="date" value={paymentDate} onChange={(e) => setPaymentDate(e.target.value)}
-                    style={{ width: '100%', background: C.surface, border: `1px solid ${C.border}`, borderRadius: '8px', padding: '10px 12px', color: C.text, fontSize: '14px' }} />
+                  <p className="text-xs text-gray-500">Bank Name</p>
+                  <p className="text-sm text-gray-900 font-medium">{instructions.bank_name}</p>
                 </div>
+              )}
+              {instructions.account_name && (
                 <div>
-                  <p style={{ fontSize: '13px', color: C.text2, margin: '0 0 4px 0' }}>Sender Name</p>
-                  <input type="text" value={senderName} onChange={(e) => setSenderName(e.target.value)} placeholder="Your full name"
-                    style={{ width: '100%', background: C.surface, border: `1px solid ${C.border}`, borderRadius: '8px', padding: '10px 12px', color: C.text, fontSize: '14px' }} />
+                  <p className="text-xs text-gray-500">Account Name</p>
+                  <p className="text-sm text-gray-900 font-medium">{instructions.account_name}</p>
                 </div>
-              </div>
-              <div>
-                <p style={{ fontSize: '13px', color: C.text2, margin: '0 0 4px 0' }}>Transaction/Reference Number</p>
-                <input type="text" value={transactionReference} onChange={(e) => setTransactionReference(e.target.value)} placeholder="e.g., TRX-123456"
-                  style={{ width: '100%', background: C.surface, border: `1px solid ${C.border}`, borderRadius: '8px', padding: '10px 12px', color: C.text, fontSize: '14px' }} />
-              </div>
-              <div>
-                <p style={{ fontSize: '13px', color: C.text2, margin: '0 0 4px 0' }}>Notes (optional)</p>
-                <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2}
-                  style={{ width: '100%', background: C.surface, border: `1px solid ${C.border}`, borderRadius: '8px', padding: '10px 12px', color: C.text, fontSize: '14px' }} />
-              </div>
-              <div>
-                <p style={{ fontSize: '13px', color: C.text2, margin: '0 0 4px 0' }}>Proof of Payment *</p>
-                <input type="file" onChange={(e) => setProofFile(e.target.files?.[0] || null)} accept=".pdf,.png,.jpg,.jpeg,.webp"
-                  style={{ width: '100%', color: C.text2, fontSize: '13px' }} />
-                {proofFile && <p style={{ fontSize: '12px', color: C.text2, margin: '4px 0 0 0' }}>Selected: {proofFile.name}</p>}
-              </div>
+              )}
+              {instructions.account_number && (
+                <div className="flex items-center gap-2">
+                  <div className="flex-1">
+                    <p className="text-xs text-gray-500">Account Number</p>
+                    <p className="text-sm text-gray-900 font-medium">{instructions.account_number}</p>
+                  </div>
+                  <button
+                    onClick={() => copyToClipboard(instructions.account_number)}
+                    className="px-3 py-1.5 bg-blue-600 text-gray-900 text-xs rounded-lg"
+                  >
+                    {copied === instructions.account_number ? 'Copied!' : 'Copy'}
+                  </button>
+                </div>
+              )}
+              {instructions.routing_number && (
+                <div>
+                  <p className="text-xs text-gray-500">Routing Number</p>
+                  <p className="text-sm text-gray-900 font-medium">{instructions.routing_number}</p>
+                </div>
+              )}
+              {instructions.bank_address && (
+                <div>
+                  <p className="text-xs text-gray-500">Bank Address</p>
+                  <p className="text-sm text-gray-900">{instructions.bank_address}</p>
+                </div>
+              )}
+              {instructions.instructions && (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                  <p className="text-xs text-yellow-700">{instructions.instructions}</p>
+                </div>
+              )}
             </div>
           </div>
         )}
 
-        {/* Action Buttons */}
-        {selectedInvoice && selectedMethod && (
-          <div>
-            {selectedMethod === 'Paystack' && (
-              <button onClick={handlePaystack} disabled={processing}
-                style={{ width: '100%', padding: '16px', background: C.accent, color: '#fff', border: 'none', borderRadius: '12px', fontSize: '16px', fontWeight: '600', cursor: 'pointer', opacity: processing ? 0.5 : 1 }}>
-                {processing ? 'Processing...' : `Pay ${fmt(remaining, selectedInvoice.currency)} via Paystack`}
+        {/* Proof Upload for Manual Methods */}
+        {selectedMethod !== 'paystack' && (
+          <div className="bg-white border border-gray-200 rounded-xl p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Submit Payment Proof</h3>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm text-gray-700 mb-1">Payment Reference/Transaction ID</label>
+                <input
+                  type="text"
+                  value={paymentReference}
+                  onChange={(e) => setPaymentReference(e.target.value)}
+                  className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-900 focus:border-blue-500 outline-none"
+                  placeholder="Enter transaction reference"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-gray-700 mb-1">Sender Name</label>
+                <input
+                  type="text"
+                  value={senderName}
+                  onChange={(e) => setSenderName(e.target.value)}
+                  className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-900 focus:border-blue-500 outline-none"
+                  placeholder="Your name as sender"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-gray-700 mb-1">Proof of Payment</label>
+                <input
+                  type="file"
+                  onChange={(e) => setProofFile(e.target.files?.[0] || null)}
+                  className="w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-blue-600 file:text-gray-900"
+                  accept="image/*,.pdf,.jpg,.png,.jpeg"
+                />
+                {proofFile && <p className="text-xs text-gray-500 mt-1">Selected: {proofFile.name}</p>}
+              </div>
+              <button
+                onClick={handleSubmitProof}
+                disabled={uploading || !proofFile}
+                className="w-full py-3 bg-green-600 hover:bg-green-700 text-gray-900 font-semibold rounded-xl disabled:opacity-50"
+              >
+                {uploading ? 'Uploading...' : 'Submit for Verification'}
               </button>
-            )}
-            {selectedMethod !== 'Paystack' && (
-              <button onClick={handleManualSubmit} disabled={uploading || !proofFile}
-                style={{ width: '100%', padding: '16px', background: C.green, color: '#fff', border: 'none', borderRadius: '12px', fontSize: '16px', fontWeight: '600', cursor: 'pointer', opacity: uploading || !proofFile ? 0.5 : 1 }}>
-                {uploading ? 'Submitting...' : 'Submit for Verification'}
-              </button>
-            )}
-          </div>
-        )}
-
-        {error && (
-          <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '8px', padding: '12px', marginTop: '16px' }}>
-            <p style={{ fontSize: '14px', color: C.red, margin: 0 }}>{error}</p>
+            </div>
           </div>
         )}
       </div>
@@ -426,10 +446,12 @@ function MakePaymentContent() {
 
 export default function MakePaymentPage() {
   return (
-    <Suspense fallback={<div style={{ minHeight: '100vh', background: '#070A0F', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full"></div>
-    </div>}>
-      <MakePaymentContent />
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full"></div>
+      </div>
+    }>
+      <PaymentContent />
     </Suspense>
   )
 }
