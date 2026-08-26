@@ -6,19 +6,36 @@ import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
 
 interface Payment {
-  id: string
-  invoice_id: string
+  id: number
+  invoice_id: number
   client_id: string
   amount: number
   currency: string
-  method: string
-  payment_method: string
   status: string
+  payment_method: string
+  payment_channel: string
   provider_reference: string
   internal_reference: string
-  proof_url: string
-  created_at: string
   paid_at: string
+  created_at: string
+  invoice_number: string
+}
+
+interface PaymentEvent {
+  id: number
+  payment_id: number
+  event_type: string
+  description: string
+  metadata: any
+  created_at: string
+}
+
+interface Receipt {
+  id: number
+  receipt_number: string
+  amount: number
+  currency: string
+  created_at: string
 }
 
 export default function PaymentDetailPage() {
@@ -27,16 +44,17 @@ export default function PaymentDetailPage() {
   const paymentId = params?.id as string
 
   const [payment, setPayment] = useState<Payment | null>(null)
-  const [invoice, setInvoice] = useState<any>(null)
+  const [events, setEvents] = useState<PaymentEvent[]>([])
+  const [receipt, setReceipt] = useState<Receipt | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     if (paymentId) {
-      fetchPayment()
+      fetchPaymentDetail()
     }
   }, [paymentId])
 
-  const fetchPayment = async () => {
+  const fetchPaymentDetail = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) {
@@ -44,10 +62,11 @@ export default function PaymentDetailPage() {
         return
       }
 
+      // Fetch payment
       const { data: paymentData, error } = await supabase
         .from('payments')
         .select('*')
-        .eq('id', paymentId)
+        .eq('id', Number(paymentId))
         .eq('client_id', user.id)
         .single()
 
@@ -57,24 +76,45 @@ export default function PaymentDetailPage() {
         return
       }
 
-      setPayment(paymentData)
-
-      // Fetch invoice
+      // Get invoice number
+      let invoiceNumber = 'N/A'
       if (paymentData.invoice_id) {
-        const { data: invoiceData } = await supabase
+        const { data: invoice } = await supabase
           .from('invoices')
-          .select('*')
+          .select('invoice_number')
           .eq('id', paymentData.invoice_id)
           .single()
+        invoiceNumber = invoice?.invoice_number || 'N/A'
+      }
 
-        if (invoiceData) {
-          setInvoice(invoiceData)
-        }
+      setPayment({
+        ...paymentData,
+        invoice_number: invoiceNumber,
+      })
+
+      // Fetch payment events (timeline)
+      const { data: eventsData } = await supabase
+        .from('payment_events')
+        .select('*')
+        .eq('payment_id', paymentData.id)
+        .order('created_at', { ascending: true })
+
+      setEvents(eventsData || [])
+
+      // Fetch receipt
+      const { data: receiptData } = await supabase
+        .from('receipts')
+        .select('*')
+        .eq('payment_id', paymentData.id)
+        .single()
+
+      if (receiptData) {
+        setReceipt(receiptData)
       }
 
       setLoading(false)
     } catch (error) {
-      console.error('Fetch payment error:', error)
+      console.error('Fetch payment detail error:', error)
       setLoading(false)
     }
   }
@@ -83,22 +123,43 @@ export default function PaymentDetailPage() {
     const map: Record<string, string> = {
       initiated: 'bg-blue-500/20 text-blue-300',
       pending: 'bg-yellow-500/20 text-yellow-300',
+      pending_review: 'bg-yellow-500/20 text-yellow-300',
       processing: 'bg-purple-500/20 text-purple-300',
+      under_review: 'bg-cyan-500/20 text-cyan-300',
       success: 'bg-green-500/20 text-green-300',
       successful: 'bg-green-500/20 text-green-300',
+      paid: 'bg-green-500/20 text-green-300',
       failed: 'bg-red-500/20 text-red-300',
       cancelled: 'bg-gray-500/20 text-gray-300',
       refunded: 'bg-orange-500/20 text-orange-300',
-      under_review: 'bg-cyan-500/20 text-cyan-300',
     }
     return map[status?.toLowerCase()] || 'bg-gray-500/20 text-gray-300'
   }
 
-  function formatCurrency(amount: number, currency: string) {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: currency || 'USD',
-    }).format(amount || 0)
+  function getEventIcon(eventType: string) {
+    const map: Record<string, string> = {
+      payment_initiated: '[>]',
+      payment_submitted: '[^]',
+      payment_verified: '[OK]',
+      payment_success: '[OK]',
+      payment_failed: '[X]',
+      payment_rejected: '[X]',
+      payment_approved: '[OK]',
+      webhook_received: '[>]',
+      receipt_generated: '[R]',
+    }
+    return map[eventType] || '[*]'
+  }
+
+  function formatCurrency(amount: number, currency: string = 'USD') {
+    try {
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: currency,
+      }).format(amount || 0)
+    } catch {
+      return `${currency} ${(amount || 0).toLocaleString()}`
+    }
   }
 
   function formatDate(date: string) {
@@ -132,14 +193,17 @@ export default function PaymentDetailPage() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto py-8 px-4">
-      <Link href="/portal/payments" className="text-gray-400 hover:text-white text-sm mb-6 inline-block">
-        &lt;- Back to Payments
+    <div className="max-w-3xl mx-auto py-8 px-4">
+      <Link
+        href="/portal/payments"
+        className="text-gray-400 hover:text-white text-sm mb-6 inline-block"
+      >
+        ← Back to Payments
       </Link>
 
       <h1 className="text-2xl font-bold text-white mb-6">Payment Details</h1>
 
-      {/* Payment Status Card */}
+      {/* Payment Status Card per blueprint Section 21 */}
       <div className="bg-white/5 border border-white/10 rounded-xl p-6 mb-6 text-center">
         <span className={`inline-block px-4 py-2 text-sm font-medium rounded-full ${getStatusColor(payment.status)}`}>
           {payment.status}
@@ -159,55 +223,77 @@ export default function PaymentDetailPage() {
         <h3 className="font-semibold text-white mb-4">Details</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
+            <p className="text-xs text-gray-500">Invoice</p>
+            <p className="text-sm text-white font-medium">{payment.invoice_number}</p>
+          </div>
+          <div>
             <p className="text-xs text-gray-500">Payment Method</p>
-            <p className="text-sm text-white font-medium">{payment.payment_method || payment.method || '-'}</p>
+            <p className="text-sm text-white font-medium">{payment.payment_method || '-'}</p>
+          </div>
+          <div>
+            <p className="text-xs text-gray-500">Channel</p>
+            <p className="text-sm text-white font-medium">{payment.payment_channel || '-'}</p>
           </div>
           <div>
             <p className="text-xs text-gray-500">Currency</p>
             <p className="text-sm text-white font-medium">{payment.currency || 'USD'}</p>
           </div>
           <div>
-            <p className="text-xs text-gray-500">Reference</p>
-            <p className="text-sm text-white font-medium font-mono">{payment.provider_reference || payment.internal_reference || '-'}</p>
+            <p className="text-xs text-gray-500">Provider Reference</p>
+            <p className="text-sm text-white font-mono text-xs">{payment.provider_reference || '-'}</p>
           </div>
           <div>
-            <p className="text-xs text-gray-500">Created</p>
-            <p className="text-sm text-white font-medium">{formatDate(payment.created_at)}</p>
+            <p className="text-xs text-gray-500">Internal Reference</p>
+            <p className="text-sm text-white font-mono text-xs">{payment.internal_reference || '-'}</p>
           </div>
         </div>
       </div>
 
-      {/* Invoice Info */}
-      {invoice && (
+      {/* Receipt per blueprint Section 22 */}
+      {receipt && (
         <div className="bg-white/5 border border-white/10 rounded-xl p-6 mb-6">
-          <h3 className="font-semibold text-white mb-4">Invoice</h3>
+          <h3 className="font-semibold text-white mb-4">Receipt</h3>
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-400">Invoice Number</p>
-              <p className="text-white font-medium">{invoice.invoice_number}</p>
+              <p className="text-sm text-gray-400">Receipt Number</p>
+              <p className="text-white font-medium font-mono">{receipt.receipt_number}</p>
             </div>
             <Link
-              href={`/portal/invoices/${invoice.id}`}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg"
+              href={`/portal/invoices/${payment.invoice_id}/receipt-print`}
+              target="_blank"
+              className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg"
             >
-              View Invoice
+              Download Receipt
             </Link>
           </div>
         </div>
       )}
 
-      {/* Proof of Payment */}
-      {payment.proof_url && (
+      {/* Payment Timeline per blueprint Section 38 */}
+      {events.length > 0 && (
         <div className="bg-white/5 border border-white/10 rounded-xl p-6">
-          <h3 className="font-semibold text-white mb-4">Proof of Payment</h3>
-          <a
-            href={payment.proof_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg"
-          >
-            [View] View Proof
-          </a>
+          <h3 className="font-semibold text-white mb-4">Payment Timeline</h3>
+          <div className="space-y-4">
+            {events.map((event, index) => (
+              <div key={event.id} className="flex items-start gap-3">
+                <div className="flex flex-col items-center">
+                  <div className="w-8 h-8 bg-white/10 rounded-full flex items-center justify-center text-xs">
+                    {getEventIcon(event.event_type)}
+                  </div>
+                  {index < events.length - 1 && (
+                    <div className="w-px h-8 bg-white/10"></div>
+                  )}
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm text-white font-medium">
+                    {event.event_type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
+                  </p>
+                  <p className="text-xs text-gray-400">{event.description || '-'}</p>
+                  <p className="text-xs text-gray-500 mt-1">{formatDate(event.created_at)}</p>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>

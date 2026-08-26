@@ -1,50 +1,123 @@
 'use client'
 
+import { useState, useEffect } from 'react'
+import { supabase } from '@/lib/supabase'
+
+interface PaymentMethod {
+  id: number
+  name: string
+  type: string
+  instructions: string
+  active: boolean
+}
+
 interface PaymentMethodSelectorProps {
   selectedMethod: string
   onSelect: (method: string) => void
   disabled?: boolean
 }
 
-const PAYMENT_METHODS = [
-  { id: 'paystack', label: 'Pay Online (Paystack)', icon: '[CARD]', description: 'Secure card or bank payment', type: 'automated' },
-  { id: 'bank_transfer', label: 'Bank Transfer', icon: '[BANK]', description: 'Direct bank transfer', type: 'manual' },
-  { id: 'wire_transfer', label: 'Wire Transfer', icon: '[WIRE]', description: 'International wire transfer', type: 'manual' },
-  { id: 'fedwire', label: 'FedWire', icon: '[FED]', description: 'US domestic wire', type: 'manual' },
-  { id: 'local_wire', label: 'Local Wire Transfer', icon: '[LOCAL]', description: 'Local wire transfer', type: 'manual' },
-  { id: 'remitly', label: 'Remitly', icon: '[REM]', description: 'Send via Remitly', type: 'manual' },
-  { id: 'worldremit', label: 'WorldRemit', icon: '[WORLD]', description: 'Send via WorldRemit', type: 'manual' },
-  { id: 'western_union', label: 'Western Union', icon: '[WU]', description: 'Send via Western Union', type: 'manual' },
-  { id: 'moneygram', label: 'MoneyGram', icon: '[MG]', description: 'Send via MoneyGram', type: 'manual' },
-  { id: 'usdt', label: 'USDT (Crypto)', icon: '[USDT]', description: 'Pay with USDT', type: 'manual' },
-]
+export default function PaymentMethodSelector({ 
+  selectedMethod, 
+  onSelect, 
+  disabled = false 
+}: PaymentMethodSelectorProps) {
+  const [methods, setMethods] = useState<PaymentMethod[]>([])
+  const [loading, setLoading] = useState(true)
 
-export default function PaymentMethodSelector({ selectedMethod, onSelect, disabled = false }: PaymentMethodSelectorProps) {
+  useEffect(() => {
+    fetchMethods()
+  }, [])
+
+  const fetchMethods = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('payment_methods')
+        .select('*')
+        .eq('active', true)
+        .order('id', { ascending: true })
+
+      if (error) {
+        console.error('Fetch methods error:', error)
+        setLoading(false)
+        return
+      }
+
+      setMethods(data || [])
+      setLoading(false)
+    } catch (err) {
+      console.error('Fetch methods error:', err)
+      setLoading(false)
+    }
+  }
+
+  const getMethodIcon = (type: string) => {
+    if (type === 'gateway') return '[CARD]'
+    if (type === 'crypto') return '[USDT]'
+    return '[BANK]'
+  }
+
+  const getMethodDescription = (type: string) => {
+    if (type === 'gateway') return 'Fast online payment. Cards and supported payment methods.'
+    if (type === 'crypto') return 'Crypto payment. Manual verification required.'
+    return 'Manual verification. Processing usually within 1 business day.'
+  }
+
+  const getProcessingTime = (type: string) => {
+    if (type === 'gateway') return 'Instant'
+    return '1 business day'
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <div className="animate-spin h-6 w-6 border-4 border-blue-500 border-t-transparent rounded-full"></div>
+      </div>
+    )
+  }
+
+  if (methods.length === 0) {
+    return (
+      <div className="bg-white/5 border border-white/10 rounded-xl p-6 text-center">
+        <p className="text-gray-500">No payment methods available</p>
+      </div>
+    )
+  }
+
   return (
-    <div className="space-y-2">
-      {PAYMENT_METHODS.map((method) => (
+    <div className="space-y-3">
+      {methods.map((method) => (
         <button
           key={method.id}
-          onClick={() => onSelect(method.id)}
+          onClick={() => onSelect(method.name)}
           disabled={disabled}
-          className={`w-full text-left p-4 rounded-xl border transition-colors ${
-            selectedMethod === method.id
+          className={`w-full text-left p-5 rounded-xl border transition-colors ${
+            selectedMethod === method.name
               ? 'bg-blue-500/20 border-blue-500'
               : 'bg-white/5 border-white/10 hover:bg-white/10'
           } disabled:opacity-50 disabled:cursor-not-allowed`}
         >
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <span className="text-xs text-gray-400">{method.icon}</span>
+            <div className="flex items-center gap-4">
+              <span className="w-12 h-12 bg-white/10 rounded-lg flex items-center justify-center text-sm shrink-0">
+                {getMethodIcon(method.type)}
+              </span>
               <div>
-                <span className="text-white font-medium">{method.label}</span>
-                <p className="text-xs text-gray-400">{method.description}</p>
+                <p className="text-white font-semibold">{method.name}</p>
+                <p className="text-xs text-gray-400 mt-1">
+                  {getMethodDescription(method.type)}
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  Estimated processing: {getProcessingTime(method.type)}
+                </p>
               </div>
             </div>
-            {method.type === 'automated' && (
-              <span className="px-2 py-0.5 bg-green-500/20 text-green-300 text-xs rounded-full shrink-0">
-                Instant
+            {selectedMethod === method.name ? (
+              <span className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center text-white text-xs shrink-0">
+                [OK]
               </span>
+            ) : (
+              <span className="w-6 h-6 border-2 border-white/20 rounded-full shrink-0"></span>
             )}
           </div>
         </button>

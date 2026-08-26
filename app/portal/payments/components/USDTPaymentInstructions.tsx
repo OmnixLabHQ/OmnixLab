@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 
 interface USDTWallet {
   network: string
@@ -9,54 +9,39 @@ interface USDTWallet {
   qr_code_url: string
 }
 
-export default function USDTPaymentInstructions({ invoiceId }: { invoiceId: string }) {
-  const [wallets, setWallets] = useState<USDTWallet[]>([])
-  const [selectedNetwork, setSelectedNetwork] = useState('')
-  const [loading, setLoading] = useState(true)
+const QR_CODE_BASE_URL = 'https://fqeyrtjlfnsxgwczcrvx.supabase.co/storage/v1/object/public/payment-qr-codes'
+
+const USDT_WALLETS: USDTWallet[] = [
+  {
+    network: 'ERC20 (Ethereum)',
+    wallet_address: '0x05cc5992a2ac3380a8c4eac0563323191b3e7b04',
+    memo_tag: '',
+    qr_code_url: `${QR_CODE_BASE_URL}/usdt-erc20.jpg`,
+  },
+  {
+    network: 'TRC20 (TRON)',
+    wallet_address: 'TDsAEYnpqtzh6Mj19ASY5nV2THKF3xYnDn',
+    memo_tag: '',
+    qr_code_url: `${QR_CODE_BASE_URL}/usdt-trc20.jpg`,
+  },
+  {
+    network: 'BEP20 (BSC)',
+    wallet_address: '0x05cc5992a2ac3380a8c4eac0563323191b3e7b04',
+    memo_tag: '',
+    qr_code_url: `${QR_CODE_BASE_URL}/usdt-bep20.jpg`,
+  },
+]
+
+export default function USDTPaymentInstructions() {
+  const [selectedNetwork, setSelectedNetwork] = useState(USDT_WALLETS[0].network)
   const [copied, setCopied] = useState('')
 
-  useEffect(() => {
-    fetchInstructions()
-  }, [invoiceId])
-
-  const fetchInstructions = async () => {
-    try {
-      const response = await fetch('/api/billing/payment-instructions?method=usdt')
-      const data = await response.json()
-
-      if (data.success && data.instructions?.wallets) {
-        setWallets(data.instructions.wallets)
-        setSelectedNetwork(data.instructions.wallets[0]?.network || '')
-      }
-    } catch (error) {
-      console.error('Fetch USDT instructions error:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const selectedWallet = wallets.find((w) => w.network === selectedNetwork)
+  const selectedWallet = USDT_WALLETS.find((w) => w.network === selectedNetwork)
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text)
     setCopied(text)
     setTimeout(() => setCopied(''), 2000)
-  }
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-8">
-        <div className="animate-spin h-6 w-6 border-4 border-blue-500 border-t-transparent rounded-full"></div>
-      </div>
-    )
-  }
-
-  if (wallets.length === 0) {
-    return (
-      <div className="text-center py-8">
-        <p className="text-gray-500">USDT payment instructions not available</p>
-      </div>
-    )
   }
 
   return (
@@ -65,7 +50,7 @@ export default function USDTPaymentInstructions({ invoiceId }: { invoiceId: stri
       <div>
         <label className="block text-sm text-gray-300 mb-2">Select Network</label>
         <div className="grid grid-cols-3 gap-2">
-          {wallets.map((wallet) => (
+          {USDT_WALLETS.map((wallet) => (
             <button
               key={wallet.network}
               onClick={() => setSelectedNetwork(wallet.network)}
