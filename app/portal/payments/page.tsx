@@ -250,14 +250,14 @@ export default function PaymentsPage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#070A0F', padding: '2rem 1rem' }}>
+    <div style={{ minHeight: '100vh', background: '#F9FAFB', padding: '2rem 1rem' }}>
       <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
         {/* Header */}
         <div style={{ marginBottom: '2rem' }}>
-          <h1 style={{ fontSize: '28px', fontWeight: '700', color: '#F8FAFC', margin: '0 0 4px 0' }}>
+          <h1 style={{ fontSize: '28px', fontWeight: '700', color: '#111827', margin: '0 0 4px 0' }}>
             Payments
           </h1>
-          <p style={{ fontSize: '14px', color: '#94A3B8', margin: 0 }}>
+          <p style={{ fontSize: '14px', color: '#6B7280', margin: 0 }}>
             Manage your invoices and payments securely.
           </p>
         </div>
@@ -265,7 +265,7 @@ export default function PaymentsPage() {
         {/* Payment Center Card */}
         <div style={{
           background: 'linear-gradient(135deg, rgba(225,29,46,0.15) 0%, rgba(18,24,33,0.8) 100%)',
-          border: '1px solid #1E293B',
+          border: '1px solid #D1D5DB',
           borderRadius: '16px',
           padding: '32px',
           marginBottom: '24px',
@@ -276,13 +276,13 @@ export default function PaymentsPage() {
           gap: '16px',
         }}>
           <div>
-            <p style={{ fontSize: '14px', color: '#94A3B8', margin: '0 0 8px 0' }}>
+            <p style={{ fontSize: '14px', color: '#6B7280', margin: '0 0 8px 0' }}>
               Outstanding Balance
             </p>
-            <p style={{ fontSize: '48px', fontWeight: '700', color: '#F8FAFC', margin: 0 }}>
+            <p style={{ fontSize: '48px', fontWeight: '700', color: '#111827', margin: 0 }}>
               {formatCurrency(stats.outstanding, 'USD')}
             </p>
-            <p style={{ fontSize: '14px', color: '#94A3B8', margin: '8px 0 0 0' }}>
+            <p style={{ fontSize: '14px', color: '#6B7280', margin: '8px 0 0 0' }}>
               {stats.outstandingCount} outstanding invoice{stats.outstandingCount !== 1 ? 's' : ''}
             </p>
           </div>
@@ -290,7 +290,7 @@ export default function PaymentsPage() {
             onClick={() => router.push('/portal/payments/make')}
             style={{
               background: '#E11D2E',
-              color: '#F8FAFC',
+              color: '#111827',
               border: 'none',
               borderRadius: '12px',
               padding: '16px 32px',
@@ -320,18 +320,18 @@ export default function PaymentsPage() {
             { label: 'Overdue', value: stats.overdue, count: `${stats.overdueCount} invoices`, color: '#EF4444' },
           ].map((card) => (
             <div key={card.label} style={{
-              background: '#0D1117',
-              border: '1px solid #1E293B',
+              background: '#FFFFFF',
+              border: '1px solid #D1D5DB',
               borderRadius: '12px',
               padding: '20px',
             }}>
-              <p style={{ fontSize: '14px', color: '#94A3B8', margin: '0 0 8px 0' }}>
+              <p style={{ fontSize: '14px', color: '#6B7280', margin: '0 0 8px 0' }}>
                 {card.label}
               </p>
               <p style={{ fontSize: '28px', fontWeight: '700', color: card.color, margin: '0 0 4px 0' }}>
                 {formatCurrency(card.value, 'USD')}
               </p>
-              <p style={{ fontSize: '12px', color: '#64748B', margin: 0 }}>
+              <p style={{ fontSize: '12px', color: '#9CA3AF', margin: 0 }}>
                 {card.count}
               </p>
             </div>
@@ -340,7 +340,7 @@ export default function PaymentsPage() {
 
         {/* Available Payment Methods */}
         <div style={{ marginBottom: '24px' }}>
-          <h2 style={{ fontSize: '18px', fontWeight: '600', color: '#F8FAFC', margin: '0 0 16px 0' }}>
+          <h2 style={{ fontSize: '18px', fontWeight: '600', color: '#111827', margin: '0 0 16px 0' }}>
             Available Payment Methods
           </h2>
           <div style={{
@@ -353,8 +353,8 @@ export default function PaymentsPage() {
                 key={method.id}
                 onClick={() => router.push(`/portal/payments/make?method=${method.name.toLowerCase().replace(/\s+/g, '_')}`)}
                 style={{
-                  background: '#0D1117',
-                  border: '1px solid #1E293B',
+                  background: '#FFFFFF',
+                  border: '1px solid #D1D5DB',
                   borderRadius: '12px',
                   padding: '16px',
                   cursor: 'pointer',
@@ -362,15 +362,15 @@ export default function PaymentsPage() {
                   transition: 'border-color 0.2s',
                 }}
                 onMouseEnter={(e) => e.currentTarget.style.borderColor = '#E11D2E'}
-                onMouseLeave={(e) => e.currentTarget.style.borderColor = '#1E293B'}
+                onMouseLeave={(e) => e.currentTarget.style.borderColor = '#D1D5DB'}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                   <span style={{ fontSize: '24px' }}>{getMethodIcon(method.type)}</span>
                   <div>
-                    <p style={{ fontSize: '14px', fontWeight: '600', color: '#F8FAFC', margin: 0 }}>
+                    <p style={{ fontSize: '14px', fontWeight: '600', color: '#111827', margin: 0 }}>
                       {method.name}
                     </p>
-                    <p style={{ fontSize: '12px', color: '#94A3B8', margin: '4px 0 0 0' }}>
+                    <p style={{ fontSize: '12px', color: '#6B7280', margin: '4px 0 0 0' }}>
                       {method.type === 'gateway' ? 'Instant processing' : 'Manual verification'}
                     </p>
                   </div>
@@ -383,7 +383,7 @@ export default function PaymentsPage() {
         {/* Outstanding Invoices */}
         {invoices.filter(inv => ['unpaid', 'viewed', 'sent', 'partial', 'pending'].includes(inv.payment_status || inv.status || '')).length > 0 && (
           <div style={{ marginBottom: '24px' }}>
-            <h2 style={{ fontSize: '18px', fontWeight: '600', color: '#F8FAFC', margin: '0 0 16px 0' }}>
+            <h2 style={{ fontSize: '18px', fontWeight: '600', color: '#111827', margin: '0 0 16px 0' }}>
               Outstanding Invoices
             </h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -398,8 +398,8 @@ export default function PaymentsPage() {
                       key={invoice.id}
                       onClick={() => router.push(`/portal/payments/make?invoiceId=${invoice.id}`)}
                       style={{
-                        background: '#0D1117',
-                        border: '1px solid #1E293B',
+                        background: '#FFFFFF',
+                        border: '1px solid #D1D5DB',
                         borderRadius: '12px',
                         padding: '20px',
                         cursor: 'pointer',
@@ -409,18 +409,18 @@ export default function PaymentsPage() {
                         transition: 'border-color 0.2s',
                       }}
                       onMouseEnter={(e) => e.currentTarget.style.borderColor = '#E11D2E'}
-                      onMouseLeave={(e) => e.currentTarget.style.borderColor = '#1E293B'}
+                      onMouseLeave={(e) => e.currentTarget.style.borderColor = '#D1D5DB'}
                     >
                       <div>
-                        <p style={{ fontSize: '15px', fontWeight: '600', color: '#F8FAFC', margin: 0 }}>
+                        <p style={{ fontSize: '15px', fontWeight: '600', color: '#111827', margin: 0 }}>
                           {invoice.invoice_number}
                         </p>
-                        <p style={{ fontSize: '13px', color: '#94A3B8', margin: '4px 0 0 0' }}>
+                        <p style={{ fontSize: '13px', color: '#6B7280', margin: '4px 0 0 0' }}>
                           {invoice.project_name}
                         </p>
                       </div>
                       <div style={{ textAlign: 'right' }}>
-                        <p style={{ fontSize: '18px', fontWeight: '700', color: '#F8FAFC', margin: 0 }}>
+                        <p style={{ fontSize: '18px', fontWeight: '700', color: '#111827', margin: 0 }}>
                           {formatCurrency(remaining, invoice.currency)}
                         </p>
                         <span style={{
@@ -444,43 +444,43 @@ export default function PaymentsPage() {
 
         {/* Recent Transactions */}
         <div>
-          <h2 style={{ fontSize: '18px', fontWeight: '600', color: '#F8FAFC', margin: '0 0 16px 0' }}>
+          <h2 style={{ fontSize: '18px', fontWeight: '600', color: '#111827', margin: '0 0 16px 0' }}>
             Recent Transactions
           </h2>
           <div style={{
-            background: '#0D1117',
-            border: '1px solid #1E293B',
+            background: '#FFFFFF',
+            border: '1px solid #D1D5DB',
             borderRadius: '12px',
             overflow: 'hidden',
           }}>
             {payments.length === 0 ? (
               <div style={{ padding: '40px', textAlign: 'center' }}>
-                <p style={{ color: '#64748B', margin: 0 }}>No transactions yet</p>
+                <p style={{ color: '#9CA3AF', margin: 0 }}>No transactions yet</p>
               </div>
             ) : (
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
-                  <tr style={{ borderBottom: '1px solid #1E293B' }}>
-                    <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '13px', color: '#94A3B8', fontWeight: '500' }}>Date</th>
-                    <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '13px', color: '#94A3B8', fontWeight: '500' }}>Invoice</th>
-                    <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '13px', color: '#94A3B8', fontWeight: '500' }}>Method</th>
-                    <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '13px', color: '#94A3B8', fontWeight: '500' }}>Amount</th>
-                    <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '13px', color: '#94A3B8', fontWeight: '500' }}>Status</th>
+                  <tr style={{ borderBottom: '1px solid #D1D5DB' }}>
+                    <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '13px', color: '#6B7280', fontWeight: '500' }}>Date</th>
+                    <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '13px', color: '#6B7280', fontWeight: '500' }}>Invoice</th>
+                    <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '13px', color: '#6B7280', fontWeight: '500' }}>Method</th>
+                    <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '13px', color: '#6B7280', fontWeight: '500' }}>Amount</th>
+                    <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '13px', color: '#6B7280', fontWeight: '500' }}>Status</th>
                   </tr>
                 </thead>
                 <tbody>
                   {payments.slice(0, 10).map((payment) => (
-                    <tr key={payment.id} style={{ borderBottom: '1px solid #1E293B' }}>
-                      <td style={{ padding: '12px 16px', fontSize: '13px', color: '#94A3B8' }}>
+                    <tr key={payment.id} style={{ borderBottom: '1px solid #D1D5DB' }}>
+                      <td style={{ padding: '12px 16px', fontSize: '13px', color: '#6B7280' }}>
                         {formatDate(payment.created_at)}
                       </td>
-                      <td style={{ padding: '12px 16px', fontSize: '14px', color: '#F8FAFC', fontWeight: '500' }}>
+                      <td style={{ padding: '12px 16px', fontSize: '14px', color: '#111827', fontWeight: '500' }}>
                         {payment.invoice_number}
                       </td>
-                      <td style={{ padding: '12px 16px', fontSize: '13px', color: '#94A3B8' }}>
+                      <td style={{ padding: '12px 16px', fontSize: '13px', color: '#6B7280' }}>
                         {payment.payment_method || '-'}
                       </td>
-                      <td style={{ padding: '12px 16px', fontSize: '14px', color: '#F8FAFC', fontWeight: '600' }}>
+                      <td style={{ padding: '12px 16px', fontSize: '14px', color: '#111827', fontWeight: '600' }}>
                         {formatCurrency(payment.amount, payment.currency)}
                       </td>
                       <td style={{ padding: '12px 16px' }}>
