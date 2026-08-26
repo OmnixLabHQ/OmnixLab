@@ -17,11 +17,22 @@ interface PaymentDetails {
   receipt_number: string
 }
 
+const C = {
+  bg: '#070A0F',
+  surface: '#0D1117',
+  border: '#1E293B',
+  text: '#F8FAFC',
+  text2: '#94A3B8',
+  accent: '#E11D2E',
+  green: '#22C55E',
+  blue: '#38BDF8',
+}
+
 function SuccessContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const reference = searchParams.get('reference') || ''
-  
+
   const [payment, setPayment] = useState<PaymentDetails | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -35,7 +46,6 @@ function SuccessContent() {
 
   const fetchPaymentDetails = async (ref: string) => {
     try {
-      // Fetch payment by provider reference
       const { data: paymentData, error } = await supabase
         .from('payments')
         .select('*')
@@ -48,7 +58,6 @@ function SuccessContent() {
         return
       }
 
-      // Get invoice number
       let invoiceNumber = 'N/A'
       if (paymentData.invoice_id) {
         const { data: invoice } = await supabase
@@ -59,7 +68,6 @@ function SuccessContent() {
         invoiceNumber = invoice?.invoice_number || 'N/A'
       }
 
-      // Get receipt number
       let receiptNumber = ''
       if (paymentData.id) {
         const { data: receipt } = await supabase
@@ -88,90 +96,102 @@ function SuccessContent() {
     }
   }
 
-  function formatCurrency(amount: number, currency: string) {
+  const fmt = (n: number, c: string = 'USD') => {
     try {
-      return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: currency || 'USD',
-      }).format(amount || 0)
+      return new Intl.NumberFormat('en-US', { style: 'currency', currency: c }).format(n || 0)
     } catch {
-      return `${currency} ${(amount || 0).toLocaleString()}`
+      return `${c} ${(n || 0).toLocaleString()}`
     }
   }
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div style={{ minHeight: '100vh', background: C.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full"></div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-12">
-      <div className="bg-white/5 border border-white/10 rounded-2xl p-8 max-w-md w-full">
+    <div style={{ minHeight: '100vh', background: C.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+      <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: '16px', padding: '32px', maxWidth: '450px', width: '100%' }}>
         {/* Success Icon */}
-        <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-          <span className="text-3xl text-green-400">[OK]</span>
+        <div style={{
+          width: '64px', height: '64px', background: 'rgba(34,197,94,0.2)', borderRadius: '50%',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px',
+        }}>
+          <span style={{ fontSize: '32px', color: C.green }}>✓</span>
         </div>
 
-        <h1 className="text-2xl font-bold text-white text-center mb-2">
+        <h1 style={{ fontSize: '24px', fontWeight: '700', color: C.text, textAlign: 'center', margin: '0 0 8px 0' }}>
           Payment Successful!
         </h1>
-        <p className="text-gray-400 text-center mb-6">
+        <p style={{ fontSize: '14px', color: C.text2, textAlign: 'center', margin: '0 0 24px 0' }}>
           Your payment has been received and processed.
         </p>
 
         {/* Payment Details */}
         {payment && (
-          <div className="bg-white/5 border border-white/10 rounded-xl p-4 mb-6">
-            <div className="space-y-3">
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-400">Amount</span>
-                <span className="text-sm font-bold text-white">
-                  {formatCurrency(payment.amount, payment.currency)}
+          <div style={{ background: C.bg, border: `1px solid ${C.border}`, borderRadius: '12px', padding: '16px', marginBottom: '16px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: '13px', color: C.text2 }}>Amount</span>
+                <span style={{ fontSize: '14px', fontWeight: '700', color: C.text }}>
+                  {fmt(payment.amount, payment.currency)}
                 </span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-400">Invoice</span>
-                <span className="text-sm text-white font-medium">{payment.invoice_number}</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: '13px', color: C.text2 }}>Invoice</span>
+                <span style={{ fontSize: '14px', fontWeight: '500', color: C.text }}>{payment.invoice_number}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-400">Method</span>
-                <span className="text-sm text-white font-medium">{payment.payment_method}</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: '13px', color: C.text2 }}>Method</span>
+                <span style={{ fontSize: '14px', fontWeight: '500', color: C.text }}>{payment.payment_method}</span>
               </div>
               {payment.receipt_number && (
-                <div className="flex justify-between">
-                  <span className="text-sm text-gray-400">Receipt</span>
-                  <span className="text-sm text-white font-medium font-mono">{payment.receipt_number}</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: '13px', color: C.text2 }}>Receipt</span>
+                  <span style={{ fontSize: '14px', fontWeight: '500', color: C.text, fontFamily: 'monospace' }}>
+                    {payment.receipt_number}
+                  </span>
                 </div>
               )}
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-400">Reference</span>
-                <span className="text-sm text-white font-mono text-xs">{payment.provider_reference}</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: '13px', color: C.text2 }}>Reference</span>
+                <span style={{ fontSize: '12px', color: C.text, fontFamily: 'monospace' }}>{payment.provider_reference}</span>
               </div>
             </div>
           </div>
         )}
 
-        {/* Notification per blueprint Section 23 */}
-        <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-4 mb-6">
-          <p className="text-sm text-green-400 text-center">
+        {/* Notification */}
+        <div style={{
+          background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)',
+          borderRadius: '12px', padding: '16px', marginBottom: '24px', textAlign: 'center',
+        }}>
+          <p style={{ fontSize: '14px', color: C.green, margin: 0 }}>
             Payment successful — Your payment has been received.
           </p>
         </div>
 
         {/* Actions */}
-        <div className="space-y-3">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           <button
             onClick={() => router.push('/portal/payments')}
-            className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-colors"
+            style={{
+              width: '100%', padding: '14px', background: C.blue, color: '#000',
+              border: 'none', borderRadius: '12px', fontSize: '15px', fontWeight: '600', cursor: 'pointer',
+            }}
           >
             View Payments
           </button>
           <Link
             href="/portal/invoices"
-            className="block w-full py-3 bg-white/10 hover:bg-white/20 text-white font-semibold rounded-xl transition-colors text-center"
+            style={{
+              display: 'block', width: '100%', padding: '14px', background: C.surface,
+              color: C.text, border: `1px solid ${C.border}`, borderRadius: '12px',
+              fontSize: '15px', fontWeight: '600', textAlign: 'center', textDecoration: 'none',
+            }}
           >
             Back to Invoices
           </Link>
@@ -184,7 +204,7 @@ function SuccessContent() {
 export default function SuccessPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center">
+      <div style={{ minHeight: '100vh', background: '#070A0F', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full"></div>
       </div>
     }>
