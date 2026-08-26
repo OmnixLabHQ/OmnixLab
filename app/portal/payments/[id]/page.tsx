@@ -38,6 +38,19 @@ interface Receipt {
   created_at: string
 }
 
+const C = {
+  bg: '#070A0F',
+  surface: '#0D1117',
+  border: '#1E293B',
+  text: '#F8FAFC',
+  text2: '#94A3B8',
+  green: '#22C55E',
+  red: '#EF4444',
+  yellow: '#F59E0B',
+  blue: '#38BDF8',
+  purple: '#A78BFA',
+}
+
 export default function PaymentDetailPage() {
   const params = useParams()
   const router = useRouter()
@@ -62,7 +75,6 @@ export default function PaymentDetailPage() {
         return
       }
 
-      // Fetch payment
       const { data: paymentData, error } = await supabase
         .from('payments')
         .select('*')
@@ -76,7 +88,6 @@ export default function PaymentDetailPage() {
         return
       }
 
-      // Get invoice number
       let invoiceNumber = 'N/A'
       if (paymentData.invoice_id) {
         const { data: invoice } = await supabase
@@ -87,12 +98,8 @@ export default function PaymentDetailPage() {
         invoiceNumber = invoice?.invoice_number || 'N/A'
       }
 
-      setPayment({
-        ...paymentData,
-        invoice_number: invoiceNumber,
-      })
+      setPayment({ ...paymentData, invoice_number: invoiceNumber })
 
-      // Fetch payment events (timeline)
       const { data: eventsData } = await supabase
         .from('payment_events')
         .select('*')
@@ -101,16 +108,13 @@ export default function PaymentDetailPage() {
 
       setEvents(eventsData || [])
 
-      // Fetch receipt
       const { data: receiptData } = await supabase
         .from('receipts')
         .select('*')
         .eq('payment_id', paymentData.id)
         .single()
 
-      if (receiptData) {
-        setReceipt(receiptData)
-      }
+      if (receiptData) setReceipt(receiptData)
 
       setLoading(false)
     } catch (error) {
@@ -119,63 +123,71 @@ export default function PaymentDetailPage() {
     }
   }
 
-  function getStatusColor(status: string) {
+  const getStatusColor = (status: string) => {
     const map: Record<string, string> = {
-      initiated: 'bg-blue-500/20 text-blue-300',
-      pending: 'bg-yellow-500/20 text-yellow-300',
-      pending_review: 'bg-yellow-500/20 text-yellow-300',
-      processing: 'bg-purple-500/20 text-purple-300',
-      under_review: 'bg-cyan-500/20 text-cyan-300',
-      success: 'bg-green-500/20 text-green-300',
-      successful: 'bg-green-500/20 text-green-300',
-      paid: 'bg-green-500/20 text-green-300',
-      failed: 'bg-red-500/20 text-red-300',
-      cancelled: 'bg-gray-500/20 text-gray-300',
-      refunded: 'bg-orange-500/20 text-orange-300',
+      success: 'rgba(34,197,94,0.2)',
+      successful: 'rgba(34,197,94,0.2)',
+      paid: 'rgba(34,197,94,0.2)',
+      failed: 'rgba(239,68,68,0.2)',
+      pending: 'rgba(245,158,11,0.2)',
+      pending_review: 'rgba(245,158,11,0.2)',
+      initiated: 'rgba(56,189,248,0.2)',
+      processing: 'rgba(167,139,250,0.2)',
+      refunded: 'rgba(239,68,68,0.2)',
+      cancelled: 'rgba(148,163,184,0.2)',
     }
-    return map[status?.toLowerCase()] || 'bg-gray-500/20 text-gray-300'
+    return map[status?.toLowerCase()] || 'rgba(148,163,184,0.2)'
   }
 
-  function getEventIcon(eventType: string) {
+  const getStatusTextColor = (status: string) => {
     const map: Record<string, string> = {
-      payment_initiated: '[>]',
-      payment_submitted: '[^]',
-      payment_verified: '[OK]',
-      payment_success: '[OK]',
-      payment_failed: '[X]',
-      payment_rejected: '[X]',
-      payment_approved: '[OK]',
-      webhook_received: '[>]',
-      receipt_generated: '[R]',
+      success: C.green,
+      successful: C.green,
+      paid: C.green,
+      failed: C.red,
+      pending: C.yellow,
+      pending_review: C.yellow,
+      initiated: C.blue,
+      processing: C.purple,
+      refunded: C.red,
+      cancelled: C.text2,
     }
-    return map[eventType] || '[*]'
+    return map[status?.toLowerCase()] || C.text2
   }
 
-  function formatCurrency(amount: number, currency: string = 'USD') {
+  const getEventIcon = (eventType: string) => {
+    const map: Record<string, string> = {
+      payment_initiated: '>',
+      payment_submitted: '^',
+      payment_verified: '✓',
+      payment_success: '✓',
+      payment_failed: '✕',
+      payment_rejected: '✕',
+      payment_approved: '✓',
+      webhook_received: '>',
+      receipt_generated: 'R',
+    }
+    return map[eventType] || '*'
+  }
+
+  const fmt = (n: number, c: string = 'USD') => {
     try {
-      return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: currency,
-      }).format(amount || 0)
+      return new Intl.NumberFormat('en-US', { style: 'currency', currency: c }).format(n || 0)
     } catch {
-      return `${currency} ${(amount || 0).toLocaleString()}`
+      return `${c} ${(n || 0).toLocaleString()}`
     }
   }
 
-  function formatDate(date: string) {
+  const formatDate = (date: string) => {
     if (!date) return '-'
     return new Date(date).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
+      month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit',
     })
   }
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20">
+      <div style={{ minHeight: '100vh', background: C.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full"></div>
       </div>
     )
@@ -183,119 +195,134 @@ export default function PaymentDetailPage() {
 
   if (!payment) {
     return (
-      <div className="max-w-md mx-auto py-20 text-center">
-        <p className="text-gray-400 mb-4">Payment not found</p>
-        <Link href="/portal/payments" className="text-blue-400 hover:underline">
-          Back to Payments
-        </Link>
+      <div style={{ minHeight: '100vh', background: C.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ textAlign: 'center' }}>
+          <p style={{ color: C.text2, marginBottom: '16px' }}>Payment not found</p>
+          <Link href="/portal/payments" style={{ color: C.blue, textDecoration: 'none' }}>
+            Back to Payments
+          </Link>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="max-w-3xl mx-auto py-8 px-4">
-      <Link
-        href="/portal/payments"
-        className="text-gray-400 hover:text-white text-sm mb-6 inline-block"
-      >
-        ← Back to Payments
-      </Link>
+    <div style={{ minHeight: '100vh', background: C.bg, padding: '2rem 1rem' }}>
+      <div style={{ maxWidth: '700px', margin: '0 auto' }}>
+        <Link href="/portal/payments" style={{ color: C.text2, fontSize: '14px', textDecoration: 'none', display: 'inline-block', marginBottom: '24px' }}>
+          &larr; Back to Payments
+        </Link>
 
-      <h1 className="text-2xl font-bold text-white mb-6">Payment Details</h1>
+        <h1 style={{ fontSize: '28px', fontWeight: '700', color: C.text, margin: '0 0 24px 0' }}>
+          Payment Details
+        </h1>
 
-      {/* Payment Status Card per blueprint Section 21 */}
-      <div className="bg-white/5 border border-white/10 rounded-xl p-6 mb-6 text-center">
-        <span className={`inline-block px-4 py-2 text-sm font-medium rounded-full ${getStatusColor(payment.status)}`}>
-          {payment.status}
-        </span>
-        <p className="text-4xl font-bold text-white mt-4">
-          {formatCurrency(payment.amount, payment.currency)}
-        </p>
-        {payment.paid_at && (
-          <p className="text-sm text-green-400 mt-2">
-            Paid on {formatDate(payment.paid_at)}
+        {/* Status Card */}
+        <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: '16px', padding: '24px', marginBottom: '16px', textAlign: 'center' }}>
+          <span style={{
+            display: 'inline-block', padding: '6px 20px', borderRadius: '9999px',
+            fontSize: '14px', fontWeight: '600', background: getStatusColor(payment.status), color: getStatusTextColor(payment.status),
+          }}>
+            {payment.status}
+          </span>
+          <p style={{ fontSize: '40px', fontWeight: '700', color: C.text, margin: '16px 0 4px 0' }}>
+            {fmt(payment.amount, payment.currency)}
           </p>
+          {payment.paid_at && (
+            <p style={{ fontSize: '13px', color: C.green, margin: 0 }}>
+              Paid on {formatDate(payment.paid_at)}
+            </p>
+          )}
+        </div>
+
+        {/* Details */}
+        <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: '16px', padding: '24px', marginBottom: '16px' }}>
+          <h3 style={{ fontSize: '16px', fontWeight: '600', color: C.text, margin: '0 0 16px 0' }}>Details</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+            <div>
+              <p style={{ fontSize: '12px', color: C.text2, margin: '0 0 4px 0' }}>Invoice</p>
+              <p style={{ fontSize: '14px', fontWeight: '500', color: C.text, margin: 0 }}>{payment.invoice_number}</p>
+            </div>
+            <div>
+              <p style={{ fontSize: '12px', color: C.text2, margin: '0 0 4px 0' }}>Payment Method</p>
+              <p style={{ fontSize: '14px', fontWeight: '500', color: C.text, margin: 0 }}>{payment.payment_method || '-'}</p>
+            </div>
+            <div>
+              <p style={{ fontSize: '12px', color: C.text2, margin: '0 0 4px 0' }}>Channel</p>
+              <p style={{ fontSize: '14px', fontWeight: '500', color: C.text, margin: 0 }}>{payment.payment_channel || '-'}</p>
+            </div>
+            <div>
+              <p style={{ fontSize: '12px', color: C.text2, margin: '0 0 4px 0' }}>Currency</p>
+              <p style={{ fontSize: '14px', fontWeight: '500', color: C.text, margin: 0 }}>{payment.currency || 'USD'}</p>
+            </div>
+            <div>
+              <p style={{ fontSize: '12px', color: C.text2, margin: '0 0 4px 0' }}>Provider Reference</p>
+              <p style={{ fontSize: '12px', color: C.text, fontFamily: 'monospace', margin: 0, wordBreak: 'break-all' }}>{payment.provider_reference || '-'}</p>
+            </div>
+            <div>
+              <p style={{ fontSize: '12px', color: C.text2, margin: '0 0 4px 0' }}>Internal Reference</p>
+              <p style={{ fontSize: '12px', color: C.text, fontFamily: 'monospace', margin: 0, wordBreak: 'break-all' }}>{payment.internal_reference || '-'}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Receipt */}
+        {receipt && (
+          <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: '16px', padding: '24px', marginBottom: '16px' }}>
+            <h3 style={{ fontSize: '16px', fontWeight: '600', color: C.text, margin: '0 0 16px 0' }}>Receipt</h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <p style={{ fontSize: '12px', color: C.text2, margin: '0 0 4px 0' }}>Receipt Number</p>
+                <p style={{ fontSize: '14px', fontWeight: '500', color: C.text, fontFamily: 'monospace', margin: 0 }}>
+                  {receipt.receipt_number}
+                </p>
+              </div>
+              <Link
+                href={`/portal/invoices/${payment.invoice_id}/receipt-print`}
+                target="_blank"
+                style={{
+                  padding: '10px 20px', background: C.green, color: '#fff',
+                  borderRadius: '10px', fontSize: '14px', fontWeight: '600', textDecoration: 'none',
+                }}
+              >
+                Download Receipt
+              </Link>
+            </div>
+          </div>
+        )}
+
+        {/* Timeline */}
+        {events.length > 0 && (
+          <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: '16px', padding: '24px' }}>
+            <h3 style={{ fontSize: '16px', fontWeight: '600', color: C.text, margin: '0 0 16px 0' }}>Payment Timeline</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
+              {events.map((event, index) => (
+                <div key={event.id} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                    <div style={{
+                      width: '28px', height: '28px', background: C.bg, border: `1px solid ${C.border}`,
+                      borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: '12px', color: C.blue, fontWeight: '700', flexShrink: 0,
+                    }}>
+                      {getEventIcon(event.event_type)}
+                    </div>
+                    {index < events.length - 1 && (
+                      <div style={{ width: '2px', height: '32px', background: C.border }} />
+                    )}
+                  </div>
+                  <div style={{ paddingBottom: '20px' }}>
+                    <p style={{ fontSize: '14px', fontWeight: '600', color: C.text, margin: '0 0 2px 0' }}>
+                      {event.event_type.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase())}
+                    </p>
+                    <p style={{ fontSize: '12px', color: C.text2, margin: '0 0 2px 0' }}>{event.description || '-'}</p>
+                    <p style={{ fontSize: '11px', color: C.text2, opacity: 0.7, margin: 0 }}>{formatDate(event.created_at)}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         )}
       </div>
-
-      {/* Payment Details */}
-      <div className="bg-white/5 border border-white/10 rounded-xl p-6 mb-6">
-        <h3 className="font-semibold text-white mb-4">Details</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <p className="text-xs text-gray-500">Invoice</p>
-            <p className="text-sm text-white font-medium">{payment.invoice_number}</p>
-          </div>
-          <div>
-            <p className="text-xs text-gray-500">Payment Method</p>
-            <p className="text-sm text-white font-medium">{payment.payment_method || '-'}</p>
-          </div>
-          <div>
-            <p className="text-xs text-gray-500">Channel</p>
-            <p className="text-sm text-white font-medium">{payment.payment_channel || '-'}</p>
-          </div>
-          <div>
-            <p className="text-xs text-gray-500">Currency</p>
-            <p className="text-sm text-white font-medium">{payment.currency || 'USD'}</p>
-          </div>
-          <div>
-            <p className="text-xs text-gray-500">Provider Reference</p>
-            <p className="text-sm text-white font-mono text-xs">{payment.provider_reference || '-'}</p>
-          </div>
-          <div>
-            <p className="text-xs text-gray-500">Internal Reference</p>
-            <p className="text-sm text-white font-mono text-xs">{payment.internal_reference || '-'}</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Receipt per blueprint Section 22 */}
-      {receipt && (
-        <div className="bg-white/5 border border-white/10 rounded-xl p-6 mb-6">
-          <h3 className="font-semibold text-white mb-4">Receipt</h3>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-400">Receipt Number</p>
-              <p className="text-white font-medium font-mono">{receipt.receipt_number}</p>
-            </div>
-            <Link
-              href={`/portal/invoices/${payment.invoice_id}/receipt-print`}
-              target="_blank"
-              className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg"
-            >
-              Download Receipt
-            </Link>
-          </div>
-        </div>
-      )}
-
-      {/* Payment Timeline per blueprint Section 38 */}
-      {events.length > 0 && (
-        <div className="bg-white/5 border border-white/10 rounded-xl p-6">
-          <h3 className="font-semibold text-white mb-4">Payment Timeline</h3>
-          <div className="space-y-4">
-            {events.map((event, index) => (
-              <div key={event.id} className="flex items-start gap-3">
-                <div className="flex flex-col items-center">
-                  <div className="w-8 h-8 bg-white/10 rounded-full flex items-center justify-center text-xs">
-                    {getEventIcon(event.event_type)}
-                  </div>
-                  {index < events.length - 1 && (
-                    <div className="w-px h-8 bg-white/10"></div>
-                  )}
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm text-white font-medium">
-                    {event.event_type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
-                  </p>
-                  <p className="text-xs text-gray-400">{event.description || '-'}</p>
-                  <p className="text-xs text-gray-500 mt-1">{formatDate(event.created_at)}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   )
 }
