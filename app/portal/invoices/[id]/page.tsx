@@ -78,6 +78,28 @@ interface Receipt {
   created_at: string
 }
 
+interface PaymentInstructions {
+  method: string
+  bank_name?: string
+  account_name?: string
+  account_number?: string
+  routing_number?: string
+  account_type?: string
+  bank_address?: string
+  swift_bic?: string
+  iban?: string
+  wallet_address?: string
+  network?: string
+  memo_tag?: string
+  instructions?: string
+  wallets?: {
+    network: string
+    wallet_address: string
+    memo_tag: string
+    qr_code_url: string
+  }[]
+}
+
 export default function InvoiceDetailPage() {
   const params = useParams()
   const router = useRouter()
@@ -92,8 +114,23 @@ export default function InvoiceDetailPage() {
   const [loading, setLoading] = useState(true)
   const [showPaymentModal, setShowPaymentModal] = useState(false)
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('paystack')
-  const [paymentRequestMessage, setPaymentRequestMessage] = useState('')
+  const [paymentInstructions, setPaymentInstructions] = useState<PaymentInstructions | null>(null)
+  const [selectedNetwork, setSelectedNetwork] = useState('')
   const [processingPayment, setProcessingPayment] = useState(false)
+  const [copied, setCopied] = useState('')
+
+  const PAYMENT_METHODS = [
+    { id: 'paystack', label: 'Pay Online', icon: '[CARD]', description: 'Secure card or bank payment via Paystack', type: 'automated' },
+    { id: 'bank_transfer', label: 'Bank Transfer', icon: '[BANK]', description: 'Direct bank transfer', type: 'manual' },
+    { id: 'wire_transfer', label: 'Wire Transfer', icon: '[WIRE]', description: 'International wire transfer', type: 'manual' },
+    { id: 'fedwire', label: 'FedWire', icon: '[FED]', description: 'US domestic wire transfer', type: 'manual' },
+    { id: 'local_wire', label: 'Local Wire Transfer', icon: '[LOCAL]', description: 'Local wire transfer', type: 'manual' },
+    { id: 'remitly', label: 'Remitly', icon: '[REM]', description: 'Send via Remitly', type: 'manual' },
+    { id: 'worldremit', label: 'WorldRemit', icon: '[WORLD]', description: 'Send via WorldRemit', type: 'manual' },
+    { id: 'western_union', label: 'Western Union', icon: '[WU]', description: 'Send via Western Union', type: 'manual' },
+    { id: 'moneygram', label: 'MoneyGram', icon: '[MG]', description: 'Send via MoneyGram', type: 'manual' },
+    { id: 'usdt', label: 'USDT (Crypto)', icon: '[USDT]', description: 'Pay with USDT', type: 'manual' },
+  ]
 
   useEffect(() => {
     if (invoiceId) {
@@ -112,7 +149,6 @@ export default function InvoiceDetailPage() {
         return
       }
 
-      // Fetch invoice
       const { data: invoiceData, error: invoiceError } = await supabase
         .from('invoices')
         .select('*')
@@ -128,7 +164,6 @@ export default function InvoiceDetailPage() {
 
       setInvoice(invoiceData)
 
-      // Mark as viewed if not already
       if (!invoiceData.viewed_at && invoiceData.status === 'sent') {
         await supabase
           .from('invoices')
@@ -139,7 +174,6 @@ export default function InvoiceDetailPage() {
           .eq('id', invoiceId)
       }
 
-      // Fetch client info
       const { data: clientData } = await supabase
         .from('clients')
         .select('*')
@@ -150,7 +184,6 @@ export default function InvoiceDetailPage() {
         setClient(clientData)
       }
 
-      // Fetch project if exists
       if (invoiceData.project_id) {
         const { data: projectData } = await supabase
           .from('projects')
@@ -163,37 +196,34 @@ export default function InvoiceDetailPage() {
         }
       }
 
-      // Fetch invoice items
-      const { data: itemsData, error: itemsError } = await supabase
+      const { data: itemsData } = await supabase
         .from('invoice_items')
         .select('*')
         .eq('invoice_id', invoiceId)
         .order('id', { ascending: true })
 
-      if (!itemsError) {
-        setItems(itemsData || [])
+      if (itemsData) {
+        setItems(itemsData)
       }
 
-      // Fetch payments
-      const { data: paymentsData, error: paymentsError } = await supabase
+      const { data: paymentsData } = await supabase
         .from('payments')
         .select('*')
         .eq('invoice_id', invoiceId)
         .order('created_at', { ascending: false })
 
-      if (!paymentsError) {
-        setPayments(paymentsData || [])
+      if (paymentsData) {
+        setPayments(paymentsData)
       }
 
-      // Fetch receipts
-      const { data: receiptsData, error: receiptsError } = await supabase
+      const { data: receiptsData } = await supabase
         .from('receipts')
         .select('*')
         .eq('invoice_id', invoiceId)
         .order('created_at', { ascending: false })
 
-      if (!receiptsError) {
-        setReceipts(receiptsData || [])
+      if (receiptsData) {
+        setReceipts(receiptsData)
       }
 
       setLoading(false)
@@ -203,26 +233,43 @@ export default function InvoiceDetailPage() {
     }
   }
 
-  async function handlePaymentRequest() {
+  async function handlePaymentMethodSelect(method: string) {
+    setSelectedPaymentMethod(method)
+    setPaymentInstructions(null)
+    setCopied('')
+
+    if (method === 'paystack') {
+      return
+    }
+
+    // Fetch payment instructions for manual methods
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
+      const response = await fetch(`/api/billing/payment-instructions?method=${method}`)
+      const data = await response.json()
 
-      if (!user || !invoice) return
+      if (data.success && data.instructions) {
+        setPaymentInstructions(data.instructions)
+        if (method === 'usdt' && data.instructions.wallets?.length > 0) {
+          setSelectedNetwork(data.instructions.wallets[0].network)
+        }
+      }
+    } catch (error) {
+      console.error('Fetch instructions error:', error)
+    }
+  }
 
-      setProcessingPayment(true)
+  async function handlePayNow() {
+    if (!invoice) return
 
+    setProcessingPayment(true)
+
+    try {
       if (selectedPaymentMethod === 'paystack') {
-        // Initialize Paystack payment
         const response = await fetch('/api/billing/paystack/initialize', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             invoiceId: invoice.id,
-            clientId: user.id,
-            amount: invoice.total || invoice.amount,
-            currency: invoice.currency,
           }),
         })
 
@@ -234,55 +281,36 @@ export default function InvoiceDetailPage() {
           return
         }
 
-        // Redirect to Paystack checkout
         window.location.href = result.authorization_url
       } else {
-        // Manual payment method - request instructions
-        const response = await fetch('/api/billing/request-instructions', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            invoiceId: invoice.id,
-            clientId: user.id,
-            amount: invoice.total || invoice.amount,
-            currency: invoice.currency,
-            method: selectedPaymentMethod,
-            message: paymentRequestMessage,
-          }),
-        })
-
-        const result = await response.json()
-
-        if (!result.success) {
-          alert(result.error || 'Failed to submit request')
-          setProcessingPayment(false)
-          return
-        }
-
-        setShowPaymentModal(false)
-        setPaymentRequestMessage('')
-        setProcessingPayment(false)
-        alert('Payment request submitted successfully. Omnix Lab will provide instructions shortly.')
+        // For manual methods, redirect to payment page with instructions
+        router.push(`/portal/payments/make?invoiceId=${invoice.id}&method=${selectedPaymentMethod}`)
       }
     } catch (error) {
-      console.error('Payment request exception:', error)
+      console.error('Payment error:', error)
       alert('An error occurred')
       setProcessingPayment(false)
     }
   }
 
+  function copyToClipboard(text: string) {
+    navigator.clipboard.writeText(text)
+    setCopied(text)
+    setTimeout(() => setCopied(''), 2000)
+  }
+
   function getStatusDisplay(status: string) {
     const statusMap: Record<string, { label: string; color: string; dot: string }> = {
-      draft: { label: 'Draft', color: 'bg-gray-100 text-gray-800', dot: '⚪' },
-      sent: { label: 'Pending', color: 'bg-amber-100 text-amber-800', dot: '🟡' },
-      viewed: { label: 'Viewed', color: 'bg-blue-100 text-blue-800', dot: '🔵' },
-      partial: { label: 'Partially Paid', color: 'bg-purple-100 text-purple-800', dot: '🟣' },
-      paid: { label: 'Paid', color: 'bg-green-100 text-green-800', dot: '🟢' },
-      overdue: { label: 'Overdue', color: 'bg-red-100 text-red-800', dot: '🔴' },
-      cancelled: { label: 'Cancelled', color: 'bg-gray-100 text-gray-600', dot: '⚫' },
-      refunded: { label: 'Refunded', color: 'bg-orange-100 text-orange-800', dot: '🟠' },
+      draft: { label: 'Draft', color: 'bg-gray-100 text-gray-800', dot: '[ ]' },
+      sent: { label: 'Pending', color: 'bg-amber-100 text-amber-800', dot: '[!]' },
+      viewed: { label: 'Viewed', color: 'bg-blue-100 text-blue-800', dot: '[>]' },
+      partial: { label: 'Partially Paid', color: 'bg-purple-100 text-purple-800', dot: '[~]' },
+      paid: { label: 'Paid', color: 'bg-green-100 text-green-800', dot: '[OK]' },
+      overdue: { label: 'Overdue', color: 'bg-red-100 text-red-800', dot: '[X]' },
+      cancelled: { label: 'Cancelled', color: 'bg-gray-100 text-gray-600', dot: '[-]' },
+      refunded: { label: 'Refunded', color: 'bg-orange-100 text-orange-800', dot: '[R]' },
     }
-    return statusMap[status] || { label: status.replace(/_/g, ' '), color: 'bg-gray-100 text-gray-800', dot: '⚪' }
+    return statusMap[status] || { label: status.replace(/_/g, ' '), color: 'bg-gray-100 text-gray-800', dot: '[ ]' }
   }
 
   function formatCurrency(amount: number, currency: string = 'USD') {
@@ -314,7 +342,7 @@ export default function InvoiceDetailPage() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="text-5xl mb-4">🔍</div>
+          <div className="text-5xl mb-4">[ ]</div>
           <p className="text-gray-600 mb-4">Invoice not found</p>
           <Link href="/portal/invoices" className="text-blue-600 hover:underline">
             Back to Invoices
@@ -326,19 +354,18 @@ export default function InvoiceDetailPage() {
 
   const statusInfo = getStatusDisplay(invoice.status)
   const totalPaid = payments
-    .filter((p) => p.status === 'success')
+    .filter((p) => p.status === 'success' || p.status === 'successful')
     .reduce((sum, p) => sum + (p.amount || 0), 0)
   const remainingBalance = (invoice.total || invoice.amount) - totalPaid
 
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-4xl mx-auto px-4 py-8">
-        {/* Back Link */}
         <Link
           href="/portal/invoices"
           className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900 mb-6"
         >
-          ← Back to Invoices
+          &larr; Back to Invoices
         </Link>
 
         {/* Invoice Header Card */}
@@ -357,13 +384,15 @@ export default function InvoiceDetailPage() {
             </span>
           </div>
 
-          {/* Amount Display */}
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-600 mb-1">
-              {invoice.status === 'paid' ? 'Amount Paid' : 'Total Amount'}
+              {invoice.status === 'paid' ? 'Amount Paid' : remainingBalance > 0 && totalPaid > 0 ? 'Remaining Balance' : 'Total Amount'}
             </p>
             <p className="text-4xl font-bold text-gray-900">
-              {formatCurrency(invoice.total || invoice.amount, invoice.currency)}
+              {formatCurrency(
+                invoice.status === 'paid' ? invoice.total || invoice.amount : remainingBalance,
+                invoice.currency
+              )}
             </p>
             {invoice.due_date && invoice.status !== 'paid' && (
               <p className="text-sm text-gray-500 mt-2">
@@ -377,7 +406,6 @@ export default function InvoiceDetailPage() {
             )}
           </div>
 
-          {/* Action Buttons */}
           <div className="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
             {['sent', 'viewed', 'overdue', 'partial'].includes(invoice.status) && remainingBalance > 0 && (
               <button
@@ -388,7 +416,6 @@ export default function InvoiceDetailPage() {
               </button>
             )}
 
-            {/* Print/Download Invoice */}
             <Link
               href={`/portal/invoices/${invoice.id}/print`}
               target="_blank"
@@ -397,15 +424,14 @@ export default function InvoiceDetailPage() {
               Download Invoice PDF
             </Link>
 
-            {invoice.status === 'paid' && invoice.receipt_url && (
-              <a
-                href={invoice.receipt_url}
+            {invoice.status === 'paid' && (
+              <Link
+                href={`/portal/invoices/${invoice.id}/receipt-print`}
                 target="_blank"
-                rel="noopener noreferrer"
                 className="inline-flex items-center justify-center px-6 py-3 bg-green-50 hover:bg-green-100 text-green-700 font-medium rounded-xl transition-colors"
               >
                 View Receipt
-              </a>
+              </Link>
             )}
           </div>
         </div>
@@ -420,7 +446,6 @@ export default function InvoiceDetailPage() {
               <p className="font-medium text-gray-900">Omnix Lab</p>
               <p className="text-sm text-gray-600">Global Software Development</p>
               <p className="text-sm text-gray-600">helloafrica@omnixlab-production.up.railway.app</p>
-              <p className="text-sm text-gray-600">+234 703 370 2874</p>
             </div>
 
             <div>
@@ -445,7 +470,7 @@ export default function InvoiceDetailPage() {
               <p className="text-sm text-gray-900">
                 {invoice.due_date
                   ? new Date(invoice.due_date).toLocaleDateString()
-                  : '—'}
+                  : 'N/A'}
               </p>
             </div>
 
@@ -472,13 +497,6 @@ export default function InvoiceDetailPage() {
                 <p className="text-sm text-gray-900">{invoice.currency}</p>
               </div>
             )}
-
-            {invoice.billing_address && (
-              <div>
-                <p className="text-xs text-gray-500 uppercase mb-1">Billing Address</p>
-                <p className="text-sm text-gray-900 whitespace-pre-line">{invoice.billing_address}</p>
-              </div>
-            )}
           </div>
         </div>
 
@@ -494,7 +512,7 @@ export default function InvoiceDetailPage() {
                     <div>
                       <p className="font-medium text-gray-900">{item.description}</p>
                       <p className="text-xs text-gray-500">
-                        Qty: {item.quantity} × {formatCurrency(item.unit_price, invoice.currency)}
+                        Qty: {item.quantity} x {formatCurrency(item.unit_price, invoice.currency)}
                       </p>
                     </div>
                     <p className="font-medium text-gray-900">
@@ -558,8 +576,7 @@ export default function InvoiceDetailPage() {
                       {formatCurrency(payment.amount, payment.currency)}
                     </p>
                     <p className="text-xs text-gray-500">
-                      {payment.payment_method || 'Payment'} •{' '}
-                      {new Date(payment.created_at).toLocaleDateString()}
+                      {payment.payment_method || 'Payment'} - {new Date(payment.created_at).toLocaleDateString()}
                     </p>
                     {payment.provider_reference && (
                       <p className="text-xs text-gray-400 font-mono">
@@ -569,7 +586,7 @@ export default function InvoiceDetailPage() {
                   </div>
                   <span
                     className={`px-3 py-1 text-xs font-medium rounded-full ${
-                      payment.status === 'success'
+                      payment.status === 'success' || payment.status === 'successful'
                         ? 'bg-green-100 text-green-800'
                         : payment.status === 'failed'
                         ? 'bg-red-100 text-red-800'
@@ -580,24 +597,6 @@ export default function InvoiceDetailPage() {
                   </span>
                 </div>
               ))}
-            </div>
-
-            {/* Payment Summary */}
-            <div className="mt-4 p-4 bg-blue-50 rounded-lg">
-              <div className="flex justify-between">
-                <span className="text-blue-800 font-medium">Total Paid</span>
-                <span className="text-blue-800 font-bold">
-                  {formatCurrency(totalPaid, invoice.currency)}
-                </span>
-              </div>
-              {remainingBalance > 0 && (
-                <div className="flex justify-between mt-2">
-                  <span className="text-blue-800">Remaining Balance</span>
-                  <span className="text-blue-800 font-bold">
-                    {formatCurrency(remainingBalance, invoice.currency)}
-                  </span>
-                </div>
-              )}
             </div>
           </div>
         )}
@@ -616,29 +615,16 @@ export default function InvoiceDetailPage() {
                   <div>
                     <p className="font-medium text-gray-900">{receipt.receipt_number}</p>
                     <p className="text-xs text-gray-500">
-                      {new Date(receipt.created_at).toLocaleDateString()} •{' '}
-                      {formatCurrency(receipt.amount, receipt.currency)}
+                      {new Date(receipt.created_at).toLocaleDateString()} - {formatCurrency(receipt.amount, receipt.currency)}
                     </p>
                   </div>
-                  <div className="flex items-center gap-2">
-                    {receipt.receipt_url && (
-                      <a
-                        href={receipt.receipt_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition-colors"
-                      >
-                        View
-                      </a>
-                    )}
-                    <Link
-                      href={`/portal/invoices/${invoice.id}/receipt-print`}
-                      target="_blank"
-                      className="px-3 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors"
-                    >
-                      Download PDF
-                    </Link>
-                  </div>
+                  <Link
+                    href={`/portal/invoices/${invoice.id}/receipt-print`}
+                    target="_blank"
+                    className="px-3 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors"
+                  >
+                    Download PDF
+                  </Link>
                 </div>
               ))}
             </div>
@@ -654,7 +640,7 @@ export default function InvoiceDetailPage() {
         )}
       </div>
 
-      {/* Payment Modal */}
+      {/* Payment Modal - UPDATED WITH ALL 10 METHODS */}
       {showPaymentModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 max-h-[90vh] overflow-y-auto">
@@ -665,7 +651,7 @@ export default function InvoiceDetailPage() {
                 className="p-1 rounded-lg hover:bg-gray-100"
                 disabled={processingPayment}
               >
-                <span className="text-gray-400 text-xl">✕</span>
+                <span className="text-gray-400 text-xl">X</span>
               </button>
             </div>
 
@@ -679,107 +665,90 @@ export default function InvoiceDetailPage() {
               </p>
             </div>
 
-            <div className="space-y-3 mb-6">
+            <div className="space-y-2 mb-6">
               <p className="text-sm font-medium text-gray-700">Select Payment Method</p>
 
-              <button
-                onClick={() => setSelectedPaymentMethod('paystack')}
-                disabled={processingPayment}
-                className={`w-full p-4 rounded-xl border-2 transition-colors text-left ${
-                  selectedPaymentMethod === 'paystack'
-                    ? 'border-blue-600 bg-blue-50'
-                    : 'border-gray-200 hover:border-gray-300'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <span className="text-2xl">💳</span>
-                  <div>
-                    <p className="font-medium text-gray-900">Pay Online</p>
-                    <p className="text-sm text-gray-600">Secure card or bank payment via Paystack</p>
+              {PAYMENT_METHODS.map((method) => (
+                <button
+                  key={method.id}
+                  onClick={() => handlePaymentMethodSelect(method.id)}
+                  disabled={processingPayment}
+                  className={`w-full p-3 rounded-xl border-2 transition-colors text-left ${
+                    selectedPaymentMethod === method.id
+                      ? 'border-blue-600 bg-blue-50'
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm text-gray-400">{method.icon}</span>
+                    <div>
+                      <p className="font-medium text-gray-900">{method.label}</p>
+                      <p className="text-xs text-gray-600">{method.description}</p>
+                    </div>
                   </div>
-                </div>
-              </button>
-
-              <button
-                onClick={() => setSelectedPaymentMethod('bank_transfer')}
-                disabled={processingPayment}
-                className={`w-full p-4 rounded-xl border-2 transition-colors text-left ${
-                  selectedPaymentMethod === 'bank_transfer'
-                    ? 'border-blue-600 bg-blue-50'
-                    : 'border-gray-200 hover:border-gray-300'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <span className="text-2xl">🏦</span>
-                  <div>
-                    <p className="font-medium text-gray-900">Bank Transfer</p>
-                    <p className="text-sm text-gray-600">Request payment instructions</p>
-                  </div>
-                </div>
-              </button>
-
-              <button
-                onClick={() => setSelectedPaymentMethod('wire_transfer')}
-                disabled={processingPayment}
-                className={`w-full p-4 rounded-xl border-2 transition-colors text-left ${
-                  selectedPaymentMethod === 'wire_transfer'
-                    ? 'border-blue-600 bg-blue-50'
-                    : 'border-gray-200 hover:border-gray-300'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <span className="text-2xl">🌍</span>
-                  <div>
-                    <p className="font-medium text-gray-900">Wire Transfer</p>
-                    <p className="text-sm text-gray-600">Request international wire instructions</p>
-                  </div>
-                </div>
-              </button>
-
-              <button
-                onClick={() => setSelectedPaymentMethod('usdt')}
-                disabled={processingPayment}
-                className={`w-full p-4 rounded-xl border-2 transition-colors text-left ${
-                  selectedPaymentMethod === 'usdt'
-                    ? 'border-blue-600 bg-blue-50'
-                    : 'border-gray-200 hover:border-gray-300'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <span className="text-2xl">🪙</span>
-                  <div>
-                    <p className="font-medium text-gray-900">USDT</p>
-                    <p className="text-sm text-gray-600">Request crypto payment instructions</p>
-                  </div>
-                </div>
-              </button>
+                </button>
+              ))}
             </div>
 
-            {selectedPaymentMethod !== 'paystack' && (
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Message (optional)
-                </label>
-                <textarea
-                  value={paymentRequestMessage}
-                  onChange={(e) => setPaymentRequestMessage(e.target.value)}
-                  placeholder="Add a note for the billing team..."
-                  rows={3}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition resize-none"
-                />
+            {/* Show USDT Wallet Instructions in Modal */}
+            {selectedPaymentMethod === 'usdt' && paymentInstructions?.wallets && (
+              <div className="mb-4 space-y-3">
+                <label className="block text-sm font-medium text-gray-700">Select Network</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {paymentInstructions.wallets.map((wallet) => (
+                    <button
+                      key={wallet.network}
+                      onClick={() => setSelectedNetwork(wallet.network)}
+                      className={`px-3 py-2 text-sm font-medium rounded-lg ${
+                        selectedNetwork === wallet.network
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-gray-100 text-gray-700'
+                      }`}
+                    >
+                      {wallet.network.split(' ')[0]}
+                    </button>
+                  ))}
+                </div>
+                {paymentInstructions.wallets
+                  .filter(w => w.network === selectedNetwork)
+                  .map(wallet => (
+                    <div key={wallet.network} className="text-center">
+                      {wallet.qr_code_url && (
+                        <div className="bg-white border border-gray-200 rounded-xl p-3 inline-block mb-2">
+                          <img
+                            src={wallet.qr_code_url}
+                            alt={`${wallet.network} QR Code`}
+                            width={150}
+                            height={150}
+                            className="rounded"
+                          />
+                        </div>
+                      )}
+                      <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg p-2">
+                        <code className="flex-1 text-xs text-gray-900 break-all">{wallet.wallet_address}</code>
+                        <button
+                          onClick={() => copyToClipboard(wallet.wallet_address)}
+                          className="px-2 py-1 bg-blue-600 text-white text-xs rounded shrink-0"
+                        >
+                          {copied === wallet.wallet_address ? 'Copied!' : 'Copy'}
+                        </button>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-1">Network: {wallet.network}</p>
+                    </div>
+                  ))}
               </div>
             )}
 
             <button
-              onClick={handlePaymentRequest}
+              onClick={handlePayNow}
               disabled={processingPayment}
               className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {processingPayment
                 ? 'Processing...'
                 : selectedPaymentMethod === 'paystack'
-                ? 'Continue to Payment'
-                : 'Request Instructions'}
+                ? 'Continue to Paystack'
+                : 'View Full Payment Instructions'}
             </button>
           </div>
         </div>
