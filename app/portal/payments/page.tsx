@@ -38,19 +38,18 @@ interface PaymentMethod {
   name: string
   type: string
   instructions: string
-  logo: string
   active: boolean
 }
 
 export default function PaymentsPage() {
   const router = useRouter()
-  
+
   const [invoices, setInvoices] = useState<Invoice[]>([])
   const [payments, setPayments] = useState<Payment[]>([])
   const [methods, setMethods] = useState<PaymentMethod[]>([])
   const [loading, setLoading] = useState(true)
-  
-  // Financial stats per blueprint Section 3
+  const [error, setError] = useState('')
+
   const [stats, setStats] = useState({
     outstanding: 0,
     paid: 0,
@@ -68,6 +67,7 @@ export default function PaymentsPage() {
 
   const fetchPaymentCenter = useCallback(async () => {
     setLoading(true)
+    setError('')
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) {
@@ -75,20 +75,15 @@ export default function PaymentsPage() {
         return
       }
 
-      // Fetch invoices for this client
+      // Fetch invoices
       const { data: invoicesData, error: invoicesError } = await supabase
         .from('invoices')
         .select('*')
         .eq('client_id', user.id)
         .order('created_at', { ascending: false })
 
-      if (invoicesError) {
-        console.error('Fetch invoices error:', invoicesError)
-        setLoading(false)
-        return
-      }
+      if (invoicesError) throw invoicesError
 
-      // Get project names
       const invoicesWithProjects = await Promise.all(
         (invoicesData || []).map(async (invoice) => {
           let projectName = 'General'
@@ -106,18 +101,15 @@ export default function PaymentsPage() {
 
       setInvoices(invoicesWithProjects)
 
-      // Fetch payments for this client
+      // Fetch payments
       const { data: paymentsData, error: paymentsError } = await supabase
         .from('payments')
         .select('*')
         .eq('client_id', user.id)
         .order('created_at', { ascending: false })
 
-      if (paymentsError) {
-        console.error('Fetch payments error:', paymentsError)
-      }
+      if (paymentsError) throw paymentsError
 
-      // Get invoice numbers for payments
       const paymentsWithInvoice = await Promise.all(
         (paymentsData || []).map(async (payment) => {
           let invoiceNumber = 'N/A'
@@ -135,51 +127,49 @@ export default function PaymentsPage() {
 
       setPayments(paymentsWithInvoice)
 
-      // Fetch active payment methods
+      // Fetch payment methods
       const { data: methodsData, error: methodsError } = await supabase
         .from('payment_methods')
         .select('*')
         .eq('active', true)
         .order('id', { ascending: true })
 
-      if (methodsError) {
-        console.error('Fetch methods error:', methodsError)
-      }
+      if (methodsError) throw methodsError
 
       setMethods(methodsData || [])
 
-      // Calculate stats
       calculateStats(invoicesWithProjects, paymentsWithInvoice)
       setLoading(false)
 
-    } catch (error) {
-      console.error('Fetch payment center error:', error)
+    } catch (err: any) {
+      console.error('Fetch payment center error:', err)
+      setError(err?.message || 'Failed to load payment data')
       setLoading(false)
     }
   }, [router])
 
   function calculateStats(invoices: Invoice[], payments: Payment[]) {
-    const outstandingInvoices = invoices.filter(inv => 
+    const outstandingInvoices = invoices.filter(inv =>
       ['unpaid', 'viewed', 'sent', 'partial', 'pending'].includes(inv.payment_status || inv.status || '')
     )
     const paidInvoices = invoices.filter(inv => inv.payment_status === 'paid' || inv.status === 'paid')
-    const pendingPayments = payments.filter(p => 
+    const pendingPayments = payments.filter(p =>
       ['pending', 'initiated', 'processing', 'pending_review', 'under_review'].includes(p.status || '')
     )
     const overdueInvoices = invoices.filter(inv => inv.status === 'overdue')
 
     const outstanding = outstandingInvoices.reduce((sum, inv) => {
-      const invoiceTotal = inv.amount || inv.total || 0
-      const amountPaid = inv.amount_paid || 0
-      return sum + Math.max(0, invoiceTotal - amountPaid)
+      const total = inv.amount || inv.total || 0
+      const paid = inv.amount_paid || 0
+      return sum + Math.max(0, total - paid)
     }, 0)
 
     const paid = paidInvoices.reduce((sum, inv) => sum + (inv.amount_paid || 0), 0)
     const pending = pendingPayments.reduce((sum, p) => sum + (p.amount || 0), 0)
     const overdue = overdueInvoices.reduce((sum, inv) => {
-      const invoiceTotal = inv.amount || inv.total || 0
-      const amountPaid = inv.amount_paid || 0
-      return sum + Math.max(0, invoiceTotal - amountPaid)
+      const total = inv.amount || inv.total || 0
+      const paid = inv.amount_paid || 0
+      return sum + Math.max(0, total - paid)
     }, 0)
 
     setStats({
@@ -192,36 +182,6 @@ export default function PaymentsPage() {
       pendingCount: pendingPayments.length,
       overdueCount: overdueInvoices.length,
     })
-  }
-
-  function getPaymentStatusColor(status: string) {
-    const map: Record<string, string> = {
-      initiated: 'bg-blue-500/20 text-blue-300',
-      pending: 'bg-yellow-500/20 text-yellow-300',
-      pending_review: 'bg-yellow-500/20 text-yellow-300',
-      processing: 'bg-purple-500/20 text-purple-300',
-      under_review: 'bg-cyan-500/20 text-cyan-300',
-      success: 'bg-green-500/20 text-green-300',
-      successful: 'bg-green-500/20 text-green-300',
-      paid: 'bg-green-500/20 text-green-300',
-      failed: 'bg-red-500/20 text-red-300',
-      cancelled: 'bg-gray-500/20 text-gray-300',
-      refunded: 'bg-orange-500/20 text-orange-300',
-    }
-    return map[status?.toLowerCase()] || 'bg-gray-500/20 text-gray-300'
-  }
-
-  function getInvoiceStatusColor(status: string) {
-    const map: Record<string, string> = {
-      unpaid: 'bg-yellow-500/20 text-yellow-300',
-      viewed: 'bg-blue-500/20 text-blue-300',
-      sent: 'bg-blue-500/20 text-blue-300',
-      partial: 'bg-purple-500/20 text-purple-300',
-      paid: 'bg-green-500/20 text-green-300',
-      overdue: 'bg-red-500/20 text-red-300',
-      cancelled: 'bg-gray-500/20 text-gray-300',
-    }
-    return map[status?.toLowerCase()] || 'bg-gray-500/20 text-gray-300'
   }
 
   function formatCurrency(amount: number, currency: string = 'USD') {
@@ -244,6 +204,28 @@ export default function PaymentsPage() {
     })
   }
 
+  function getPaymentStatusColor(status: string) {
+    const map: Record<string, string> = {
+      initiated: 'bg-blue-500/20 text-blue-300',
+      pending: 'bg-yellow-500/20 text-yellow-300',
+      pending_review: 'bg-yellow-500/20 text-yellow-300',
+      processing: 'bg-purple-500/20 text-purple-300',
+      success: 'bg-green-500/20 text-green-300',
+      successful: 'bg-green-500/20 text-green-300',
+      paid: 'bg-green-500/20 text-green-300',
+      failed: 'bg-red-500/20 text-red-300',
+      cancelled: 'bg-gray-500/20 text-gray-300',
+      refunded: 'bg-orange-500/20 text-orange-300',
+    }
+    return map[status?.toLowerCase()] || 'bg-gray-500/20 text-gray-300'
+  }
+
+  function getMethodIcon(type: string) {
+    if (type === 'gateway') return '💳'
+    if (type === 'crypto') return '🪙'
+    return '🏦'
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -252,174 +234,281 @@ export default function PaymentsPage() {
     )
   }
 
-  return (
-    <div className="max-w-5xl mx-auto py-8 px-4">
-      {/* Header per blueprint Section 2 */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-white">Payments</h1>
-        <p className="text-sm text-gray-400 mt-1">
-          Manage your invoices and payments securely.
-        </p>
+  if (error) {
+    return (
+      <div className="max-w-md mx-auto py-20 text-center px-4">
+        <div className="text-4xl mb-3">⚠️</div>
+        <p className="text-red-400 mb-4">{error}</p>
+        <button
+          onClick={fetchPaymentCenter}
+          className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl"
+        >
+          Try Again
+        </button>
       </div>
+    )
+  }
 
-      {/* Payment Center Main Card per blueprint Section 34 */}
-      <div className="bg-gradient-to-br from-white/10 to-white/5 border border-white/20 rounded-2xl p-6 mb-8">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+  return (
+    <div style={{ minHeight: '100vh', background: '#070A0F', padding: '2rem 1rem' }}>
+      <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+        {/* Header */}
+        <div style={{ marginBottom: '2rem' }}>
+          <h1 style={{ fontSize: '28px', fontWeight: '700', color: '#F8FAFC', margin: '0 0 4px 0' }}>
+            Payments
+          </h1>
+          <p style={{ fontSize: '14px', color: '#94A3B8', margin: 0 }}>
+            Manage your invoices and payments securely.
+          </p>
+        </div>
+
+        {/* Payment Center Card */}
+        <div style={{
+          background: 'linear-gradient(135deg, rgba(225,29,46,0.15) 0%, rgba(18,24,33,0.8) 100%)',
+          border: '1px solid #1E293B',
+          borderRadius: '16px',
+          padding: '32px',
+          marginBottom: '24px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '16px',
+        }}>
           <div>
-            <p className="text-sm text-gray-400">Outstanding Balance</p>
-            <p className="text-4xl font-bold text-white mt-2">
+            <p style={{ fontSize: '14px', color: '#94A3B8', margin: '0 0 8px 0' }}>
+              Outstanding Balance
+            </p>
+            <p style={{ fontSize: '48px', fontWeight: '700', color: '#F8FAFC', margin: 0 }}>
               {formatCurrency(stats.outstanding, 'USD')}
             </p>
-            <p className="text-sm text-gray-400 mt-1">
+            <p style={{ fontSize: '14px', color: '#94A3B8', margin: '8px 0 0 0' }}>
               {stats.outstandingCount} outstanding invoice{stats.outstandingCount !== 1 ? 's' : ''}
             </p>
           </div>
           <button
             onClick={() => router.push('/portal/payments/make')}
-            className="px-8 py-4 bg-[#E11D2E] hover:bg-[#F43F5E] text-white font-semibold rounded-xl transition-colors"
+            style={{
+              background: '#E11D2E',
+              color: '#F8FAFC',
+              border: 'none',
+              borderRadius: '12px',
+              padding: '16px 32px',
+              fontSize: '16px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              transition: 'background 0.2s',
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.background = '#F43F5E'}
+            onMouseLeave={(e) => e.currentTarget.style.background = '#E11D2E'}
           >
             Make a Payment →
           </button>
         </div>
-      </div>
 
-      {/* Financial Cards per blueprint Section 3 */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <button
-          onClick={() => router.push('/portal/invoices?filter=outstanding')}
-          className="bg-white/5 border border-white/10 rounded-xl p-4 text-left hover:bg-white/10 transition-colors"
-        >
-          <p className="text-sm text-gray-400">Outstanding</p>
-          <p className="text-2xl font-bold text-yellow-400 mt-1">{formatCurrency(stats.outstanding, 'USD')}</p>
-          <p className="text-xs text-gray-500 mt-1">{stats.outstandingCount} invoices</p>
-        </button>
-
-        <button
-          onClick={() => router.push('/portal/invoices?filter=paid')}
-          className="bg-white/5 border border-white/10 rounded-xl p-4 text-left hover:bg-white/10 transition-colors"
-        >
-          <p className="text-sm text-gray-400">Paid</p>
-          <p className="text-2xl font-bold text-green-400 mt-1">{formatCurrency(stats.paid, 'USD')}</p>
-          <p className="text-xs text-gray-500 mt-1">{stats.paidCount} invoices</p>
-        </button>
-
-        <button
-          onClick={() => router.push('/portal/payments?filter=pending')}
-          className="bg-white/5 border border-white/10 rounded-xl p-4 text-left hover:bg-white/10 transition-colors"
-        >
-          <p className="text-sm text-gray-400">Pending</p>
-          <p className="text-2xl font-bold text-blue-400 mt-1">{formatCurrency(stats.pending, 'USD')}</p>
-          <p className="text-xs text-gray-500 mt-1">{stats.pendingCount} transaction{stats.pendingCount !== 1 ? 's' : ''}</p>
-        </button>
-
-        <button
-          onClick={() => router.push('/portal/invoices?filter=overdue')}
-          className="bg-white/5 border border-white/10 rounded-xl p-4 text-left hover:bg-white/10 transition-colors"
-        >
-          <p className="text-sm text-gray-400">Overdue</p>
-          <p className="text-2xl font-bold text-red-400 mt-1">{formatCurrency(stats.overdue, 'USD')}</p>
-          <p className="text-xs text-gray-500 mt-1">{stats.overdueCount} invoices</p>
-        </button>
-      </div>
-
-      {/* Available Payment Methods per blueprint Section 27 & 35 */}
-      <div className="mb-8">
-        <h2 className="text-lg font-semibold text-white mb-4">Available Payment Methods</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {methods.map((method) => (
-            <button
-              key={method.id}
-              onClick={() => router.push(`/portal/payments/make?method=${method.name.toLowerCase().replace(/\s+/g, '_')}`)}
-              className="bg-white/5 border border-white/10 rounded-xl p-4 text-left hover:bg-white/10 transition-colors"
-            >
-              <div className="flex items-center gap-3">
-                <span className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center text-sm">
-                  {method.type === 'gateway' ? '[CARD]' : method.type === 'crypto' ? '[USDT]' : '[BANK]'}
-                </span>
-                <div>
-                  <p className="text-white font-medium">{method.name}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">
-                    {method.type === 'gateway' ? 'Instant processing' : 'Manual verification'}
-                  </p>
-                </div>
-              </div>
-            </button>
+        {/* Stats Cards */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+          gap: '16px',
+          marginBottom: '24px',
+        }}>
+          {[
+            { label: 'Outstanding', value: stats.outstanding, count: `${stats.outstandingCount} invoices`, color: '#F59E0B' },
+            { label: 'Paid', value: stats.paid, count: `${stats.paidCount} invoices`, color: '#22C55E' },
+            { label: 'Pending', value: stats.pending, count: `${stats.pendingCount} transactions`, color: '#38BDF8' },
+            { label: 'Overdue', value: stats.overdue, count: `${stats.overdueCount} invoices`, color: '#EF4444' },
+          ].map((card) => (
+            <div key={card.label} style={{
+              background: '#0D1117',
+              border: '1px solid #1E293B',
+              borderRadius: '12px',
+              padding: '20px',
+            }}>
+              <p style={{ fontSize: '14px', color: '#94A3B8', margin: '0 0 8px 0' }}>
+                {card.label}
+              </p>
+              <p style={{ fontSize: '28px', fontWeight: '700', color: card.color, margin: '0 0 4px 0' }}>
+                {formatCurrency(card.value, 'USD')}
+              </p>
+              <p style={{ fontSize: '12px', color: '#64748B', margin: 0 }}>
+                {card.count}
+              </p>
+            </div>
           ))}
         </div>
-      </div>
 
-      {/* Outstanding Invoices */}
-      {invoices.filter(inv => ['unpaid', 'viewed', 'sent', 'partial', 'pending'].includes(inv.payment_status || inv.status || '')).length > 0 && (
-        <div className="mb-8">
-          <h2 className="text-lg font-semibold text-white mb-4">Outstanding Invoices</h2>
-          <div className="space-y-2">
-            {invoices
-              .filter(inv => ['unpaid', 'viewed', 'sent', 'partial', 'pending'].includes(inv.payment_status || inv.status || ''))
-              .map((invoice) => {
-                const invoiceTotal = invoice.amount || invoice.total || 0
-                const amountPaid = invoice.amount_paid || 0
-                const remaining = Math.max(0, invoiceTotal - amountPaid)
-                return (
-                  <button
-                    key={invoice.id}
-                    onClick={() => router.push(`/portal/payments/make?invoiceId=${invoice.id}`)}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-left hover:bg-white/10 transition-colors flex items-center justify-between"
-                  >
-                    <div>
-                      <p className="text-white font-medium">{invoice.invoice_number}</p>
-                      <p className="text-xs text-gray-400">{invoice.project_name}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-white font-bold">{formatCurrency(remaining, invoice.currency)}</p>
-                      <span className={`inline-block px-2 py-0.5 text-xs rounded-full ${getInvoiceStatusColor(invoice.payment_status || invoice.status)}`}>
-                        {invoice.payment_status || invoice.status}
-                      </span>
-                    </div>
-                  </button>
-                )
-              })}
+        {/* Available Payment Methods */}
+        <div style={{ marginBottom: '24px' }}>
+          <h2 style={{ fontSize: '18px', fontWeight: '600', color: '#F8FAFC', margin: '0 0 16px 0' }}>
+            Available Payment Methods
+          </h2>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+            gap: '12px',
+          }}>
+            {methods.map((method) => (
+              <button
+                key={method.id}
+                onClick={() => router.push(`/portal/payments/make?method=${method.name.toLowerCase().replace(/\s+/g, '_')}`)}
+                style={{
+                  background: '#0D1117',
+                  border: '1px solid #1E293B',
+                  borderRadius: '12px',
+                  padding: '16px',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  transition: 'border-color 0.2s',
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.borderColor = '#E11D2E'}
+                onMouseLeave={(e) => e.currentTarget.style.borderColor = '#1E293B'}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <span style={{ fontSize: '24px' }}>{getMethodIcon(method.type)}</span>
+                  <div>
+                    <p style={{ fontSize: '14px', fontWeight: '600', color: '#F8FAFC', margin: 0 }}>
+                      {method.name}
+                    </p>
+                    <p style={{ fontSize: '12px', color: '#94A3B8', margin: '4px 0 0 0' }}>
+                      {method.type === 'gateway' ? 'Instant processing' : 'Manual verification'}
+                    </p>
+                  </div>
+                </div>
+              </button>
+            ))}
           </div>
         </div>
-      )}
 
-      {/* Recent Transactions per blueprint Section 20 */}
-      <div>
-        <h2 className="text-lg font-semibold text-white mb-4">Recent Transactions</h2>
-        <div className="bg-white/5 border border-white/10 rounded-xl overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-white/10 text-left text-gray-400">
-                <th className="py-3 px-4 font-medium">Date</th>
-                <th className="py-3 px-4 font-medium">Invoice</th>
-                <th className="py-3 px-4 font-medium">Method</th>
-                <th className="py-3 px-4 font-medium">Amount</th>
-                <th className="py-3 px-4 font-medium">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {payments.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="py-12 text-center text-gray-500">
-                    No transactions yet
-                  </td>
-                </tr>
-              ) : (
-                payments.slice(0, 10).map((payment) => (
-                  <tr key={payment.id} className="border-b border-white/5 hover:bg-white/5">
-                    <td className="py-3 px-4 text-gray-400 text-xs">{formatDate(payment.created_at)}</td>
-                    <td className="py-3 px-4 text-white font-medium">{payment.invoice_number}</td>
-                    <td className="py-3 px-4 text-gray-300">{payment.payment_method || '-'}</td>
-                    <td className="py-3 px-4 text-white">{formatCurrency(payment.amount, payment.currency)}</td>
-                    <td className="py-3 px-4">
-                      <span className={`px-2.5 py-1 text-xs font-medium rounded-full ${getPaymentStatusColor(payment.status)}`}>
-                        {payment.status}
-                      </span>
-                    </td>
+        {/* Outstanding Invoices */}
+        {invoices.filter(inv => ['unpaid', 'viewed', 'sent', 'partial', 'pending'].includes(inv.payment_status || inv.status || '')).length > 0 && (
+          <div style={{ marginBottom: '24px' }}>
+            <h2 style={{ fontSize: '18px', fontWeight: '600', color: '#F8FAFC', margin: '0 0 16px 0' }}>
+              Outstanding Invoices
+            </h2>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {invoices
+                .filter(inv => ['unpaid', 'viewed', 'sent', 'partial', 'pending'].includes(inv.payment_status || inv.status || ''))
+                .map((invoice) => {
+                  const total = invoice.amount || invoice.total || 0
+                  const paid = invoice.amount_paid || 0
+                  const remaining = Math.max(0, total - paid)
+                  return (
+                    <button
+                      key={invoice.id}
+                      onClick={() => router.push(`/portal/payments/make?invoiceId=${invoice.id}`)}
+                      style={{
+                        background: '#0D1117',
+                        border: '1px solid #1E293B',
+                        borderRadius: '12px',
+                        padding: '20px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        transition: 'border-color 0.2s',
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.borderColor = '#E11D2E'}
+                      onMouseLeave={(e) => e.currentTarget.style.borderColor = '#1E293B'}
+                    >
+                      <div>
+                        <p style={{ fontSize: '15px', fontWeight: '600', color: '#F8FAFC', margin: 0 }}>
+                          {invoice.invoice_number}
+                        </p>
+                        <p style={{ fontSize: '13px', color: '#94A3B8', margin: '4px 0 0 0' }}>
+                          {invoice.project_name}
+                        </p>
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <p style={{ fontSize: '18px', fontWeight: '700', color: '#F8FAFC', margin: 0 }}>
+                          {formatCurrency(remaining, invoice.currency)}
+                        </p>
+                        <span style={{
+                          display: 'inline-block',
+                          padding: '4px 12px',
+                          borderRadius: '9999px',
+                          fontSize: '12px',
+                          background: 'rgba(245,158,11,0.2)',
+                          color: '#F59E0B',
+                          marginTop: '4px',
+                        }}>
+                          {invoice.payment_status || invoice.status}
+                        </span>
+                      </div>
+                    </button>
+                  )
+                })}
+            </div>
+          </div>
+        )}
+
+        {/* Recent Transactions */}
+        <div>
+          <h2 style={{ fontSize: '18px', fontWeight: '600', color: '#F8FAFC', margin: '0 0 16px 0' }}>
+            Recent Transactions
+          </h2>
+          <div style={{
+            background: '#0D1117',
+            border: '1px solid #1E293B',
+            borderRadius: '12px',
+            overflow: 'hidden',
+          }}>
+            {payments.length === 0 ? (
+              <div style={{ padding: '40px', textAlign: 'center' }}>
+                <p style={{ color: '#64748B', margin: 0 }}>No transactions yet</p>
+              </div>
+            ) : (
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid #1E293B' }}>
+                    <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '13px', color: '#94A3B8', fontWeight: '500' }}>Date</th>
+                    <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '13px', color: '#94A3B8', fontWeight: '500' }}>Invoice</th>
+                    <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '13px', color: '#94A3B8', fontWeight: '500' }}>Method</th>
+                    <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '13px', color: '#94A3B8', fontWeight: '500' }}>Amount</th>
+                    <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '13px', color: '#94A3B8', fontWeight: '500' }}>Status</th>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                </thead>
+                <tbody>
+                  {payments.slice(0, 10).map((payment) => (
+                    <tr key={payment.id} style={{ borderBottom: '1px solid #1E293B' }}>
+                      <td style={{ padding: '12px 16px', fontSize: '13px', color: '#94A3B8' }}>
+                        {formatDate(payment.created_at)}
+                      </td>
+                      <td style={{ padding: '12px 16px', fontSize: '14px', color: '#F8FAFC', fontWeight: '500' }}>
+                        {payment.invoice_number}
+                      </td>
+                      <td style={{ padding: '12px 16px', fontSize: '13px', color: '#94A3B8' }}>
+                        {payment.payment_method || '-'}
+                      </td>
+                      <td style={{ padding: '12px 16px', fontSize: '14px', color: '#F8FAFC', fontWeight: '600' }}>
+                        {formatCurrency(payment.amount, payment.currency)}
+                      </td>
+                      <td style={{ padding: '12px 16px' }}>
+                        <span style={{
+                          display: 'inline-block',
+                          padding: '4px 12px',
+                          borderRadius: '9999px',
+                          fontSize: '12px',
+                          background: payment.status === 'success' || payment.status === 'successful' 
+                            ? 'rgba(34,197,94,0.2)' 
+                            : payment.status === 'failed'
+                            ? 'rgba(239,68,68,0.2)'
+                            : 'rgba(245,158,11,0.2)',
+                          color: payment.status === 'success' || payment.status === 'successful'
+                            ? '#22C55E'
+                            : payment.status === 'failed'
+                            ? '#EF4444'
+                            : '#F59E0B',
+                        }}>
+                          {payment.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
         </div>
       </div>
     </div>
