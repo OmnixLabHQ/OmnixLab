@@ -29,7 +29,6 @@ interface Milestone {
   description?: string
   status: string
   due_date?: string | null
-  weight?: number
   created_at: string
 }
 
@@ -50,7 +49,6 @@ interface Requirement {
   title: string
   description?: string
   status: string
-  priority?: string
   created_at: string
 }
 
@@ -60,7 +58,6 @@ interface Deliverable {
   title: string
   description?: string
   status: string
-  version?: string
   created_at: string
 }
 
@@ -69,7 +66,6 @@ interface ProjectFile {
   project_id: number
   file_name: string
   file_type: string
-  file_url: string
   created_at: string
 }
 
@@ -131,7 +127,6 @@ export default function AdminProjectDetailPage() {
   const [activeTab, setActiveTab] = useState('overview')
   const [message, setMessage] = useState('')
 
-  // Modal states
   const [showEditProject, setShowEditProject] = useState(false)
   const [showAddMilestone, setShowAddMilestone] = useState(false)
   const [showAddTask, setShowAddTask] = useState(false)
@@ -142,7 +137,6 @@ export default function AdminProjectDetailPage() {
   const [showStatusChange, setShowStatusChange] = useState(false)
   const [showProgressOverride, setShowProgressOverride] = useState(false)
 
-  // Form states
   const [formProjectName, setFormProjectName] = useState('')
   const [formDescription, setFormDescription] = useState('')
   const [formPriority, setFormPriority] = useState('medium')
@@ -248,33 +242,6 @@ export default function AdminProjectDetailPage() {
     setTimeout(() => setMessage(''), 3000)
   }
 
-  async function handleSaveProject() {
-    if (!project || !formProjectName.trim()) return alert('Name required')
-    setSaving(true)
-    try {
-      const { error } = await supabase
-        .from('projects')
-        .update({
-          name: formProjectName,
-          description: formDescription,
-          priority: formPriority,
-          expected_completion_date: formDeadline || null,
-          budget: formBudget ? parseFloat(formBudget) : null,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', project.id)
-
-      if (error) throw error
-      showSuccess('Project updated')
-      setShowEditProject(false)
-      fetchProjectData()
-    } catch (err: any) {
-      alert('Failed: ' + err.message)
-    } finally {
-      setSaving(false)
-    }
-  }
-
   async function handleStatusChange() {
     if (!project || !formStatus) return alert('Select status')
     setSaving(true)
@@ -292,7 +259,6 @@ export default function AdminProjectDetailPage() {
           type: 'project',
           title: 'Project Status Updated',
           message: `Project "${project.name}" status changed to ${formStatus}`,
-          data: JSON.stringify({ project_id: project.id, new_status: formStatus }),
           read: false,
           created_at: new Date().toISOString(),
         })
@@ -312,15 +278,23 @@ export default function AdminProjectDetailPage() {
     if (!project || !formProgress) return alert('Enter progress')
     setSaving(true)
     try {
-      const newProgress = Math.min(100, Math.max(0, parseInt(formProgress)))
-      const { error } = await supabase
+      const newProgress = Math.min(100, Math.max(0, parseInt(formProgress) || 0))
+
+      const { data, error } = await supabase
         .from('projects')
         .update({ progress: newProgress, progress_mode: 'manual', updated_at: new Date().toISOString() })
         .eq('id', project.id)
+        .select()
+        .single()
 
       if (error) throw error
+
+      // Update local state immediately
+      setProject(prev => prev ? { ...prev, progress: newProgress } : prev)
+
       showSuccess('Progress set to ' + newProgress + '%')
       setShowProgressOverride(false)
+      setFormProgress('')
       fetchProjectData()
     } catch (err: any) {
       alert('Failed: ' + err.message)
@@ -601,7 +575,6 @@ export default function AdminProjectDetailPage() {
         </div>
       )}
 
-      {/* Header */}
       <div className="bg-white/5 border border-white/10 rounded-xl p-6">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div>
@@ -615,14 +588,30 @@ export default function AdminProjectDetailPage() {
           </div>
         </div>
 
-        {/* Progress */}
+        {/* Progress - FIXED */}
         <div className="mt-6">
-          <div className="flex justify-between text-sm text-gray-400 mb-1"><span>Progress</span><span>{project.progress || 0}%</span></div>
-          <div className="h-3 bg-white/10 rounded-full overflow-hidden"><div className="h-full bg-blue-500 rounded-full transition-all" style={{ width: `${Math.min(project.progress || 0, 100)}%` }} /></div>
-          <button onClick={() => { setFormProgress(String(project.progress || 0)); setFormProgressReason(''); setShowProgressOverride(true); }} className="text-xs text-blue-400 hover:underline mt-2">Override Progress</button>
+          <div className="flex justify-between text-sm text-gray-400 mb-1">
+            <span>Progress</span>
+            <span>{project?.progress ?? 0}%</span>
+          </div>
+          <div className="h-3 bg-white/10 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-blue-500 rounded-full transition-all duration-500"
+              style={{ width: `${Math.min(project?.progress ?? 0, 100)}%` }}
+            />
+          </div>
+          <button
+            onClick={() => {
+              setFormProgress(String(project?.progress ?? 0))
+              setFormProgressReason('')
+              setShowProgressOverride(true)
+            }}
+            className="text-xs text-blue-400 hover:underline mt-2"
+          >
+            Override Progress
+          </button>
         </div>
 
-        {/* Quick Actions */}
         <div className="flex flex-wrap gap-2 mt-4">
           <button onClick={() => setShowAddMilestone(true)} className="px-3 py-2 bg-green-600 hover:bg-green-700 text-white text-xs font-medium rounded-lg">+ Milestone</button>
           <button onClick={() => setShowAddTask(true)} className="px-3 py-2 bg-green-600 hover:bg-green-700 text-white text-xs font-medium rounded-lg">+ Task</button>
@@ -633,14 +622,12 @@ export default function AdminProjectDetailPage() {
         </div>
       </div>
 
-      {/* Tabs */}
       <div className="flex gap-2 border-b border-white/10 overflow-x-auto">
         {['overview', 'milestones', 'tasks', 'requirements', 'deliverables', 'files', 'invoices', 'activity', 'notes'].map(tab => (
           <button key={tab} onClick={() => setActiveTab(tab)} className={`px-4 py-2.5 text-sm font-medium whitespace-nowrap ${activeTab === tab ? 'text-white border-b-2 border-blue-500' : 'text-gray-400 hover:text-white'}`}>{tab.charAt(0).toUpperCase() + tab.slice(1)}</button>
         ))}
       </div>
 
-      {/* Content */}
       <div className="space-y-4">
         {activeTab === 'overview' && (
           <>
@@ -649,7 +636,6 @@ export default function AdminProjectDetailPage() {
               <div className="bg-white/5 border border-white/10 rounded-xl p-4"><p className="text-sm text-gray-400">Tasks</p><p className="text-2xl font-bold text-white">{tasks.filter(t => t.status === 'completed').length} / {tasks.length}</p></div>
               <div className="bg-white/5 border border-white/10 rounded-xl p-4"><p className="text-sm text-gray-400">Outstanding</p><p className="text-2xl font-bold text-yellow-400">{formatCurrency(invoices.filter(inv => ['sent', 'viewed', 'overdue'].includes(inv.status)).reduce((sum, inv) => sum + (inv.total || inv.amount || 0), 0))}</p></div>
             </div>
-            <div className="bg-white/5 border border-white/10 rounded-xl p-4"><h3 className="text-lg font-semibold text-white mb-3">Recent Activity</h3>{activity.length === 0 ? <p className="text-gray-500">No activity</p> : <div className="space-y-2">{activity.slice(0, 5).map(a => <div key={a.id} className="text-sm text-gray-300">{a.description}</div>)}</div>}</div>
           </>
         )}
 
@@ -727,25 +713,7 @@ export default function AdminProjectDetailPage() {
         )}
       </div>
 
-      {/* Modals */}
-      {showEditProject && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-          <div className="bg-gray-900 rounded-2xl max-w-md w-full p-6 border border-white/10">
-            <div className="flex justify-between items-center mb-4"><h2 className="text-lg font-bold text-white">Edit Project</h2><button onClick={() => setShowEditProject(false)} className="text-white">X</button></div>
-            <div className="space-y-3">
-              <div><label className="block text-sm text-gray-300 mb-1">Name</label><input type="text" value={formProjectName} onChange={(e) => setFormProjectName(e.target.value)} className="w-full px-4 py-2.5 bg-white/10 border border-white/20 text-white rounded-lg text-sm" /></div>
-              <div><label className="block text-sm text-gray-300 mb-1">Description</label><textarea value={formDescription} onChange={(e) => setFormDescription(e.target.value)} rows={2} className="w-full px-4 py-2.5 bg-white/10 border border-white/20 text-white rounded-lg text-sm" /></div>
-              <div className="grid grid-cols-2 gap-4">
-                <div><label className="block text-sm text-gray-300 mb-1">Priority</label><select value={formPriority} onChange={(e) => setFormPriority(e.target.value)} className="w-full px-4 py-2.5 bg-white/10 border border-white/20 text-white rounded-lg text-sm"><option value="low" className="bg-gray-900">Low</option><option value="medium" className="bg-gray-900">Medium</option><option value="high" className="bg-gray-900">High</option></select></div>
-                <div><label className="block text-sm text-gray-300 mb-1">Deadline</label><input type="date" value={formDeadline} onChange={(e) => setFormDeadline(e.target.value)} className="w-full px-4 py-2.5 bg-white/10 border border-white/20 text-white rounded-lg text-sm" /></div>
-              </div>
-              <div><label className="block text-sm text-gray-300 mb-1">Budget</label><input type="number" value={formBudget} onChange={(e) => setFormBudget(e.target.value)} className="w-full px-4 py-2.5 bg-white/10 border border-white/20 text-white rounded-lg text-sm" /></div>
-              <button onClick={handleSaveProject} disabled={saving} className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg disabled:opacity-50">{saving ? 'Saving...' : 'Save'}</button>
-            </div>
-          </div>
-        </div>
-      )}
-
+      {/* All Modals */}
       {showStatusChange && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
           <div className="bg-gray-900 rounded-2xl max-w-md w-full p-6 border border-white/10">
