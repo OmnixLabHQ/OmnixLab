@@ -1,58 +1,132 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 
 interface Project {
-  id: string
+  id: number
+  client_id: string
   name: string
-  description: string
   status: string
-  start_date: string
-  end_date: string
+  progress: number
+  expected_completion_date: string | null
+  created_at: string
+  description?: string
+  completed_milestones?: number
+  total_milestones?: number
+}
+
+interface Milestone {
+  id: number
+  project_id: number
+  name: string
+  status: string
+  due_date: string | null
   created_at: string
 }
 
-interface ProjectWithProgress extends Project {
-  progress: number
-  totalTasks: number
-  completedTasks: number
-  lastActivity?: string
+interface Task {
+  id: number
+  project_id: number
+  title: string
+  status: string
+  due_date: string | null
+  created_at: string
 }
 
-export default function ProjectsPage() {
+interface Requirement {
+  id: number
+  project_id: number
+  title: string
+  status: string
+  created_at: string
+}
+
+interface ProjectFile {
+  id: number
+  project_id: number
+  file_name: string
+  file_type: string
+  created_at: string
+}
+
+interface Deliverable {
+  id: number
+  project_id: number
+  title: string
+  status: string
+  created_at: string
+}
+
+interface Idea {
+  id: number
+  project_id: number
+  title: string
+  status: string
+  created_at: string
+}
+
+interface Invoice {
+  id: number
+  project_id: number
+  invoice_number: string
+  total: number
+  amount: number
+  status: string
+  due_date: string | null
+  created_at: string
+}
+
+interface Payment {
+  id: number
+  invoice_id: number
+  amount: number
+  status: string
+  created_at: string
+}
+
+interface Activity {
+  id: string
+  description: string
+  created_at: string
+}
+
+export default function ClientProjectsPage() {
   const router = useRouter()
-  const [projects, setProjects] = useState<ProjectWithProgress[]>([])
+  const [projects, setProjects] = useState<Project[]>([])
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null)
+  const [milestones, setMilestones] = useState<Milestone[]>([])
+  const [tasks, setTasks] = useState<Task[]>([])
+  const [requirements, setRequirements] = useState<Requirement[]>([])
+  const [files, setFiles] = useState<ProjectFile[]>([])
+  const [deliverables, setDeliverables] = useState<Deliverable[]>([])
+  const [ideas, setIdeas] = useState<Idea[]>([])
+  const [invoices, setInvoices] = useState<Invoice[]>([])
+  const [payments, setPayments] = useState<Payment[]>([])
+  const [activity, setActivity] = useState<Activity[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
 
-  // Stats
-  const [stats, setStats] = useState({
-    active: 0,
-    completed: 0,
-    awaitingAction: 0,
-    outstanding: 0,
-  })
+  const [stats, setStats] = useState({ total: 0, active: 0, completed: 0, awaitingClient: 0 })
 
   useEffect(() => {
     fetchProjects()
   }, [])
 
-  async function fetchProjects() {
+  const fetchProjects = useCallback(async () => {
+    setLoading(true)
+    setError('')
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-
+      const { data: { user } } = await supabase.auth.getUser()
       if (!user) {
-        setLoading(false)
+        router.push('/portal/login')
         return
       }
 
-      // Fetch projects for this client
       const { data: projectsData, error: projectsError } = await supabase
         .from('projects')
         .select('*')
@@ -60,141 +134,97 @@ export default function ProjectsPage() {
         .order('created_at', { ascending: false })
 
       if (projectsError) {
-        console.error('Failed to fetch projects:', projectsError)
+        setError('Failed to load projects')
         setLoading(false)
         return
       }
 
-      if (!projectsData || projectsData.length === 0) {
-        setProjects([])
-        setStats({ active: 0, completed: 0, awaitingAction: 0, outstanding: 0 })
-        setLoading(false)
-        return
-      }
-
-      // Fetch all tasks for these projects to compute progress
-      const projectIds = projectsData.map((p) => p.id)
-      const { data: tasksData, error: tasksError } = await supabase
-        .from('tasks')
-        .select('*')
-        .in('project_id', projectIds)
-
-      if (tasksError) {
-        console.error('Failed to fetch tasks:', tasksError)
-        // Continue without task progress
-      }
-
-      // Compute progress and stats
-      const projectsWithProgress: ProjectWithProgress[] = projectsData.map((project) => {
-        const projectTasks = tasksData?.filter((t) => t.project_id === project.id) || []
-        const totalTasks = projectTasks.length
-        const completedTasks = projectTasks.filter((t) => t.completed_by !== null).length
-        const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0
-
-        return {
-          ...project,
-          progress,
-          totalTasks,
-          completedTasks,
-          lastActivity: project.created_at, // fallback, can be updated later
-        }
-      })
-
-      // Compute stats
-      const activeCount = projectsWithProgress.filter(
-        (p) => !['completed', 'cancelled'].includes(p.status)
-      ).length
-      const completedCount = projectsWithProgress.filter(
-        (p) => p.status === 'completed'
-      ).length
-
-      // Fetch outstanding invoices for this client to calculate outstanding amount
-      const { data: invoicesData } = await supabase
-        .from('invoices')
-        .select('amount')
-        .eq('client_id', user.id)
-        .in('status', ['sent', 'overdue', 'unpaid'])
-
-      const outstanding =
-        invoicesData?.reduce((sum, inv) => sum + (inv.amount || 0), 0) || 0
+      const projectsWithProgress = await Promise.all(
+        (projectsData || []).map(async (project) => {
+          let completedMilestones = 0
+          let totalMilestones = 0
+          try {
+            const { data: milestonesData } = await supabase.from('milestones').select('status').eq('project_id', project.id)
+            totalMilestones = milestonesData?.length || 0
+            completedMilestones = (milestonesData || []).filter(m => m.status === 'completed').length
+          } catch {}
+          return { ...project, completed_milestones: completedMilestones, total_milestones: totalMilestones, progress: project.progress || (totalMilestones > 0 ? Math.round((completedMilestones / totalMilestones) * 100) : 0) }
+        })
+      )
 
       setProjects(projectsWithProgress)
-      setStats({
-        active: activeCount,
-        completed: completedCount,
-        awaitingAction: 0, // we'll compute later if needed
-        outstanding,
-      })
+      calculateStats(projectsWithProgress)
       setLoading(false)
-    } catch (error) {
-      console.error('Projects fetch error:', error)
+    } catch (err) {
+      console.error('Fetch projects error:', err)
+      setError('Failed to load projects')
       setLoading(false)
     }
+  }, [router])
+
+  function calculateStats(projects: Project[]) {
+    const total = projects.length
+    const active = projects.filter(p => ['active', 'in_progress', 'development'].includes(p.status)).length
+    const completed = projects.filter(p => p.status === 'completed').length
+    const awaitingClient = projects.filter(p => ['awaiting_client', 'client_approval'].includes(p.status)).length
+    setStats({ total, active, completed, awaitingClient })
   }
 
-  const filteredProjects = useMemo(() => {
-    let filtered = projects
-
-    // Apply status filter
-    if (statusFilter !== 'all') {
-      if (statusFilter === 'active') {
-        filtered = filtered.filter((p) => !['completed', 'cancelled'].includes(p.status))
-      } else if (statusFilter === 'completed') {
-        filtered = filtered.filter((p) => p.status === 'completed')
-      } else if (statusFilter === 'in_progress') {
-        filtered = filtered.filter((p) => p.status === 'in_progress')
-      } else if (statusFilter === 'paused') {
-        filtered = filtered.filter((p) => p.status === 'paused' || p.status === 'on_hold')
-      }
+  function getStatusColor(status: string) {
+    const map: Record<string, string> = {
+      draft: 'bg-gray-100 text-gray-800',
+      planning: 'bg-blue-100 text-blue-800',
+      active: 'bg-green-100 text-green-800',
+      in_progress: 'bg-green-100 text-green-800',
+      development: 'bg-green-100 text-green-800',
+      review: 'bg-purple-100 text-purple-800',
+      client_approval: 'bg-amber-100 text-amber-800',
+      awaiting_client: 'bg-amber-100 text-amber-800',
+      completed: 'bg-emerald-100 text-emerald-800',
+      paused: 'bg-gray-100 text-gray-600',
+      on_hold: 'bg-amber-100 text-amber-800',
+      cancelled: 'bg-red-100 text-red-800',
     }
-
-    // Apply search
-    if (searchTerm.trim()) {
-      const term = searchTerm.toLowerCase()
-      filtered = filtered.filter(
-        (p) =>
-          p.name.toLowerCase().includes(term) ||
-          (p.description && p.description.toLowerCase().includes(term))
-      )
-    }
-
-    return filtered
-  }, [projects, searchTerm, statusFilter])
-
-  function getStatusDisplay(status: string) {
-    const statusMap: Record<string, { label: string; color: string; dot: string }> = {
-      pending: { label: 'Pending', color: 'bg-amber-100 text-amber-800', dot: '🟡' },
-      in_progress: { label: 'In Development', color: 'bg-blue-100 text-blue-800', dot: '🔵' },
-      completed: { label: 'Completed', color: 'bg-green-100 text-green-800', dot: '🟢' },
-      on_hold: { label: 'On Hold', color: 'bg-red-100 text-red-800', dot: '🔴' },
-      paused: { label: 'Paused', color: 'bg-red-100 text-red-800', dot: '🔴' },
-      review: { label: 'Client Review', color: 'bg-purple-100 text-purple-800', dot: '🟣' },
-      cancelled: { label: 'Cancelled', color: 'bg-gray-100 text-gray-800', dot: '⚪' },
-      lead: { label: 'Lead', color: 'bg-gray-100 text-gray-600', dot: '⚪' },
-      proposal: { label: 'Proposal', color: 'bg-indigo-100 text-indigo-800', dot: '🔷' },
-      awaiting_deposit: { label: 'Awaiting Deposit', color: 'bg-orange-100 text-orange-800', dot: '🟠' },
-    }
-    return statusMap[status] || { label: status.replace(/_/g, ' '), color: 'bg-gray-100 text-gray-800', dot: '⚪' }
+    return map[status?.toLowerCase()] || 'bg-gray-100 text-gray-800'
   }
+
+  function formatCurrency(amount: number) {
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount || 0)
+  }
+
+  function formatDate(date: string) {
+    if (!date) return '—'
+    return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  }
+
+  const filteredProjects = projects.filter(project => {
+    if (searchTerm.trim() && !project.name?.toLowerCase().includes(searchTerm.toLowerCase())) return false
+    if (statusFilter === 'active') return ['active', 'in_progress', 'development'].includes(project.status)
+    if (statusFilter === 'awaiting_client') return ['awaiting_client', 'client_approval'].includes(project.status)
+    if (statusFilter !== 'all') return project.status === statusFilter
+    return true
+  })
 
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 py-8">
-          <div className="animate-pulse">
-            <div className="h-8 bg-gray-200 rounded w-1/3 mb-2"></div>
-            <div className="h-4 bg-gray-200 rounded w-1/2 mb-8"></div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-              {[...Array(4)].map((_, i) => (
-                <div key={i} className="h-24 bg-gray-200 rounded-xl"></div>
-              ))}
-            </div>
-            <div className="space-y-4">
-              {[...Array(3)].map((_, i) => (
-                <div key={i} className="h-32 bg-gray-200 rounded-xl"></div>
-              ))}
-            </div>
+        <div className="max-w-6xl mx-auto px-4 py-8">
+          <div className="animate-pulse space-y-6">
+            <div className="h-8 bg-gray-200 rounded w-1/3"></div>
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">{[1,2,3,4].map(i => <div key={i} className="h-24 bg-gray-200 rounded-xl"></div>)}</div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">{[1,2,3,4].map(i => <div key={i} className="h-48 bg-gray-200 rounded-xl"></div>)}</div>
           </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">{error}</p>
+          <button onClick={fetchProjects} className="px-6 py-3 bg-blue-600 text-white font-semibold rounded-xl">Try Again</button>
         </div>
       </div>
     )
@@ -202,194 +232,65 @@ export default function ProjectsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="max-w-6xl mx-auto px-4 py-8">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Projects</h1>
-            <p className="text-gray-600 mt-2">
-              Manage your active projects, track progress, review milestones, and collaborate with the Omnix Lab team.
-            </p>
+            <h1 className="text-2xl font-bold text-gray-900">Projects</h1>
+            <p className="text-sm text-gray-600 mt-1">Your Omnix Lab projects</p>
           </div>
-          <Link
-            href="/portal/start-project"
-            className="inline-flex items-center justify-center px-5 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-colors"
-          >
+          <Link href="/portal/start-project" className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg text-center">
             + Start New Project
           </Link>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <div className="bg-white border border-gray-200 rounded-xl p-5">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                <span className="text-xl">📊</span>
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-gray-900">{stats.active}</p>
-                <p className="text-sm text-gray-600">Active Projects</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white border border-gray-200 rounded-xl p-5">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                <span className="text-xl">✅</span>
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-gray-900">{stats.completed}</p>
-                <p className="text-sm text-gray-600">Completed</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white border border-gray-200 rounded-xl p-5">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center">
-                <span className="text-xl">⚡</span>
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-gray-900">{stats.awaitingAction}</p>
-                <p className="text-sm text-gray-600">Awaiting Your Action</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white border border-gray-200 rounded-xl p-5">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
-                <span className="text-xl">💰</span>
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-gray-900">
-                  ${stats.outstanding.toLocaleString()}
-                </p>
-                <p className="text-sm text-gray-600">Outstanding</p>
-              </div>
-            </div>
-          </div>
+        {/* Stats */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+          <div className="bg-white border border-gray-200 rounded-xl p-4"><p className="text-sm text-gray-600">Total Projects</p><p className="text-2xl font-bold text-gray-900 mt-1">{stats.total}</p></div>
+          <div className="bg-white border border-gray-200 rounded-xl p-4"><p className="text-sm text-gray-600">Active</p><p className="text-2xl font-bold text-green-600 mt-1">{stats.active}</p></div>
+          <div className="bg-white border border-gray-200 rounded-xl p-4"><p className="text-sm text-gray-600">Completed</p><p className="text-2xl font-bold text-emerald-600 mt-1">{stats.completed}</p></div>
+          <div className="bg-white border border-gray-200 rounded-xl p-4"><p className="text-sm text-gray-600">Awaiting You</p><p className="text-2xl font-bold text-amber-600 mt-1">{stats.awaitingClient}</p></div>
         </div>
 
         {/* Search & Filter */}
         <div className="flex flex-col sm:flex-row gap-4 mb-6">
-          <div className="flex-1">
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search projects..."
-              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition"
-            />
-          </div>
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-4 py-3 border border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition bg-white"
-          >
-            <option value="all">All Statuses</option>
+          <input type="text" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Search projects..." className="flex-1 px-4 py-2.5 bg-white border border-gray-200 text-gray-900 rounded-lg text-sm placeholder-gray-400 focus:border-blue-500 outline-none" />
+          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="px-4 py-2.5 bg-white border border-gray-200 text-gray-900 rounded-lg text-sm focus:border-blue-500 outline-none">
+            <option value="all">All Projects</option>
             <option value="active">Active</option>
-            <option value="in_progress">In Development</option>
+            <option value="awaiting_client">Awaiting You</option>
             <option value="completed">Completed</option>
+            <option value="planning">Planning</option>
+            <option value="review">In Review</option>
             <option value="paused">Paused</option>
           </select>
         </div>
 
-        {/* Project List */}
+        {/* Projects Grid */}
         {filteredProjects.length === 0 ? (
           <div className="bg-white border border-gray-200 rounded-xl p-12 text-center">
-            <div className="text-5xl mb-4">📂</div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              No projects found
-            </h3>
-            <p className="text-gray-600 mb-4">
-              {searchTerm || statusFilter !== 'all'
-                ? 'Try adjusting your search or filters.'
-                : 'Start your first project with Omnix Lab.'}
-            </p>
-            {!searchTerm && statusFilter === 'all' && (
-              <Link
-                href="/portal/start-project"
-                className="inline-flex items-center px-5 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-colors"
-              >
-                Start a Project
-              </Link>
-            )}
+            <div className="text-4xl mb-3">[ ]</div>
+            <p className="text-gray-600 mb-4">No projects found</p>
+            <Link href="/portal/start-project" className="px-6 py-3 bg-blue-600 text-white font-medium rounded-xl">Start a Project</Link>
           </div>
         ) : (
-          <div className="space-y-4">
-            {filteredProjects.map((project) => {
-              const statusInfo = getStatusDisplay(project.status)
-              return (
-                <div
-                  key={project.id}
-                  className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-md transition-shadow"
-                >
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-1">
-                        <h3 className="text-lg font-bold text-gray-900">
-                          {project.name}
-                        </h3>
-                        <span
-                          className={`inline-flex items-center px-3 py-1 text-xs font-medium rounded-full ${statusInfo.color}`}
-                        >
-                          {statusInfo.dot} {statusInfo.label}
-                        </span>
-                      </div>
-
-                      {project.description && (
-                        <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-                          {project.description}
-                        </p>
-                      )}
-
-                      {/* Progress */}
-                      <div className="mb-3">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-xs font-medium text-gray-500">
-                            Progress
-                          </span>
-                          <span className="text-xs font-semibold text-gray-700">
-                            {project.progress}%
-                          </span>
-                        </div>
-                        <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
-                          <div
-                            className="h-full bg-blue-600 rounded-full transition-all"
-                            style={{ width: `${project.progress}%` }}
-                          ></div>
-                        </div>
-                      </div>
-
-                      <div className="flex flex-wrap items-center gap-x-6 gap-y-1 text-sm text-gray-500">
-                        <span>
-                          Start: {project.start_date ? new Date(project.start_date).toLocaleDateString() : 'N/A'}
-                        </span>
-                        <span>
-                          Due: {project.end_date ? new Date(project.end_date).toLocaleDateString() : 'N/A'}
-                        </span>
-                        {project.totalTasks > 0 && (
-                          <span>
-                            Tasks: {project.completedTasks}/{project.totalTasks}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="flex-shrink-0">
-                      <Link
-                        href={`/portal/projects/${project.id}`}
-                        className="inline-flex items-center px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition-colors"
-                      >
-                        Open Project →
-                      </Link>
-                    </div>
-                  </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {filteredProjects.map((project) => (
+              <Link key={project.id} href={`/portal/projects/${project.id}`} className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-md transition-shadow">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="font-semibold text-gray-900">{project.name}</h3>
+                  <span className={`px-2.5 py-1 text-xs font-medium rounded-full ${getStatusColor(project.status)}`}>{project.status}</span>
                 </div>
-              )
-            })}
+                <div className="mb-3">
+                  <div className="flex justify-between text-xs text-gray-500 mb-1"><span>Progress</span><span>{project.progress || 0}%</span></div>
+                  <div className="h-2 bg-gray-100 rounded-full overflow-hidden"><div className="h-full bg-blue-600 rounded-full transition-all" style={{ width: `${Math.min(project.progress || 0, 100)}%` }} /></div>
+                </div>
+                <div className="flex items-center justify-between text-xs text-gray-500">
+                  <span>{project.completed_milestones || 0} / {project.total_milestones || 0} milestones</span>
+                  {project.expected_completion_date && <span>Due: {formatDate(project.expected_completion_date)}</span>}
+                </div>
+              </Link>
+            ))}
           </div>
         )}
       </div>
