@@ -1,384 +1,232 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { supabase } from '@/lib/supabase'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
+import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
 
 interface Project {
-  id: string
+  id: number
   client_id: string
   name: string
-  description: string
   status: string
-  start_date: string
-  end_date: string
+  progress: number
+  expected_completion_date: string | null
   created_at: string
+  description?: string
 }
 
 interface Milestone {
-  id: string
-  project_id: string
-  title: string
-  description: string | null
+  id: number
+  project_id: number
+  name: string
   status: string
-  start_date: string | null
-  deadline: string | null
-  completion_percentage: number
-  payment_amount: number | null
-  payment_status: string
-  created_at: string
-}
-
-interface Task {
-  id: string
-  project_id: string
-  title: string
-  completed_by: string | null
   due_date: string | null
+  completion_percentage?: number
   created_at: string
 }
 
 interface Requirement {
-  id: string
-  project_id: string
-  client_id: string
+  id: number
+  project_id: number
   title: string
-  description: string | null
   status: string
   priority: string
-  due_date: string | null
   created_at: string
 }
 
-interface Approval {
-  id: string
-  project_id: string
-  client_id: string
-  title: string
-  description: string | null
-  status: string
-  version: number
+interface ProjectFile {
+  id: number
+  project_id: number
+  file_name: string
+  file_type: string
   created_at: string
 }
 
-interface ChangeRequest {
-  id: string
-  project_id: string
-  client_id: string
+interface Idea {
+  id: number
+  project_id: number
   title: string
-  description: string | null
   status: string
-  priority: string
-  estimated_cost: number | null
   created_at: string
 }
 
 interface Invoice {
-  id: string
+  id: number
+  project_id: number
+  invoice_number: string
+  total: number
   amount: number
   status: string
   due_date: string | null
   created_at: string
 }
 
-interface ActivityLog {
-  id: string
-  type: string
-  title: string
-  description: string | null
+interface Payment {
+  id: number
+  invoice_id: number
+  amount: number
+  status: string
   created_at: string
 }
 
-export default function ProjectDetailPage() {
+interface Activity {
+  id: string
+  description: string
+  created_at: string
+}
+
+export default function ClientProjectDetailPage() {
   const params = useParams()
   const router = useRouter()
   const projectId = params?.id as string
 
   const [project, setProject] = useState<Project | null>(null)
   const [milestones, setMilestones] = useState<Milestone[]>([])
-  const [tasks, setTasks] = useState<Task[]>([])
   const [requirements, setRequirements] = useState<Requirement[]>([])
-  const [approvals, setApprovals] = useState<Approval[]>([])
-  const [changeRequests, setChangeRequests] = useState<ChangeRequest[]>([])
+  const [files, setFiles] = useState<ProjectFile[]>([])
+  const [ideas, setIdeas] = useState<Idea[]>([])
   const [invoices, setInvoices] = useState<Invoice[]>([])
-  const [activities, setActivities] = useState<ActivityLog[]>([])
+  const [payments, setPayments] = useState<Payment[]>([])
+  const [activity, setActivity] = useState<Activity[]>([])
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState('overview')
-
-  // New requirement modal
-  const [showRequirementModal, setShowRequirementModal] = useState(false)
-  const [newRequirement, setNewRequirement] = useState({
-    title: '',
-    description: '',
-    priority: 'normal',
-    due_date: '',
-  })
-
-  // New change request modal
-  const [showChangeRequestModal, setShowChangeRequestModal] = useState(false)
-  const [newChangeRequest, setNewChangeRequest] = useState({
-    title: '',
-    description: '',
-    priority: 'normal',
-  })
+  const [error, setError] = useState('')
 
   useEffect(() => {
-    if (projectId) fetchData()
+    if (projectId) {
+      fetchProjectData()
+    }
   }, [projectId])
 
-  async function fetchData() {
+  const fetchProjectData = useCallback(async () => {
+    setLoading(true)
+    setError('')
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-
+      const { data: { user } } = await supabase.auth.getUser()
       if (!user) {
-        setLoading(false)
+        router.push('/portal/login')
         return
       }
 
-      // Project
+      // Fetch project
       const { data: projectData, error: projectError } = await supabase
         .from('projects')
         .select('*')
-        .eq('id', projectId)
+        .eq('id', Number(projectId))
         .eq('client_id', user.id)
         .single()
 
       if (projectError || !projectData) {
-        router.push('/portal/projects')
+        setError('Project not found or access denied')
+        setLoading(false)
         return
       }
 
       setProject(projectData)
 
-      // Milestones
-      const { data: milestonesData } = await supabase
-        .from('milestones')
-        .select('*')
-        .eq('project_id', projectId)
-        .order('created_at', { ascending: true })
+      // Fetch related data in parallel with allSettled to avoid total failure
+      const results = await Promise.allSettled([
+        supabase.from('milestones').select('*').eq('project_id', projectData.id).order('due_date', { ascending: true }),
+        supabase.from('requirements').select('*').eq('project_id', projectData.id).order('created_at', { ascending: false }),
+        supabase.from('files').select('*').eq('project_id', projectData.id).order('created_at', { ascending: false }).limit(5),
+        supabase.from('ideas').select('*').eq('project_id', projectData.id).order('created_at', { ascending: false }).limit(5),
+        supabase.from('invoices').select('*').eq('project_id', projectData.id).order('created_at', { ascending: false }),
+        supabase.from('payments').select('*').in('invoice_id', (await supabase.from('invoices').select('id').eq('project_id', projectData.id)).data?.map((i: any) => i.id) || []).order('created_at', { ascending: false }),
+        supabase.from('activity_logs').select('*').eq('entity_type', 'project').eq('entity_id', String(projectData.id)).order('created_at', { ascending: false }).limit(10),
+      ])
 
-      if (milestonesData) setMilestones(milestonesData)
+      const [milestonesResult, requirementsResult, filesResult, ideasResult, invoicesResult, paymentsResult, activityResult] = results
 
-      // Tasks
-      const { data: tasksData } = await supabase
-        .from('tasks')
-        .select('*')
-        .eq('project_id', projectId)
-        .order('created_at', { ascending: false })
-
-      if (tasksData) setTasks(tasksData)
-
-      // Requirements
-      const { data: requirementsData } = await supabase
-        .from('requirements')
-        .select('*')
-        .eq('project_id', projectId)
-        .order('created_at', { ascending: false })
-
-      if (requirementsData) setRequirements(requirementsData)
-
-      // Approvals
-      const { data: approvalsData } = await supabase
-        .from('approvals')
-        .select('*')
-        .eq('project_id', projectId)
-        .order('created_at', { ascending: false })
-
-      if (approvalsData) setApprovals(approvalsData)
-
-      // Change Requests
-      const { data: changeRequestsData } = await supabase
-        .from('change_requests')
-        .select('*')
-        .eq('project_id', projectId)
-        .order('created_at', { ascending: false })
-
-      if (changeRequestsData) setChangeRequests(changeRequestsData)
-
-      // Invoices
-      const { data: invoicesData } = await supabase
-        .from('invoices')
-        .select('*')
-        .eq('project_id', projectId)
-        .order('created_at', { ascending: false })
-
-      if (invoicesData) setInvoices(invoicesData)
-
-      // Activity
-      const { data: activitiesData } = await supabase
-        .from('activity_logs')
-        .select('*')
-        .eq('project_id', projectId)
-        .order('created_at', { ascending: false })
-        .limit(20)
-
-      if (activitiesData) setActivities(activitiesData)
+      if (milestonesResult.status === 'fulfilled') setMilestones(milestonesResult.value.data || [])
+      if (requirementsResult.status === 'fulfilled') setRequirements(requirementsResult.value.data || [])
+      if (filesResult.status === 'fulfilled') setFiles(filesResult.value.data || [])
+      if (ideasResult.status === 'fulfilled') setIdeas(ideasResult.value.data || [])
+      if (invoicesResult.status === 'fulfilled') setInvoices(invoicesResult.value.data || [])
+      if (paymentsResult.status === 'fulfilled') setPayments(paymentsResult.value.data || [])
+      if (activityResult.status === 'fulfilled') setActivity(activityResult.value.data || [])
 
       setLoading(false)
-    } catch (error) {
-      console.error('Fetch error:', error)
+    } catch (err) {
+      console.error('Project fetch error:', err)
+      setError('Failed to load project')
       setLoading(false)
     }
+  }, [projectId, router])
+
+  function formatCurrency(amount: number) {
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount || 0)
   }
 
-  async function handleAddRequirement() {
-    if (!newRequirement.title.trim()) return
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-    if (!user) return
-
-    await supabase.from('requirements').insert({
-      project_id: projectId,
-      client_id: user.id,
-      title: newRequirement.title,
-      description: newRequirement.description,
-      priority: newRequirement.priority,
-      due_date: newRequirement.due_date || null,
-      status: 'pending',
-    })
-
-    await supabase.from('activity_logs').insert({
-      client_id: user.id,
-      project_id: projectId,
-      type: 'requirement',
-      title: 'Requirement Added',
-      description: newRequirement.title,
-    })
-
-    setShowRequirementModal(false)
-    setNewRequirement({ title: '', description: '', priority: 'normal', due_date: '' })
-    await fetchData()
-  }
-
-  async function handleAddChangeRequest() {
-    if (!newChangeRequest.title.trim()) return
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-    if (!user) return
-
-    await supabase.from('change_requests').insert({
-      project_id: projectId,
-      client_id: user.id,
-      title: newChangeRequest.title,
-      description: newChangeRequest.description,
-      priority: newChangeRequest.priority,
-      status: 'submitted',
-    })
-
-    await supabase.from('activity_logs').insert({
-      client_id: user.id,
-      project_id: projectId,
-      type: 'change_request',
-      title: 'Change Request Submitted',
-      description: newChangeRequest.title,
-    })
-
-    setShowChangeRequestModal(false)
-    setNewChangeRequest({ title: '', description: '', priority: 'normal' })
-    await fetchData()
-  }
-
-  async function handleApproveApproval(approvalId: string) {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-    if (!user) return
-
-    await supabase
-      .from('approvals')
-      .update({
-        status: 'approved',
-        approved_by: user.id,
-        approved_at: new Date().toISOString(),
-      })
-      .eq('id', approvalId)
-
-    await supabase.from('activity_logs').insert({
-      client_id: user.id,
-      project_id: projectId,
-      type: 'approval',
-      title: 'Approval Granted',
-      description: 'Item approved by client',
-    })
-
-    await fetchData()
+  function formatDate(date: string) {
+    if (!date) return '—'
+    return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
   }
 
   function getStatusColor(status: string) {
-    const colors: Record<string, string> = {
-      pending: 'bg-amber-100 text-amber-800',
-      in_progress: 'bg-blue-100 text-blue-800',
-      completed: 'bg-green-100 text-green-800',
-      on_hold: 'bg-red-100 text-red-800',
+    const map: Record<string, string> = {
+      draft: 'bg-gray-100 text-gray-800',
+      planning: 'bg-blue-100 text-blue-800',
+      active: 'bg-green-100 text-green-800',
+      in_progress: 'bg-green-100 text-green-800',
+      development: 'bg-green-100 text-green-800',
       review: 'bg-purple-100 text-purple-800',
-      not_started: 'bg-gray-100 text-gray-800',
-      awaiting_client: 'bg-orange-100 text-orange-800',
-      approved: 'bg-green-100 text-green-800',
-      blocked: 'bg-red-100 text-red-800',
-      submitted: 'bg-blue-100 text-blue-800',
-      under_review: 'bg-amber-100 text-amber-800',
-      changes_requested: 'bg-orange-100 text-orange-800',
-      rejected: 'bg-red-100 text-red-800',
-      in_development: 'bg-blue-100 text-blue-800',
-      estimated: 'bg-purple-100 text-purple-800',
-      needs_changes: 'bg-orange-100 text-orange-800',
-      accepted: 'bg-green-100 text-green-800',
+      completed: 'bg-emerald-100 text-emerald-800',
+      paused: 'bg-gray-100 text-gray-600',
+      on_hold: 'bg-amber-100 text-amber-800',
+      cancelled: 'bg-red-100 text-red-800',
     }
-    return colors[status] || 'bg-gray-100 text-gray-800'
+    return map[status?.toLowerCase()] || 'bg-gray-100 text-gray-800'
   }
 
-  function getMilestoneProgress() {
-    if (milestones.length === 0) return 0
-    const completed = milestones.filter((m) => m.status === 'completed').length
-    return Math.round((completed / milestones.length) * 100)
-  }
+  const completedMilestones = milestones.filter(m => m.status === 'completed').length
+  const totalMilestones = milestones.length
+  const progress = project?.progress || (totalMilestones > 0 ? Math.round((completedMilestones / totalMilestones) * 100) : 0)
 
-  function getProjectHealth(): { label: string; color: string; dot: string } {
-    if (milestones.length === 0) return { label: 'New', color: 'text-gray-500', dot: '⚪' }
-    const blockedMilestones = milestones.filter((m) => m.status === 'blocked').length
-    if (blockedMilestones > 0) return { label: 'At Risk', color: 'text-red-600', dot: '🔴' }
-    const overdueMilestones = milestones.filter((m) => m.deadline && new Date(m.deadline) < new Date() && m.status !== 'completed').length
-    if (overdueMilestones > 0) return { label: 'At Risk', color: 'text-amber-600', dot: '🟡' }
-    return { label: 'Healthy', color: 'text-green-600', dot: '🟢' }
-  }
+  const outstandingInvoices = invoices.filter(inv => ['sent', 'viewed', 'overdue'].includes(inv.status))
+  const totalOutstanding = outstandingInvoices.reduce((sum, inv) => sum + (inv.total || inv.amount || 0), 0)
+  const totalPaid = payments.filter(p => ['success', 'successful'].includes(p.status)).reduce((sum, p) => sum + (p.amount || 0), 0)
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-gray-500">Loading...</div>
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-5xl mx-auto px-4 py-8">
+          <div className="animate-pulse space-y-6">
+            <div className="h-8 bg-gray-200 rounded w-1/3"></div>
+            <div className="h-32 bg-gray-200 rounded-xl"></div>
+            <div className="h-64 bg-gray-200 rounded-xl"></div>
+            <div className="h-48 bg-gray-200 rounded-xl"></div>
+          </div>
+        </div>
       </div>
     )
   }
 
-  if (!project) return null
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">{error}</p>
+          <button onClick={fetchProjectData} className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl">
+            Try Again
+          </button>
+        </div>
+      </div>
+    )
+  }
 
-  const projectHealth = getProjectHealth()
-  const milestoneProgress = getMilestoneProgress()
-
-  const tabs = [
-    { key: 'overview', label: 'Overview' },
-    { key: 'timeline', label: 'Timeline' },
-    { key: 'milestones', label: `Milestones (${milestones.length})` },
-    { key: 'tasks', label: `Tasks (${tasks.length})` },
-    { key: 'requirements', label: `Requirements (${requirements.length})` },
-    { key: 'approvals', label: `Approvals (${approvals.length})` },
-    { key: 'changes', label: `Change Requests (${changeRequests.length})` },
-    { key: 'invoices', label: `Invoices (${invoices.length})` },
-    { key: 'activity', label: 'Activity' },
-  ]
+  if (!project) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <p className="text-gray-600">Project not found</p>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* Back Link */}
-        <Link href="/portal/projects" className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900 mb-6">
+      <div className="max-w-5xl mx-auto px-4 py-8">
+        {/* Back link */}
+        <Link href="/portal/projects" className="text-gray-600 hover:text-gray-900 text-sm mb-6 inline-block">
           ← Back to Projects
         </Link>
 
@@ -387,444 +235,245 @@ export default function ProjectDetailPage() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">{project.name}</h1>
-              <p className="text-sm text-gray-500 mt-1">
-                Created {new Date(project.created_at).toLocaleDateString()}
-              </p>
+              <p className="text-sm text-gray-600 mt-1">Project ID: OMN-{project.id}</p>
             </div>
-            <div className="flex items-center gap-3">
-              <span className={`inline-flex items-center px-3 py-1 text-sm font-medium rounded-full ${getStatusColor(project.status)}`}>
-                {(project.status || 'pending').replace(/_/g, ' ')}
-              </span>
-              <span className={`inline-flex items-center gap-1 px-3 py-1 text-sm font-medium rounded-full bg-gray-100`}>
-                {projectHealth.dot} {projectHealth.label}
-              </span>
-            </div>
+            <span className={`inline-flex items-center px-4 py-2 text-sm font-medium rounded-full ${getStatusColor(project.status)}`}>
+              {project.status}
+            </span>
           </div>
 
-          {project.description && (
-            <p className="text-gray-600 mt-4">{project.description}</p>
-          )}
+          {/* Progress */}
+          <div className="mt-6">
+            <div className="flex justify-between text-sm text-gray-600 mb-1">
+              <span>Progress</span>
+              <span>{progress}%</span>
+            </div>
+            <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-blue-600 rounded-full transition-all duration-500"
+                style={{ width: `${Math.min(progress, 100)}%` }}
+              />
+            </div>
+          </div>
 
           {/* Meta */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6">
-            <div className="p-3 bg-gray-50 rounded-lg text-center">
-              <p className="text-xs text-gray-500">Start Date</p>
-              <p className="font-medium text-gray-900">{project.start_date ? new Date(project.start_date).toLocaleDateString() : '—'}</p>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-4 text-sm">
+            <div>
+              <p className="text-xs text-gray-500">Started</p>
+              <p className="text-gray-900 font-medium">{formatDate(project.created_at)}</p>
             </div>
-            <div className="p-3 bg-gray-50 rounded-lg text-center">
-              <p className="text-xs text-gray-500">End Date</p>
-              <p className="font-medium text-gray-900">{project.end_date ? new Date(project.end_date).toLocaleDateString() : '—'}</p>
+            <div>
+              <p className="text-xs text-gray-500">Expected Delivery</p>
+              <p className="text-gray-900 font-medium">{formatDate(project.expected_completion_date || '')}</p>
             </div>
-            <div className="p-3 bg-gray-50 rounded-lg text-center">
-              <p className="text-xs text-gray-500">Milestone Progress</p>
-              <p className="font-medium text-gray-900">{milestoneProgress}%</p>
+            <div>
+              <p className="text-xs text-gray-500">Milestones</p>
+              <p className="text-gray-900 font-medium">{completedMilestones} / {totalMilestones}</p>
             </div>
-            <div className="p-3 bg-gray-50 rounded-lg text-center">
-              <p className="text-xs text-gray-500">Project Health</p>
-              <p className={`font-medium ${projectHealth.color}`}>{projectHealth.dot} {projectHealth.label}</p>
+            <div>
+              <p className="text-xs text-gray-500">Outstanding</p>
+              <p className="text-amber-600 font-medium">{formatCurrency(totalOutstanding)}</p>
             </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex flex-wrap gap-3 mt-6">
+            <Link
+              href={`/portal/messages?project=${project.id}`}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg"
+            >
+              Message Team
+            </Link>
+            <Link
+              href={`/portal/files?project=${project.id}`}
+              className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg"
+            >
+              Project Files
+            </Link>
+            <Link
+              href={`/portal/invoices?project=${project.id}`}
+              className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg"
+            >
+              View Invoices
+            </Link>
+            <Link
+              href={`/portal/ideas?project=${project.id}`}
+              className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg"
+            >
+              Submit Idea
+            </Link>
           </div>
         </div>
 
-        {/* Tabs */}
-        <div className="flex border-b border-gray-200 mb-6 overflow-x-auto">
-          {tabs.map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              className={`px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
-                activeTab === tab.key
-                  ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Tab Content */}
-        {activeTab === 'overview' && (
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="bg-white border border-gray-200 rounded-xl p-5">
-                <p className="text-2xl font-bold text-gray-900">{milestones.length}</p>
-                <p className="text-sm text-gray-600">Milestones</p>
-              </div>
-              <div className="bg-white border border-gray-200 rounded-xl p-5">
-                <p className="text-2xl font-bold text-gray-900">{tasks.length}</p>
-                <p className="text-sm text-gray-600">Tasks</p>
-              </div>
-              <div className="bg-white border border-gray-200 rounded-xl p-5">
-                <p className="text-2xl font-bold text-gray-900">
-                  ${invoices.reduce((sum, inv) => sum + (inv.amount || 0), 0).toLocaleString()}
-                </p>
-                <p className="text-sm text-gray-600">Total Invoiced</p>
-              </div>
+        {/* Action Required */}
+        {outstandingInvoices.length > 0 && (
+          <div className="bg-white border border-gray-200 rounded-xl p-6 mb-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-3">Action Required</h2>
+            <div className="space-y-2">
+              {outstandingInvoices.map(inv => (
+                <Link
+                  key={inv.id}
+                  href={`/portal/invoices/${inv.id}`}
+                  className="block p-3 bg-amber-50 border border-amber-200 rounded-lg hover:bg-amber-100 transition-colors"
+                >
+                  <p className="text-sm font-medium text-amber-800">
+                    Invoice {inv.invoice_number} due - {formatCurrency(inv.total || inv.amount || 0)}
+                  </p>
+                </Link>
+              ))}
             </div>
-
-            {/* Current Milestone */}
-            {milestones.length > 0 && (
-              <div className="bg-white border border-gray-200 rounded-xl p-6">
-                <h3 className="font-semibold text-gray-900 mb-4">Current Milestone</h3>
-                {milestones.filter((m) => m.status === 'in_progress').map((milestone) => (
-                  <div key={milestone.id} className="p-4 bg-blue-50 rounded-lg">
-                    <p className="font-medium text-gray-900">{milestone.title}</p>
-                    <p className="text-sm text-gray-600 mt-1">
-                      {milestone.completion_percentage}% complete
-                      {milestone.deadline && ` • Due ${new Date(milestone.deadline).toLocaleDateString()}`}
-                    </p>
-                  </div>
-                ))}
-                {milestones.filter((m) => m.status === 'in_progress').length === 0 && (
-                  <p className="text-gray-500 text-sm">No milestone currently in progress.</p>
-                )}
-              </div>
-            )}
-
-            {/* Recent Activity */}
-            {activities.length > 0 && (
-              <div className="bg-white border border-gray-200 rounded-xl p-6">
-                <h3 className="font-semibold text-gray-900 mb-4">Recent Activity</h3>
-                <div className="space-y-3">
-                  {activities.slice(0, 8).map((activity) => (
-                    <div key={activity.id} className="flex items-start gap-3">
-                      <span>📌</span>
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">{activity.title}</p>
-                        {activity.description && <p className="text-sm text-gray-600">{activity.description}</p>}
-                        <p className="text-xs text-gray-400">{new Date(activity.created_at).toLocaleString()}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
         )}
 
-        {activeTab === 'timeline' && (
-          <div className="bg-white border border-gray-200 rounded-xl p-6">
-            {milestones.length === 0 ? (
-              <p className="text-gray-500">No milestones yet.</p>
-            ) : (
-              <div className="space-y-4">
-                {milestones.map((milestone, index) => (
-                  <div key={milestone.id} className="flex items-start gap-4">
-                    <div className="flex flex-col items-center">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                        milestone.status === 'completed' ? 'bg-green-100' :
-                        milestone.status === 'in_progress' ? 'bg-blue-100' :
-                        milestone.status === 'blocked' ? 'bg-red-100' : 'bg-gray-100'
-                      }`}>
-                        <span className="text-sm">
-                          {milestone.status === 'completed' ? '✓' :
-                           milestone.status === 'in_progress' ? '●' :
-                           milestone.status === 'blocked' ? '!' : index + 1}
-                        </span>
-                      </div>
-                      {index < milestones.length - 1 && <div className="w-0.5 h-10 bg-gray-200"></div>}
-                    </div>
-                    <div className="flex-1 pb-4">
-                      <p className="font-medium text-gray-900">{milestone.title}</p>
-                      <p className="text-sm text-gray-600">{milestone.status.replace(/_/g, ' ')}</p>
-                      {milestone.deadline && (
-                        <p className="text-xs text-gray-500">Due {new Date(milestone.deadline).toLocaleDateString()}</p>
+        {/* Milestones */}
+        <div className="bg-white border border-gray-200 rounded-xl p-6 mb-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Project Milestones</h2>
+          {milestones.length === 0 ? (
+            <p className="text-gray-500 text-center py-4">No milestones yet</p>
+          ) : (
+            <div className="space-y-3">
+              {milestones.map(milestone => (
+                <div key={milestone.id} className="flex items-center justify-between bg-gray-50 rounded-lg p-3">
+                  <div className="flex items-center gap-3">
+                    <span className={`w-3 h-3 rounded-full ${
+                      milestone.status === 'completed' ? 'bg-green-500' :
+                      milestone.status === 'in_progress' || milestone.status === 'active' ? 'bg-blue-500' :
+                      'bg-gray-300'
+                    }`}></span>
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">{milestone.name}</p>
+                      {milestone.due_date && (
+                        <p className="text-xs text-gray-500">Due: {formatDate(milestone.due_date)}</p>
                       )}
                     </div>
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {activeTab === 'milestones' && (
-          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-            {milestones.length === 0 ? (
-              <div className="p-12 text-center text-gray-500">No milestones yet.</div>
-            ) : (
-              <div className="divide-y divide-gray-100">
-                {milestones.map((milestone) => (
-                  <div key={milestone.id} className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium text-gray-900">{milestone.title}</p>
-                        {milestone.description && <p className="text-sm text-gray-600">{milestone.description}</p>}
-                        {milestone.deadline && (
-                          <p className="text-xs text-gray-500">Due {new Date(milestone.deadline).toLocaleDateString()}</p>
-                        )}
-                      </div>
-                      <div className="text-right">
-                        <span className={`inline-block px-3 py-1 text-xs rounded-full ${getStatusColor(milestone.status)}`}>
-                          {milestone.status.replace(/_/g, ' ')}
-                        </span>
-                        {milestone.completion_percentage > 0 && (
-                          <p className="text-xs text-gray-500 mt-1">{milestone.completion_percentage}%</p>
-                        )}
-                      </div>
-                    </div>
-                    {milestone.completion_percentage > 0 && (
-                      <div className="mt-2 w-full h-1.5 bg-gray-200 rounded-full">
-                        <div
-                          className="h-full bg-blue-600 rounded-full"
-                          style={{ width: `${milestone.completion_percentage}%` }}
-                        />
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {activeTab === 'tasks' && (
-          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-            {tasks.length === 0 ? (
-              <div className="p-12 text-center text-gray-500">No tasks yet.</div>
-            ) : (
-              <div className="divide-y divide-gray-100">
-                {tasks.map((task) => (
-                  <div key={task.id} className="p-4 flex items-center justify-between">
-                    <div>
-                      <p className={`font-medium ${task.completed_by ? 'text-gray-400 line-through' : 'text-gray-900'}`}>
-                        {task.title}
-                      </p>
-                      {task.due_date && <p className="text-xs text-gray-500">Due {new Date(task.due_date).toLocaleDateString()}</p>}
-                    </div>
-                    <span className="text-sm">{task.completed_by ? '✅' : '⏳'}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {activeTab === 'requirements' && (
-          <div className="space-y-4">
-            <button
-              onClick={() => setShowRequirementModal(true)}
-              className="px-5 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl"
-            >
-              + Add Requirement
-            </button>
-            <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-              {requirements.length === 0 ? (
-                <div className="p-12 text-center text-gray-500">No requirements yet.</div>
-              ) : (
-                <div className="divide-y divide-gray-100">
-                  {requirements.map((req) => (
-                    <div key={req.id} className="p-4 flex items-center justify-between">
-                      <div>
-                        <p className="font-medium text-gray-900">{req.title}</p>
-                        {req.description && <p className="text-sm text-gray-600">{req.description}</p>}
-                        {req.due_date && <p className="text-xs text-gray-500">Due {new Date(req.due_date).toLocaleDateString()}</p>}
-                      </div>
-                      <span className={`px-3 py-1 text-xs rounded-full ${getStatusColor(req.status)}`}>
-                        {req.status.replace(/_/g, ' ')}
-                      </span>
-                    </div>
-                  ))}
+                  <span className={`px-2.5 py-1 text-xs font-medium rounded-full ${
+                    milestone.status === 'completed' ? 'bg-green-100 text-green-800' :
+                    milestone.status === 'in_progress' || milestone.status === 'active' ? 'bg-blue-100 text-blue-800' :
+                    'bg-gray-100 text-gray-600'
+                  }`}>
+                    {milestone.status}
+                  </span>
                 </div>
-              )}
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Requirements */}
+        <div className="bg-white border border-gray-200 rounded-xl p-6 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-900">Requirements</h2>
+            <Link href={`/portal/projects/${project.id}/requirements`} className="text-sm text-blue-600 hover:underline">
+              View All
+            </Link>
+          </div>
+          {requirements.length === 0 ? (
+            <p className="text-gray-500 text-center py-4">No requirements submitted</p>
+          ) : (
+            <div className="space-y-2">
+              {requirements.slice(0, 5).map(req => (
+                <div key={req.id} className="flex items-center justify-between bg-gray-50 rounded-lg p-3">
+                  <p className="text-sm font-medium text-gray-900">{req.title}</p>
+                  <span className={`px-2 py-0.5 text-xs rounded-full ${
+                    req.status === 'approved' ? 'bg-green-100 text-green-800' :
+                    req.status === 'pending' || req.status === 'submitted' ? 'bg-amber-100 text-amber-800' :
+                    'bg-gray-100 text-gray-600'
+                  }`}>{req.status}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Recent Files */}
+        <div className="bg-white border border-gray-200 rounded-xl p-6 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-900">Recent Files</h2>
+            <Link href={`/portal/files?project=${project.id}`} className="text-sm text-blue-600 hover:underline">
+              View All Files
+            </Link>
+          </div>
+          {files.length === 0 ? (
+            <p className="text-gray-500 text-center py-4">No files uploaded yet</p>
+          ) : (
+            <div className="space-y-2">
+              {files.map(file => (
+                <div key={file.id} className="flex items-center justify-between bg-gray-50 rounded-lg p-3">
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">{file.file_name}</p>
+                    <p className="text-xs text-gray-500">{file.file_type} • {formatDate(file.created_at)}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Ideas */}
+        <div className="bg-white border border-gray-200 rounded-xl p-6 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-900">Ideas</h2>
+            <Link href={`/portal/ideas?project=${project.id}`} className="text-sm text-blue-600 hover:underline">
+              Submit Idea
+            </Link>
+          </div>
+          {ideas.length === 0 ? (
+            <p className="text-gray-500 text-center py-4">No ideas submitted yet</p>
+          ) : (
+            <div className="space-y-2">
+              {ideas.map(idea => (
+                <div key={idea.id} className="flex items-center justify-between bg-gray-50 rounded-lg p-3">
+                  <p className="text-sm font-medium text-gray-900">{idea.title}</p>
+                  <span className="text-xs text-gray-500">{idea.status}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Financial Summary */}
+        <div className="bg-white border border-gray-200 rounded-xl p-6 mb-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Financial Summary</h2>
+          <div className="grid grid-cols-3 gap-4 text-center">
+            <div>
+              <p className="text-xs text-gray-500">Project Value</p>
+              <p className="text-xl font-bold text-gray-900">{formatCurrency(invoices.reduce((sum, inv) => sum + (inv.total || inv.amount || 0), 0))}</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500">Paid</p>
+              <p className="text-xl font-bold text-green-600">{formatCurrency(totalPaid)}</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500">Outstanding</p>
+              <p className="text-xl font-bold text-amber-600">{formatCurrency(totalOutstanding)}</p>
             </div>
           </div>
-        )}
+          <Link href={`/portal/invoices?project=${project.id}`} className="block text-center text-sm text-blue-600 hover:underline mt-4">
+            View Invoices
+          </Link>
+        </div>
 
-        {activeTab === 'approvals' && (
-          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-            {approvals.length === 0 ? (
-              <div className="p-12 text-center text-gray-500">No approvals pending.</div>
-            ) : (
-              <div className="divide-y divide-gray-100">
-                {approvals.map((approval) => (
-                  <div key={approval.id} className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium text-gray-900">{approval.title}</p>
-                        {approval.description && <p className="text-sm text-gray-600">{approval.description}</p>}
-                        <p className="text-xs text-gray-500">Version {approval.version}</p>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <span className={`px-3 py-1 text-xs rounded-full ${getStatusColor(approval.status)}`}>
-                          {approval.status.replace(/_/g, ' ')}
-                        </span>
-                        {approval.status === 'pending' && (
-                          <button
-                            onClick={() => handleApproveApproval(approval.id)}
-                            className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg"
-                          >
-                            Approve
-                          </button>
-                        )}
-                      </div>
-                    </div>
+        {/* Activity Timeline */}
+        <div className="bg-white border border-gray-200 rounded-xl p-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h2>
+          {activity.length === 0 ? (
+            <p className="text-gray-500 text-center py-4">No activity recorded yet</p>
+          ) : (
+            <div className="space-y-3">
+              {activity.map(item => (
+                <div key={item.id} className="flex items-start gap-3">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 shrink-0"></div>
+                  <div>
+                    <p className="text-sm text-gray-900">{item.description}</p>
+                    <p className="text-xs text-gray-500">{formatDate(item.created_at)}</p>
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {activeTab === 'changes' && (
-          <div className="space-y-4">
-            <button
-              onClick={() => setShowChangeRequestModal(true)}
-              className="px-5 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl"
-            >
-              + Request Change
-            </button>
-            <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-              {changeRequests.length === 0 ? (
-                <div className="p-12 text-center text-gray-500">No change requests yet.</div>
-              ) : (
-                <div className="divide-y divide-gray-100">
-                  {changeRequests.map((cr) => (
-                    <div key={cr.id} className="p-4 flex items-center justify-between">
-                      <div>
-                        <p className="font-medium text-gray-900">{cr.title}</p>
-                        {cr.description && <p className="text-sm text-gray-600">{cr.description}</p>}
-                      </div>
-                      <span className={`px-3 py-1 text-xs rounded-full ${getStatusColor(cr.status)}`}>
-                        {cr.status.replace(/_/g, ' ')}
-                      </span>
-                    </div>
-                  ))}
                 </div>
-              )}
+              ))}
             </div>
-          </div>
-        )}
-
-        {activeTab === 'invoices' && (
-          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-            {invoices.length === 0 ? (
-              <div className="p-12 text-center text-gray-500">No invoices yet.</div>
-            ) : (
-              <div className="divide-y divide-gray-100">
-                {invoices.map((invoice) => (
-                  <Link
-                    key={invoice.id}
-                    href={`/portal/invoices/${invoice.id}`}
-                    className="p-4 flex items-center justify-between hover:bg-gray-50"
-                  >
-                    <div>
-                      <p className="font-medium text-gray-900">${(invoice.amount || 0).toLocaleString()}</p>
-                      <p className="text-xs text-gray-500">{new Date(invoice.created_at).toLocaleDateString()}</p>
-                    </div>
-                    <span className={`px-3 py-1 text-xs rounded-full ${getStatusColor(invoice.status)}`}>
-                      {invoice.status}
-                    </span>
-                  </Link>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {activeTab === 'activity' && (
-          <div className="bg-white border border-gray-200 rounded-xl p-6">
-            {activities.length === 0 ? (
-              <p className="text-gray-500">No activity yet.</p>
-            ) : (
-              <div className="space-y-4">
-                {activities.map((activity) => (
-                  <div key={activity.id} className="flex items-start gap-3">
-                    <span>📌</span>
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">{activity.title}</p>
-                      {activity.description && <p className="text-sm text-gray-600">{activity.description}</p>}
-                      <p className="text-xs text-gray-400">{new Date(activity.created_at).toLocaleString()}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
+          )}
+        </div>
       </div>
-
-      {/* Requirement Modal */}
-      {showRequirementModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">Add Requirement</h3>
-            <div className="space-y-4">
-              <input
-                type="text"
-                value={newRequirement.title}
-                onChange={(e) => setNewRequirement({ ...newRequirement, title: e.target.value })}
-                placeholder="Requirement title"
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl"
-              />
-              <textarea
-                value={newRequirement.description}
-                onChange={(e) => setNewRequirement({ ...newRequirement, description: e.target.value })}
-                placeholder="Description"
-                rows={3}
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl resize-none"
-              />
-              <select
-                value={newRequirement.priority}
-                onChange={(e) => setNewRequirement({ ...newRequirement, priority: e.target.value })}
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-white"
-              >
-                <option value="normal">Normal</option>
-                <option value="high">High</option>
-                <option value="critical">Critical</option>
-              </select>
-              <input
-                type="date"
-                value={newRequirement.due_date}
-                onChange={(e) => setNewRequirement({ ...newRequirement, due_date: e.target.value })}
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl"
-              />
-              <div className="flex gap-3">
-                <button onClick={handleAddRequirement} className="flex-1 py-3 bg-blue-600 text-white font-semibold rounded-xl">
-                  Add Requirement
-                </button>
-                <button onClick={() => setShowRequirementModal(false)} className="px-6 py-3 bg-gray-100 text-gray-700 rounded-xl">
-                  Cancel
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Change Request Modal */}
-      {showChangeRequestModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">Request Change</h3>
-            <div className="space-y-4">
-              <input
-                type="text"
-                value={newChangeRequest.title}
-                onChange={(e) => setNewChangeRequest({ ...newChangeRequest, title: e.target.value })}
-                placeholder="Change request title"
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl"
-              />
-              <textarea
-                value={newChangeRequest.description}
-                onChange={(e) => setNewChangeRequest({ ...newChangeRequest, description: e.target.value })}
-                placeholder="Describe the change..."
-                rows={3}
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl resize-none"
-              />
-              <div className="flex gap-3">
-                <button onClick={handleAddChangeRequest} className="flex-1 py-3 bg-blue-600 text-white font-semibold rounded-xl">
-                  Submit Request
-                </button>
-                <button onClick={() => setShowChangeRequestModal(false)} className="px-6 py-3 bg-gray-100 text-gray-700 rounded-xl">
-                  Cancel
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
