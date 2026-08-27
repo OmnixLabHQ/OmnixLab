@@ -41,7 +41,6 @@ interface Task {
   status: string
   priority?: string
   due_date?: string | null
-  milestone_id?: number | null
   created_at: string
 }
 
@@ -52,7 +51,6 @@ interface Requirement {
   description?: string
   status: string
   priority?: string
-  due_date?: string | null
   created_at: string
 }
 
@@ -72,7 +70,6 @@ interface ProjectFile {
   file_name: string
   file_type: string
   file_url: string
-  visibility?: string
   created_at: string
 }
 
@@ -90,7 +87,6 @@ interface Invoice {
 interface Activity {
   id: string
   description: string
-  action_type?: string
   created_at: string
 }
 
@@ -130,10 +126,10 @@ export default function AdminProjectDetailPage() {
   const [invoices, setInvoices] = useState<Invoice[]>([])
   const [activity, setActivity] = useState<Activity[]>([])
   const [notes, setNotes] = useState<InternalNote[]>([])
-
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [activeTab, setActiveTab] = useState('overview')
+  const [message, setMessage] = useState('')
 
   // Modal states
   const [showEditProject, setShowEditProject] = useState(false)
@@ -159,22 +155,18 @@ export default function AdminProjectDetailPage() {
   const [formMilestoneName, setFormMilestoneName] = useState('')
   const [formMilestoneDescription, setFormMilestoneDescription] = useState('')
   const [formMilestoneDueDate, setFormMilestoneDueDate] = useState('')
-  const [formMilestoneWeight, setFormMilestoneWeight] = useState('10')
 
   const [formTaskTitle, setFormTaskTitle] = useState('')
   const [formTaskDescription, setFormTaskDescription] = useState('')
   const [formTaskPriority, setFormTaskPriority] = useState('medium')
   const [formTaskDueDate, setFormTaskDueDate] = useState('')
-  const [formTaskMilestoneId, setFormTaskMilestoneId] = useState('')
 
   const [formRequirementTitle, setFormRequirementTitle] = useState('')
   const [formRequirementDescription, setFormRequirementDescription] = useState('')
   const [formRequirementPriority, setFormRequirementPriority] = useState('medium')
-  const [formRequirementDueDate, setFormRequirementDueDate] = useState('')
 
   const [formDeliverableTitle, setFormDeliverableTitle] = useState('')
   const [formDeliverableDescription, setFormDeliverableDescription] = useState('')
-  const [formDeliverableFile, setFormDeliverableFile] = useState<File | null>(null)
 
   const [formInvoiceAmount, setFormInvoiceAmount] = useState('')
   const [formInvoiceDueDate, setFormInvoiceDueDate] = useState('')
@@ -206,7 +198,6 @@ export default function AdminProjectDetailPage() {
         return
       }
 
-      // Fetch client
       let clientData = null
       if (projectData.client_id) {
         const { data: client } = await supabase
@@ -224,7 +215,6 @@ export default function AdminProjectDetailPage() {
         client_company: clientData?.company || '',
       })
 
-      // Fetch all related data with error tolerance
       const [mR, tR, reqR, dR, fR, invR, actR, nR] = await Promise.allSettled([
         supabase.from('milestones').select('*').eq('project_id', projectData.id).order('due_date', { ascending: true }),
         supabase.from('tasks').select('*').eq('project_id', projectData.id).order('created_at', { ascending: false }),
@@ -247,17 +237,22 @@ export default function AdminProjectDetailPage() {
 
       setLoading(false)
     } catch (err) {
-      console.error('Fetch project data error:', err)
-      setError('Failed to load project')
+      console.error('Fetch error:', err)
+      setError('Failed to load')
       setLoading(false)
     }
   }, [projectId])
 
-  const handleSaveProject = async () => {
-    if (!project || !formProjectName.trim()) return
+  function showSuccess(msg: string) {
+    setMessage(msg)
+    setTimeout(() => setMessage(''), 3000)
+  }
+
+  async function handleSaveProject() {
+    if (!project || !formProjectName.trim()) return alert('Name required')
     setSaving(true)
     try {
-      await supabase
+      const { error } = await supabase
         .from('projects')
         .update({
           name: formProjectName,
@@ -269,208 +264,205 @@ export default function AdminProjectDetailPage() {
         })
         .eq('id', project.id)
 
-      await logActivity(project.id, `Project updated`)
+      if (error) throw error
+      showSuccess('Project updated')
       setShowEditProject(false)
       fetchProjectData()
-    } catch (err) {
-      console.error('Save project error:', err)
-      alert('Failed to save project')
+    } catch (err: any) {
+      alert('Failed: ' + err.message)
     } finally {
       setSaving(false)
     }
   }
 
-  const handleStatusChange = async () => {
-    if (!project || !formStatus) return
+  async function handleStatusChange() {
+    if (!project || !formStatus) return alert('Select status')
     setSaving(true)
     try {
-      await supabase
+      const { error } = await supabase
         .from('projects')
         .update({ status: formStatus, updated_at: new Date().toISOString() })
         .eq('id', project.id)
 
-      await logActivity(project.id, `Project status changed to ${formStatus}`)
+      if (error) throw error
+
+      try {
+        await supabase.from('notifications').insert({
+          client_id: project.client_id,
+          type: 'project',
+          title: 'Project Status Updated',
+          message: `Project "${project.name}" status changed to ${formStatus}`,
+          data: JSON.stringify({ project_id: project.id, new_status: formStatus }),
+          read: false,
+          created_at: new Date().toISOString(),
+        })
+      } catch (e) {}
+
+      showSuccess('Status updated to ' + formStatus)
       setShowStatusChange(false)
       fetchProjectData()
-    } catch (err) {
-      console.error('Status change error:', err)
-      alert('Failed to change status')
+    } catch (err: any) {
+      alert('Failed: ' + err.message)
     } finally {
       setSaving(false)
     }
   }
 
-  const handleProgressOverride = async () => {
-    if (!project || !formProgress) return
+  async function handleProgressOverride() {
+    if (!project || !formProgress) return alert('Enter progress')
     setSaving(true)
     try {
-      await supabase
+      const newProgress = Math.min(100, Math.max(0, parseInt(formProgress)))
+      const { error } = await supabase
         .from('projects')
-        .update({
-          progress: Math.min(100, Math.max(0, parseInt(formProgress))),
-          progress_mode: 'manual',
-          updated_at: new Date().toISOString(),
-        })
+        .update({ progress: newProgress, progress_mode: 'manual', updated_at: new Date().toISOString() })
         .eq('id', project.id)
 
-      await logActivity(project.id, `Project progress manually set to ${formProgress}% (Reason: ${formProgressReason})`)
+      if (error) throw error
+      showSuccess('Progress set to ' + newProgress + '%')
       setShowProgressOverride(false)
       fetchProjectData()
-    } catch (err) {
-      console.error('Progress override error:', err)
-      alert('Failed to update progress')
+    } catch (err: any) {
+      alert('Failed: ' + err.message)
     } finally {
       setSaving(false)
     }
   }
 
-  const handleAddMilestone = async () => {
-    if (!project || !formMilestoneName.trim()) return
+  async function handleAddMilestone() {
+    if (!project || !formMilestoneName.trim()) return alert('Name required')
     setSaving(true)
     try {
-      await supabase.from('milestones').insert({
+      const { error } = await supabase.from('milestones').insert({
         project_id: project.id,
         name: formMilestoneName,
         description: formMilestoneDescription,
         status: 'upcoming',
         due_date: formMilestoneDueDate || null,
-        weight: parseFloat(formMilestoneWeight) || 0,
         created_at: new Date().toISOString(),
       })
-
-      await logActivity(project.id, `Milestone "${formMilestoneName}" created`)
+      if (error) throw error
+      showSuccess('Milestone added')
       setShowAddMilestone(false)
-      resetMilestoneForm()
+      setFormMilestoneName('')
+      setFormMilestoneDescription('')
+      setFormMilestoneDueDate('')
       fetchProjectData()
-    } catch (err) {
-      console.error('Add milestone error:', err)
-      alert('Failed to add milestone')
+    } catch (err: any) {
+      alert('Failed: ' + err.message)
     } finally {
       setSaving(false)
     }
   }
 
-  const handleAddTask = async () => {
-    if (!project || !formTaskTitle.trim()) return
+  async function handleAddTask() {
+    if (!project || !formTaskTitle.trim()) return alert('Title required')
     setSaving(true)
     try {
-      await supabase.from('tasks').insert({
+      const { error } = await supabase.from('tasks').insert({
         project_id: project.id,
         title: formTaskTitle,
         description: formTaskDescription,
         status: 'todo',
         priority: formTaskPriority,
         due_date: formTaskDueDate || null,
-        milestone_id: formTaskMilestoneId ? parseInt(formTaskMilestoneId) : null,
         created_at: new Date().toISOString(),
       })
-
-      await logActivity(project.id, `Task "${formTaskTitle}" created`)
+      if (error) throw error
+      showSuccess('Task added')
       setShowAddTask(false)
-      resetTaskForm()
+      setFormTaskTitle('')
+      setFormTaskDescription('')
+      setFormTaskDueDate('')
       fetchProjectData()
-    } catch (err) {
-      console.error('Add task error:', err)
-      alert('Failed to add task')
+    } catch (err: any) {
+      alert('Failed: ' + err.message)
     } finally {
       setSaving(false)
     }
   }
 
-  const handleRequestRequirement = async () => {
-    if (!project || !formRequirementTitle.trim()) return
+  async function handleRequestRequirement() {
+    if (!project || !formRequirementTitle.trim()) return alert('Title required')
     setSaving(true)
     try {
-      await supabase.from('requirements').insert({
+      const { error } = await supabase.from('requirements').insert({
         project_id: project.id,
         title: formRequirementTitle,
         description: formRequirementDescription,
         status: 'requested',
         priority: formRequirementPriority,
-        due_date: formRequirementDueDate || null,
         created_at: new Date().toISOString(),
       })
+      if (error) throw error
 
-      await supabase.from('notifications').insert({
-        user_id: project.client_id,
-        type: 'requirement_requested',
-        title: 'New Requirement Requested',
-        message: `Please provide: ${formRequirementTitle}`,
-        read: false,
-        channel: 'in_app',
-        delivery_status: 'delivered',
-        created_at: new Date().toISOString(),
-      })
+      try {
+        await supabase.from('notifications').insert({
+          client_id: project.client_id,
+          type: 'requirement',
+          title: 'Requirement Requested',
+          message: `Please provide: ${formRequirementTitle}`,
+          read: false,
+          created_at: new Date().toISOString(),
+        })
+      } catch (e) {}
 
-      await logActivity(project.id, `Requirement "${formRequirementTitle}" requested`)
+      showSuccess('Requirement requested')
       setShowRequestRequirement(false)
-      resetRequirementForm()
+      setFormRequirementTitle('')
+      setFormRequirementDescription('')
       fetchProjectData()
-    } catch (err) {
-      console.error('Request requirement error:', err)
-      alert('Failed to request requirement')
+    } catch (err: any) {
+      alert('Failed: ' + err.message)
     } finally {
       setSaving(false)
     }
   }
 
-  const handleAddDeliverable = async () => {
-    if (!project || !formDeliverableTitle.trim()) return
+  async function handleAddDeliverable() {
+    if (!project || !formDeliverableTitle.trim()) return alert('Title required')
     setSaving(true)
     try {
-      let fileUrl = null
-      if (formDeliverableFile) {
-        const fileName = `${Date.now()}-${formDeliverableFile.name}`
-        const { error: uploadError } = await supabase.storage
-          .from('deliverables')
-          .upload(fileName, formDeliverableFile)
-        if (!uploadError) {
-          const { data: urlData } = supabase.storage.from('deliverables').getPublicUrl(fileName)
-          fileUrl = urlData?.publicUrl
-        }
-      }
-
-      await supabase.from('deliverables').insert({
+      const { error } = await supabase.from('deliverables').insert({
         project_id: project.id,
         title: formDeliverableTitle,
         description: formDeliverableDescription,
         status: 'awaiting_approval',
         version: 'V1',
-        file_url: fileUrl,
         created_at: new Date().toISOString(),
       })
+      if (error) throw error
 
-      await supabase.from('notifications').insert({
-        user_id: project.client_id,
-        type: 'deliverable_submitted',
-        title: 'New Deliverable Available',
-        message: `"${formDeliverableTitle}" has been submitted for your review`,
-        read: false,
-        channel: 'in_app',
-        delivery_status: 'delivered',
-        created_at: new Date().toISOString(),
-      })
+      try {
+        await supabase.from('notifications').insert({
+          client_id: project.client_id,
+          type: 'deliverable',
+          title: 'New Deliverable Available',
+          message: `"${formDeliverableTitle}" has been submitted for review`,
+          read: false,
+          created_at: new Date().toISOString(),
+        })
+      } catch (e) {}
 
-      await logActivity(project.id, `Deliverable "${formDeliverableTitle}" submitted`)
+      showSuccess('Deliverable added')
       setShowUploadDeliverable(false)
-      resetDeliverableForm()
+      setFormDeliverableTitle('')
+      setFormDeliverableDescription('')
       fetchProjectData()
-    } catch (err) {
-      console.error('Add deliverable error:', err)
-      alert('Failed to add deliverable')
+    } catch (err: any) {
+      alert('Failed: ' + err.message)
     } finally {
       setSaving(false)
     }
   }
 
-  const handleCreateInvoice = async () => {
-    if (!project || !formInvoiceAmount) return
+  async function handleCreateInvoice() {
+    if (!project || !formInvoiceAmount) return alert('Amount required')
     setSaving(true)
     try {
       const amount = parseFloat(formInvoiceAmount)
       const invoiceNumber = `INV-${Date.now()}`
-
-      await supabase.from('invoices').insert({
+      const { error } = await supabase.from('invoices').insert({
         invoice_number: invoiceNumber,
         client_id: project.client_id,
         project_id: project.id,
@@ -488,119 +480,71 @@ export default function AdminProjectDetailPage() {
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       })
+      if (error) throw error
 
-      await supabase.from('notifications').insert({
-        user_id: project.client_id,
-        type: 'invoice_sent',
-        title: 'New Invoice Available',
-        message: `Invoice ${invoiceNumber} is now available`,
-        read: false,
-        channel: 'in_app',
-        delivery_status: 'delivered',
-        created_at: new Date().toISOString(),
-      })
+      try {
+        await supabase.from('notifications').insert({
+          client_id: project.client_id,
+          type: 'invoice',
+          title: 'New Invoice Available',
+          message: `Invoice ${invoiceNumber} is available`,
+          read: false,
+          created_at: new Date().toISOString(),
+        })
+      } catch (e) {}
 
-      await logActivity(project.id, `Invoice ${invoiceNumber} created`)
+      showSuccess('Invoice created')
       setShowCreateInvoice(false)
-      resetInvoiceForm()
+      setFormInvoiceAmount('')
+      setFormInvoiceDueDate('')
+      setFormInvoiceNotes('')
       fetchProjectData()
-    } catch (err) {
-      console.error('Create invoice error:', err)
-      alert('Failed to create invoice')
+    } catch (err: any) {
+      alert('Failed: ' + err.message)
     } finally {
       setSaving(false)
     }
   }
 
-  const handleAddNote = async () => {
-    if (!project || !formNoteContent.trim()) return
+  async function handleAddNote() {
+    if (!project || !formNoteContent.trim()) return alert('Note required')
     setSaving(true)
     try {
-      await supabase.from('internal_notes').insert({
+      const { error } = await supabase.from('internal_notes').insert({
         project_id: project.id,
         content: formNoteContent,
         created_at: new Date().toISOString(),
       })
+      if (error) throw error
+      showSuccess('Note added')
       setShowAddNote(false)
       setFormNoteContent('')
       fetchProjectData()
-    } catch (err) {
-      console.error('Add note error:', err)
-      alert('Failed to add note')
+    } catch (err: any) {
+      alert('Failed: ' + err.message)
     } finally {
       setSaving(false)
     }
   }
 
-  const handleUpdateMilestoneStatus = async (milestoneId: number, newStatus: string) => {
+  async function handleMilestoneStatus(milestoneId: number, newStatus: string) {
     try {
-      await supabase.from('milestones').update({ status: newStatus, updated_at: new Date().toISOString() }).eq('id', milestoneId)
-      await logActivity(Number(projectId), `Milestone ${newStatus}`)
+      const { error } = await supabase.from('milestones').update({ status: newStatus }).eq('id', milestoneId)
+      if (error) throw error
       fetchProjectData()
-    } catch (err) {
-      console.error('Update milestone error:', err)
-      alert('Failed to update milestone')
+    } catch (err: any) {
+      alert('Failed: ' + err.message)
     }
   }
 
-  const handleUpdateTaskStatus = async (taskId: number, newStatus: string) => {
+  async function handleTaskStatus(taskId: number, newStatus: string) {
     try {
-      await supabase.from('tasks').update({ status: newStatus, updated_at: new Date().toISOString() }).eq('id', taskId)
+      const { error } = await supabase.from('tasks').update({ status: newStatus }).eq('id', taskId)
+      if (error) throw error
       fetchProjectData()
-    } catch (err) {
-      console.error('Update task error:', err)
-      alert('Failed to update task')
+    } catch (err: any) {
+      alert('Failed: ' + err.message)
     }
-  }
-
-  const logActivity = async (projectId: number, description: string) => {
-    try {
-      await supabase.from('activity_logs').insert({
-        user_id: null,
-        action_type: 'project_updated',
-        description,
-        entity_type: 'project',
-        entity_id: String(projectId),
-        result: 'success',
-        created_at: new Date().toISOString(),
-      })
-    } catch (e) {
-      console.log('Activity log failed (non-fatal):', e)
-    }
-  }
-
-  function resetMilestoneForm() {
-    setFormMilestoneName('')
-    setFormMilestoneDescription('')
-    setFormMilestoneDueDate('')
-    setFormMilestoneWeight('10')
-  }
-
-  function resetTaskForm() {
-    setFormTaskTitle('')
-    setFormTaskDescription('')
-    setFormTaskPriority('medium')
-    setFormTaskDueDate('')
-    setFormTaskMilestoneId('')
-  }
-
-  function resetRequirementForm() {
-    setFormRequirementTitle('')
-    setFormRequirementDescription('')
-    setFormRequirementPriority('medium')
-    setFormRequirementDueDate('')
-  }
-
-  function resetDeliverableForm() {
-    setFormDeliverableTitle('')
-    setFormDeliverableDescription('')
-    setFormDeliverableFile(null)
-  }
-
-  function resetInvoiceForm() {
-    setFormInvoiceAmount('')
-    setFormInvoiceDueDate('')
-    setFormInvoiceNotes('')
   }
 
   function getStatusColor(status: string) {
@@ -651,64 +595,31 @@ export default function AdminProjectDetailPage() {
     <div className="space-y-6">
       <Link href="/admin/projects" className="text-gray-400 hover:text-white text-sm inline-block">← Back to Projects</Link>
 
+      {message && (
+        <div className="bg-green-500/20 border border-green-500/30 rounded-lg p-3">
+          <p className="text-green-400 text-sm">{message}</p>
+        </div>
+      )}
+
       {/* Header */}
       <div className="bg-white/5 border border-white/10 rounded-xl p-6">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-white">{project.name}</h1>
-            <p className="text-sm text-gray-400 mt-1">
-              OMN-{project.id} • Client: {project.client_name}
-            </p>
+            <p className="text-sm text-gray-400 mt-1">OMN-{project.id} • Client: {project.client_name}</p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <span className={`px-3 py-1 text-xs font-medium rounded-full ${getStatusColor(project.status)}`}>{project.status}</span>
-            <button
-              onClick={() => {
-                setFormProjectName(project.name)
-                setFormDescription(project.description || '')
-                setFormPriority(project.priority || 'medium')
-                setFormDeadline(project.expected_completion_date || '')
-                setFormBudget(project.budget?.toString() || '')
-                setShowEditProject(true)
-              }}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg"
-            >
-              Edit Project
-            </button>
-            <button
-              onClick={() => {
-                setFormStatus(project.status)
-                setShowStatusChange(true)
-              }}
-              className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-lg"
-            >
-              Change Status
-            </button>
+            <button onClick={() => { setFormProjectName(project.name); setFormDescription(project.description || ''); setFormPriority(project.priority || 'medium'); setFormDeadline(project.expected_completion_date || ''); setFormBudget(project.budget?.toString() || ''); setShowEditProject(true); }} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg">Edit</button>
+            <button onClick={() => { setFormStatus(project.status); setShowStatusChange(true); }} className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-lg">Status</button>
           </div>
         </div>
 
         {/* Progress */}
         <div className="mt-6">
-          <div className="flex justify-between text-sm text-gray-400 mb-1">
-            <span>Progress</span>
-            <span>{project.progress || 0}%</span>
-          </div>
-          <div className="h-3 bg-white/10 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-blue-500 rounded-full transition-all"
-              style={{ width: `${Math.min(project.progress || 0, 100)}%` }}
-            />
-          </div>
-          <button
-            onClick={() => {
-              setFormProgress(String(project.progress || 0))
-              setFormProgressReason('')
-              setShowProgressOverride(true)
-            }}
-            className="text-xs text-blue-400 hover:underline mt-2"
-          >
-            Manual Override
-          </button>
+          <div className="flex justify-between text-sm text-gray-400 mb-1"><span>Progress</span><span>{project.progress || 0}%</span></div>
+          <div className="h-3 bg-white/10 rounded-full overflow-hidden"><div className="h-full bg-blue-500 rounded-full transition-all" style={{ width: `${Math.min(project.progress || 0, 100)}%` }} /></div>
+          <button onClick={() => { setFormProgress(String(project.progress || 0)); setFormProgressReason(''); setShowProgressOverride(true); }} className="text-xs text-blue-400 hover:underline mt-2">Override Progress</button>
         </div>
 
         {/* Quick Actions */}
@@ -725,15 +636,7 @@ export default function AdminProjectDetailPage() {
       {/* Tabs */}
       <div className="flex gap-2 border-b border-white/10 overflow-x-auto">
         {['overview', 'milestones', 'tasks', 'requirements', 'deliverables', 'files', 'invoices', 'activity', 'notes'].map(tab => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2.5 text-sm font-medium whitespace-nowrap ${
-              activeTab === tab ? 'text-white border-b-2 border-blue-500' : 'text-gray-400 hover:text-white'
-            }`}
-          >
-            {tab.charAt(0).toUpperCase() + tab.slice(1)}
-          </button>
+          <button key={tab} onClick={() => setActiveTab(tab)} className={`px-4 py-2.5 text-sm font-medium whitespace-nowrap ${activeTab === tab ? 'text-white border-b-2 border-blue-500' : 'text-gray-400 hover:text-white'}`}>{tab.charAt(0).toUpperCase() + tab.slice(1)}</button>
         ))}
       </div>
 
@@ -742,32 +645,11 @@ export default function AdminProjectDetailPage() {
         {activeTab === 'overview' && (
           <>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-                <p className="text-sm text-gray-400">Milestones</p>
-                <p className="text-2xl font-bold text-white">{milestones.filter(m => m.status === 'completed').length} / {milestones.length}</p>
-              </div>
-              <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-                <p className="text-sm text-gray-400">Tasks</p>
-                <p className="text-2xl font-bold text-white">{tasks.filter(t => t.status === 'completed').length} / {tasks.length}</p>
-              </div>
-              <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-                <p className="text-sm text-gray-400">Outstanding</p>
-                <p className="text-2xl font-bold text-yellow-400">
-                  {formatCurrency(invoices.filter(inv => ['sent', 'viewed', 'overdue'].includes(inv.status)).reduce((sum, inv) => sum + (inv.total || inv.amount || 0), 0))}
-                </p>
-              </div>
+              <div className="bg-white/5 border border-white/10 rounded-xl p-4"><p className="text-sm text-gray-400">Milestones</p><p className="text-2xl font-bold text-white">{milestones.filter(m => m.status === 'completed').length} / {milestones.length}</p></div>
+              <div className="bg-white/5 border border-white/10 rounded-xl p-4"><p className="text-sm text-gray-400">Tasks</p><p className="text-2xl font-bold text-white">{tasks.filter(t => t.status === 'completed').length} / {tasks.length}</p></div>
+              <div className="bg-white/5 border border-white/10 rounded-xl p-4"><p className="text-sm text-gray-400">Outstanding</p><p className="text-2xl font-bold text-yellow-400">{formatCurrency(invoices.filter(inv => ['sent', 'viewed', 'overdue'].includes(inv.status)).reduce((sum, inv) => sum + (inv.total || inv.amount || 0), 0))}</p></div>
             </div>
-
-            <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-              <h3 className="text-lg font-semibold text-white mb-3">Recent Activity</h3>
-              {activity.length === 0 ? <p className="text-gray-500">No activity yet</p> : (
-                <div className="space-y-2">
-                  {activity.slice(0, 5).map(a => (
-                    <div key={a.id} className="text-sm text-gray-300">{a.description}</div>
-                  ))}
-                </div>
-              )}
-            </div>
+            <div className="bg-white/5 border border-white/10 rounded-xl p-4"><h3 className="text-lg font-semibold text-white mb-3">Recent Activity</h3>{activity.length === 0 ? <p className="text-gray-500">No activity</p> : <div className="space-y-2">{activity.slice(0, 5).map(a => <div key={a.id} className="text-sm text-gray-300">{a.description}</div>)}</div>}</div>
           </>
         )}
 
@@ -775,20 +657,12 @@ export default function AdminProjectDetailPage() {
           <div className="space-y-3">
             {milestones.length === 0 ? <p className="text-gray-500">No milestones</p> : milestones.map(m => (
               <div key={m.id} className="flex items-center justify-between bg-white/5 border border-white/10 rounded-lg p-3">
-                <div>
-                  <p className="text-white font-medium">{m.name}</p>
-                  {m.due_date && <p className="text-xs text-gray-400">Due: {formatDate(m.due_date)}</p>}
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className={`px-2 py-0.5 text-xs rounded-full ${
-                    m.status === 'completed' ? 'bg-green-500/20 text-green-300' :
-                    m.status === 'in_progress' ? 'bg-blue-500/20 text-blue-300' :
-                    'bg-gray-500/20 text-gray-300'
-                  }`}>{m.status}</span>
-                  {m.status !== 'completed' && (
-                    <button onClick={() => handleUpdateMilestoneStatus(m.id, 'completed')} className="text-green-400 text-xs">Complete</button>
-                  )}
-                </div>
+                <div><p className="text-white font-medium">{m.name}</p>{m.due_date && <p className="text-xs text-gray-400">Due: {formatDate(m.due_date)}</p>}</div>
+                <select value={m.status} onChange={(e) => handleMilestoneStatus(m.id, e.target.value)} className="bg-white/10 border border-white/20 text-white rounded px-2 py-1 text-xs">
+                  <option value="upcoming" className="bg-gray-900">Upcoming</option>
+                  <option value="in_progress" className="bg-gray-900">In Progress</option>
+                  <option value="completed" className="bg-gray-900">Completed</option>
+                </select>
               </div>
             ))}
           </div>
@@ -798,19 +672,11 @@ export default function AdminProjectDetailPage() {
           <div className="space-y-3">
             {tasks.length === 0 ? <p className="text-gray-500">No tasks</p> : tasks.map(t => (
               <div key={t.id} className="flex items-center justify-between bg-white/5 border border-white/10 rounded-lg p-3">
-                <div>
-                  <p className="text-white font-medium">{t.title}</p>
-                  {t.due_date && <p className="text-xs text-gray-400">Due: {formatDate(t.due_date)}</p>}
-                </div>
-                <select
-                  value={t.status}
-                  onChange={(e) => handleUpdateTaskStatus(t.id, e.target.value)}
-                  className="bg-white/10 border border-white/20 text-white rounded px-2 py-1 text-xs"
-                >
+                <div><p className="text-white font-medium">{t.title}</p>{t.due_date && <p className="text-xs text-gray-400">Due: {formatDate(t.due_date)}</p>}</div>
+                <select value={t.status} onChange={(e) => handleTaskStatus(t.id, e.target.value)} className="bg-white/10 border border-white/20 text-white rounded px-2 py-1 text-xs">
                   <option value="todo" className="bg-gray-900">To Do</option>
                   <option value="in_progress" className="bg-gray-900">In Progress</option>
                   <option value="blocked" className="bg-gray-900">Blocked</option>
-                  <option value="in_review" className="bg-gray-900">In Review</option>
                   <option value="completed" className="bg-gray-900">Completed</option>
                 </select>
               </div>
@@ -822,15 +688,8 @@ export default function AdminProjectDetailPage() {
           <div className="space-y-3">
             {requirements.length === 0 ? <p className="text-gray-500">No requirements</p> : requirements.map(r => (
               <div key={r.id} className="flex items-center justify-between bg-white/5 border border-white/10 rounded-lg p-3">
-                <div>
-                  <p className="text-white font-medium">{r.title}</p>
-                  {r.due_date && <p className="text-xs text-gray-400">Due: {formatDate(r.due_date)}</p>}
-                </div>
-                <span className={`px-2 py-0.5 text-xs rounded-full ${
-                  r.status === 'approved' ? 'bg-green-500/20 text-green-300' :
-                  r.status === 'requested' ? 'bg-amber-500/20 text-amber-300' :
-                  'bg-gray-500/20 text-gray-300'
-                }`}>{r.status}</span>
+                <p className="text-white font-medium">{r.title}</p>
+                <span className={`px-2 py-0.5 text-xs rounded-full ${r.status === 'approved' ? 'bg-green-500/20 text-green-300' : r.status === 'requested' ? 'bg-amber-500/20 text-amber-300' : 'bg-gray-500/20 text-gray-300'}`}>{r.status}</span>
               </div>
             ))}
           </div>
@@ -840,15 +699,8 @@ export default function AdminProjectDetailPage() {
           <div className="space-y-3">
             {deliverables.length === 0 ? <p className="text-gray-500">No deliverables</p> : deliverables.map(d => (
               <div key={d.id} className="flex items-center justify-between bg-white/5 border border-white/10 rounded-lg p-3">
-                <div>
-                  <p className="text-white font-medium">{d.title}</p>
-                  {d.version && <p className="text-xs text-gray-400">Version: {d.version}</p>}
-                </div>
-                <span className={`px-2 py-0.5 text-xs rounded-full ${
-                  d.status === 'approved' ? 'bg-green-500/20 text-green-300' :
-                  d.status === 'awaiting_approval' ? 'bg-amber-500/20 text-amber-300' :
-                  'bg-gray-500/20 text-gray-300'
-                }`}>{d.status}</span>
+                <p className="text-white font-medium">{d.title}</p>
+                <span className={`px-2 py-0.5 text-xs rounded-full ${d.status === 'approved' ? 'bg-green-500/20 text-green-300' : d.status === 'awaiting_approval' ? 'bg-amber-500/20 text-amber-300' : 'bg-gray-500/20 text-gray-300'}`}>{d.status}</span>
               </div>
             ))}
           </div>
@@ -856,46 +708,22 @@ export default function AdminProjectDetailPage() {
 
         {activeTab === 'files' && (
           <div className="space-y-3">
-            {files.length === 0 ? <p className="text-gray-500">No files</p> : files.map(f => (
-              <div key={f.id} className="flex items-center justify-between bg-white/5 border border-white/10 rounded-lg p-3">
-                <p className="text-white font-medium">{f.file_name}</p>
-                <span className="text-xs text-gray-400">{f.visibility || 'client_visible'}</span>
-              </div>
-            ))}
+            {files.length === 0 ? <p className="text-gray-500">No files</p> : files.map(f => <div key={f.id} className="flex items-center justify-between bg-white/5 border border-white/10 rounded-lg p-3"><p className="text-white font-medium">{f.file_name}</p><span className="text-xs text-gray-400">{f.file_type}</span></div>)}
           </div>
         )}
 
         {activeTab === 'invoices' && (
           <div className="space-y-3">
-            {invoices.length === 0 ? <p className="text-gray-500">No invoices</p> : invoices.map(inv => (
-              <div key={inv.id} className="flex items-center justify-between bg-white/5 border border-white/10 rounded-lg p-3">
-                <div>
-                  <p className="text-white font-medium">{inv.invoice_number}</p>
-                  <p className="text-xs text-gray-400">Due: {formatDate(inv.due_date || '')}</p>
-                </div>
-                <span className="text-white">{formatCurrency(inv.total || inv.amount)}</span>
-              </div>
-            ))}
+            {invoices.length === 0 ? <p className="text-gray-500">No invoices</p> : invoices.map(inv => <div key={inv.id} className="flex items-center justify-between bg-white/5 border border-white/10 rounded-lg p-3"><div><p className="text-white font-medium">{inv.invoice_number}</p><p className="text-xs text-gray-400">Due: {formatDate(inv.due_date || '')}</p></div><span className="text-white">{formatCurrency(inv.total || inv.amount)}</span></div>)}
           </div>
         )}
 
         {activeTab === 'activity' && (
-          <div className="space-y-2">
-            {activity.length === 0 ? <p className="text-gray-500">No activity</p> : activity.map(a => (
-              <div key={a.id} className="text-sm text-gray-300">{a.description}</div>
-            ))}
-          </div>
+          <div className="space-y-2">{activity.length === 0 ? <p className="text-gray-500">No activity</p> : activity.map(a => <div key={a.id} className="text-sm text-gray-300">{a.description}</div>)}</div>
         )}
 
         {activeTab === 'notes' && (
-          <div className="space-y-2">
-            {notes.length === 0 ? <p className="text-gray-500">No internal notes</p> : notes.map(n => (
-              <div key={n.id} className="bg-white/5 border border-white/10 rounded-lg p-3">
-                <p className="text-white">{n.content}</p>
-                <p className="text-xs text-gray-400">{formatDate(n.created_at)}</p>
-              </div>
-            ))}
-          </div>
+          <div className="space-y-2">{notes.length === 0 ? <p className="text-gray-500">No notes</p> : notes.map(n => <div key={n.id} className="bg-white/5 border border-white/10 rounded-lg p-3"><p className="text-white">{n.content}</p><p className="text-xs text-gray-400">{formatDate(n.created_at)}</p></div>)}</div>
         )}
       </div>
 
@@ -907,10 +735,12 @@ export default function AdminProjectDetailPage() {
             <div className="space-y-3">
               <div><label className="block text-sm text-gray-300 mb-1">Name</label><input type="text" value={formProjectName} onChange={(e) => setFormProjectName(e.target.value)} className="w-full px-4 py-2.5 bg-white/10 border border-white/20 text-white rounded-lg text-sm" /></div>
               <div><label className="block text-sm text-gray-300 mb-1">Description</label><textarea value={formDescription} onChange={(e) => setFormDescription(e.target.value)} rows={2} className="w-full px-4 py-2.5 bg-white/10 border border-white/20 text-white rounded-lg text-sm" /></div>
-              <div><label className="block text-sm text-gray-300 mb-1">Priority</label><select value={formPriority} onChange={(e) => setFormPriority(e.target.value)} className="w-full px-4 py-2.5 bg-white/10 border border-white/20 text-white rounded-lg text-sm"><option value="low" className="bg-gray-900">Low</option><option value="medium" className="bg-gray-900">Medium</option><option value="high" className="bg-gray-900">High</option></select></div>
-              <div><label className="block text-sm text-gray-300 mb-1">Deadline</label><input type="date" value={formDeadline} onChange={(e) => setFormDeadline(e.target.value)} className="w-full px-4 py-2.5 bg-white/10 border border-white/20 text-white rounded-lg text-sm" /></div>
+              <div className="grid grid-cols-2 gap-4">
+                <div><label className="block text-sm text-gray-300 mb-1">Priority</label><select value={formPriority} onChange={(e) => setFormPriority(e.target.value)} className="w-full px-4 py-2.5 bg-white/10 border border-white/20 text-white rounded-lg text-sm"><option value="low" className="bg-gray-900">Low</option><option value="medium" className="bg-gray-900">Medium</option><option value="high" className="bg-gray-900">High</option></select></div>
+                <div><label className="block text-sm text-gray-300 mb-1">Deadline</label><input type="date" value={formDeadline} onChange={(e) => setFormDeadline(e.target.value)} className="w-full px-4 py-2.5 bg-white/10 border border-white/20 text-white rounded-lg text-sm" /></div>
+              </div>
               <div><label className="block text-sm text-gray-300 mb-1">Budget</label><input type="number" value={formBudget} onChange={(e) => setFormBudget(e.target.value)} className="w-full px-4 py-2.5 bg-white/10 border border-white/20 text-white rounded-lg text-sm" /></div>
-              <button onClick={handleSaveProject} disabled={saving} className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg disabled:opacity-50">{saving ? 'Saving...' : 'Save Changes'}</button>
+              <button onClick={handleSaveProject} disabled={saving} className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg disabled:opacity-50">{saving ? 'Saving...' : 'Save'}</button>
             </div>
           </div>
         </div>
@@ -920,12 +750,8 @@ export default function AdminProjectDetailPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
           <div className="bg-gray-900 rounded-2xl max-w-md w-full p-6 border border-white/10">
             <div className="flex justify-between items-center mb-4"><h2 className="text-lg font-bold text-white">Change Status</h2><button onClick={() => setShowStatusChange(false)} className="text-white">X</button></div>
-            <div className="space-y-3">
-              <select value={formStatus} onChange={(e) => setFormStatus(e.target.value)} className="w-full px-4 py-2.5 bg-white/10 border border-white/20 text-white rounded-lg text-sm">
-                {PROJECT_STATUSES.map(s => <option key={s} value={s} className="bg-gray-900">{s}</option>)}
-              </select>
-              <button onClick={handleStatusChange} disabled={saving} className="w-full py-3 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg disabled:opacity-50">{saving ? 'Updating...' : 'Update Status'}</button>
-            </div>
+            <select value={formStatus} onChange={(e) => setFormStatus(e.target.value)} className="w-full px-4 py-2.5 bg-white/10 border border-white/20 text-white rounded-lg text-sm mb-3">{PROJECT_STATUSES.map(s => <option key={s} value={s} className="bg-gray-900">{s}</option>)}</select>
+            <button onClick={handleStatusChange} disabled={saving} className="w-full py-3 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg disabled:opacity-50">{saving ? 'Updating...' : 'Update Status'}</button>
           </div>
         </div>
       )}
@@ -933,7 +759,7 @@ export default function AdminProjectDetailPage() {
       {showProgressOverride && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
           <div className="bg-gray-900 rounded-2xl max-w-md w-full p-6 border border-white/10">
-            <div className="flex justify-between items-center mb-4"><h2 className="text-lg font-bold text-white">Manual Progress Override</h2><button onClick={() => setShowProgressOverride(false)} className="text-white">X</button></div>
+            <div className="flex justify-between items-center mb-4"><h2 className="text-lg font-bold text-white">Override Progress</h2><button onClick={() => setShowProgressOverride(false)} className="text-white">X</button></div>
             <div className="space-y-3">
               <div><label className="block text-sm text-gray-300 mb-1">Progress (0-100)</label><input type="number" value={formProgress} onChange={(e) => setFormProgress(e.target.value)} className="w-full px-4 py-2.5 bg-white/10 border border-white/20 text-white rounded-lg text-sm" /></div>
               <div><label className="block text-sm text-gray-300 mb-1">Reason</label><textarea value={formProgressReason} onChange={(e) => setFormProgressReason(e.target.value)} rows={2} className="w-full px-4 py-2.5 bg-white/10 border border-white/20 text-white rounded-lg text-sm" /></div>
@@ -951,7 +777,6 @@ export default function AdminProjectDetailPage() {
               <div><label className="block text-sm text-gray-300 mb-1">Name</label><input type="text" value={formMilestoneName} onChange={(e) => setFormMilestoneName(e.target.value)} className="w-full px-4 py-2.5 bg-white/10 border border-white/20 text-white rounded-lg text-sm" /></div>
               <div><label className="block text-sm text-gray-300 mb-1">Description</label><textarea value={formMilestoneDescription} onChange={(e) => setFormMilestoneDescription(e.target.value)} rows={2} className="w-full px-4 py-2.5 bg-white/10 border border-white/20 text-white rounded-lg text-sm" /></div>
               <div><label className="block text-sm text-gray-300 mb-1">Due Date</label><input type="date" value={formMilestoneDueDate} onChange={(e) => setFormMilestoneDueDate(e.target.value)} className="w-full px-4 py-2.5 bg-white/10 border border-white/20 text-white rounded-lg text-sm" /></div>
-              <div><label className="block text-sm text-gray-300 mb-1">Weight (%)</label><input type="number" value={formMilestoneWeight} onChange={(e) => setFormMilestoneWeight(e.target.value)} className="w-full px-4 py-2.5 bg-white/10 border border-white/20 text-white rounded-lg text-sm" /></div>
               <button onClick={handleAddMilestone} disabled={saving} className="w-full py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg disabled:opacity-50">{saving ? 'Adding...' : 'Add Milestone'}</button>
             </div>
           </div>
@@ -965,7 +790,6 @@ export default function AdminProjectDetailPage() {
             <div className="space-y-3">
               <div><label className="block text-sm text-gray-300 mb-1">Title</label><input type="text" value={formTaskTitle} onChange={(e) => setFormTaskTitle(e.target.value)} className="w-full px-4 py-2.5 bg-white/10 border border-white/20 text-white rounded-lg text-sm" /></div>
               <div><label className="block text-sm text-gray-300 mb-1">Description</label><textarea value={formTaskDescription} onChange={(e) => setFormTaskDescription(e.target.value)} rows={2} className="w-full px-4 py-2.5 bg-white/10 border border-white/20 text-white rounded-lg text-sm" /></div>
-              <div><label className="block text-sm text-gray-300 mb-1">Priority</label><select value={formTaskPriority} onChange={(e) => setFormTaskPriority(e.target.value)} className="w-full px-4 py-2.5 bg-white/10 border border-white/20 text-white rounded-lg text-sm"><option value="low" className="bg-gray-900">Low</option><option value="medium" className="bg-gray-900">Medium</option><option value="high" className="bg-gray-900">High</option></select></div>
               <div><label className="block text-sm text-gray-300 mb-1">Due Date</label><input type="date" value={formTaskDueDate} onChange={(e) => setFormTaskDueDate(e.target.value)} className="w-full px-4 py-2.5 bg-white/10 border border-white/20 text-white rounded-lg text-sm" /></div>
               <button onClick={handleAddTask} disabled={saving} className="w-full py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg disabled:opacity-50">{saving ? 'Adding...' : 'Add Task'}</button>
             </div>
@@ -980,8 +804,7 @@ export default function AdminProjectDetailPage() {
             <div className="space-y-3">
               <div><label className="block text-sm text-gray-300 mb-1">Title</label><input type="text" value={formRequirementTitle} onChange={(e) => setFormRequirementTitle(e.target.value)} className="w-full px-4 py-2.5 bg-white/10 border border-white/20 text-white rounded-lg text-sm" /></div>
               <div><label className="block text-sm text-gray-300 mb-1">Description</label><textarea value={formRequirementDescription} onChange={(e) => setFormRequirementDescription(e.target.value)} rows={2} className="w-full px-4 py-2.5 bg-white/10 border border-white/20 text-white rounded-lg text-sm" /></div>
-              <div><label className="block text-sm text-gray-300 mb-1">Priority</label><select value={formRequirementPriority} onChange={(e) => setFormRequirementPriority(e.target.value)} className="w-full px-4 py-2.5 bg-white/10 border border-white/20 text-white rounded-lg text-sm"><option value="low" className="bg-gray-900">Low</option><option value="medium" className="bg-gray-900">Medium</option><option value="high" className="bg-gray-900">High</option></select></div>
-              <button onClick={handleRequestRequirement} disabled={saving} className="w-full py-3 bg-amber-600 hover:bg-amber-700 text-white font-semibold rounded-lg disabled:opacity-50">{saving ? 'Sending...' : 'Request Requirement'}</button>
+              <button onClick={handleRequestRequirement} disabled={saving} className="w-full py-3 bg-amber-600 hover:bg-amber-700 text-white font-semibold rounded-lg disabled:opacity-50">{saving ? 'Sending...' : 'Request'}</button>
             </div>
           </div>
         </div>
@@ -994,8 +817,7 @@ export default function AdminProjectDetailPage() {
             <div className="space-y-3">
               <div><label className="block text-sm text-gray-300 mb-1">Title</label><input type="text" value={formDeliverableTitle} onChange={(e) => setFormDeliverableTitle(e.target.value)} className="w-full px-4 py-2.5 bg-white/10 border border-white/20 text-white rounded-lg text-sm" /></div>
               <div><label className="block text-sm text-gray-300 mb-1">Description</label><textarea value={formDeliverableDescription} onChange={(e) => setFormDeliverableDescription(e.target.value)} rows={2} className="w-full px-4 py-2.5 bg-white/10 border border-white/20 text-white rounded-lg text-sm" /></div>
-              <div><label className="block text-sm text-gray-300 mb-1">File</label><input type="file" onChange={(e) => setFormDeliverableFile(e.target.files?.[0] || null)} className="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-blue-600 file:text-white" /></div>
-              <button onClick={handleAddDeliverable} disabled={saving} className="w-full py-3 bg-cyan-600 hover:bg-cyan-700 text-white font-semibold rounded-lg disabled:opacity-50">{saving ? 'Uploading...' : 'Upload Deliverable'}</button>
+              <button onClick={handleAddDeliverable} disabled={saving} className="w-full py-3 bg-cyan-600 hover:bg-cyan-700 text-white font-semibold rounded-lg disabled:opacity-50">{saving ? 'Uploading...' : 'Upload'}</button>
             </div>
           </div>
         </div>
@@ -1008,7 +830,6 @@ export default function AdminProjectDetailPage() {
             <div className="space-y-3">
               <div><label className="block text-sm text-gray-300 mb-1">Amount</label><input type="number" value={formInvoiceAmount} onChange={(e) => setFormInvoiceAmount(e.target.value)} className="w-full px-4 py-2.5 bg-white/10 border border-white/20 text-white rounded-lg text-sm" /></div>
               <div><label className="block text-sm text-gray-300 mb-1">Due Date</label><input type="date" value={formInvoiceDueDate} onChange={(e) => setFormInvoiceDueDate(e.target.value)} className="w-full px-4 py-2.5 bg-white/10 border border-white/20 text-white rounded-lg text-sm" /></div>
-              <div><label className="block text-sm text-gray-300 mb-1">Notes</label><textarea value={formInvoiceNotes} onChange={(e) => setFormInvoiceNotes(e.target.value)} rows={2} className="w-full px-4 py-2.5 bg-white/10 border border-white/20 text-white rounded-lg text-sm" /></div>
               <button onClick={handleCreateInvoice} disabled={saving} className="w-full py-3 bg-orange-600 hover:bg-orange-700 text-white font-semibold rounded-lg disabled:opacity-50">{saving ? 'Creating...' : 'Create Invoice'}</button>
             </div>
           </div>
@@ -1018,7 +839,7 @@ export default function AdminProjectDetailPage() {
       {showAddNote && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
           <div className="bg-gray-900 rounded-2xl max-w-md w-full p-6 border border-white/10">
-            <div className="flex justify-between items-center mb-4"><h2 className="text-lg font-bold text-white">Add Internal Note</h2><button onClick={() => setShowAddNote(false)} className="text-white">X</button></div>
+            <div className="flex justify-between items-center mb-4"><h2 className="text-lg font-bold text-white">Add Note</h2><button onClick={() => setShowAddNote(false)} className="text-white">X</button></div>
             <div className="space-y-3">
               <div><label className="block text-sm text-gray-300 mb-1">Note</label><textarea value={formNoteContent} onChange={(e) => setFormNoteContent(e.target.value)} rows={3} className="w-full px-4 py-2.5 bg-white/10 border border-white/20 text-white rounded-lg text-sm" /></div>
               <button onClick={handleAddNote} disabled={saving} className="w-full py-3 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-lg disabled:opacity-50">{saving ? 'Adding...' : 'Add Note'}</button>
