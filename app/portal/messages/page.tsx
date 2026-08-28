@@ -21,14 +21,6 @@ interface Conversation {
   project_name?: string
 }
 
-interface Attachment {
-  id: number
-  file_name: string
-  storage_path: string
-  mime_type: string
-  file_size: number
-}
-
 interface Message {
   id: number
   conversation_id: number
@@ -38,7 +30,6 @@ interface Message {
   content: string
   visibility: string
   created_at: string
-  attachments?: Attachment[]
 }
 
 export default function ClientMessagesPage() {
@@ -72,15 +63,20 @@ export default function ClientMessagesPage() {
   useEffect(() => {
     if (selectedConversation) {
       fetchMessages(selectedConversation.id)
-
       const channel = supabase
-        .channel(`client-conversation-${selectedConversation.id}`)
-        .on('postgres_changes',
-          { event: 'INSERT', schema: 'public', table: 'messages', filter: `conversation_id=eq.${selectedConversation.id}` },
+        .channel(`client-conv-${selectedConversation.id}`)
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'messages',
+            filter: `conversation_id=eq.${selectedConversation.id}`
+          },
           (payload) => {
             const newMsg = payload.new as Message
             if (newMsg.visibility === 'client') {
-              setMessages(prev => [...prev, newMsg])
+              setMessages((prev) => [...prev, newMsg])
               scrollToBottom()
             }
           }
@@ -152,7 +148,7 @@ export default function ClientMessagesPage() {
             ...conv,
             project_name: projectName,
             last_message: lastMessage,
-            unread_count: unreadCount,
+            unread_count: unreadCount
           }
         })
       )
@@ -171,10 +167,7 @@ export default function ClientMessagesPage() {
     try {
       const { data: messagesData, error } = await supabase
         .from('messages')
-        .select(`
-          *,
-          message_attachments (*)
-        `)
+        .select('*')
         .eq('conversation_id', conversationId)
         .eq('visibility', 'client')
         .order('created_at', { ascending: true })
@@ -182,9 +175,9 @@ export default function ClientMessagesPage() {
       if (error) throw error
       setMessages(messagesData || [])
       scrollToBottom()
-      setLoadingMessages(false)
-    } catch (err) {
+    } catch (err: any) {
       console.error('Fetch messages error:', err)
+    } finally {
       setLoadingMessages(false)
     }
   }, [])
@@ -202,13 +195,9 @@ export default function ClientMessagesPage() {
       )
     }
 
-    if (filter === 'unread') {
-      filtered = filtered.filter(conv => conv.unread_count > 0)
-    } else if (filter === 'projects') {
-      filtered = filtered.filter(conv => conv.project_id !== null)
-    } else if (filter === 'support') {
-      filtered = filtered.filter(conv => conv.category === 'support')
-    }
+    if (filter === 'unread') filtered = filtered.filter(conv => conv.unread_count > 0)
+    if (filter === 'projects') filtered = filtered.filter(conv => conv.project_id !== null)
+    if (filter === 'support') filtered = filtered.filter(conv => conv.category === 'support')
 
     setFilteredConversations(filtered)
   }
@@ -257,10 +246,10 @@ export default function ClientMessagesPage() {
           conversation_id: selectedConversation.id,
           sender_id: user.id,
           sender_type: 'client',
-          message_type: 'text',
+          message_type: attachment ? 'file' : 'text',
           content: newMessage.trim(),
           visibility: 'client',
-          created_at: new Date().toISOString(),
+          created_at: new Date().toISOString()
         })
         .select()
         .single()
@@ -274,7 +263,7 @@ export default function ClientMessagesPage() {
           storage_path: attachmentUrl,
           mime_type: attachmentType,
           file_size: attachmentSize,
-          created_by: user.id,
+          created_by: user.id
         })
       }
 
@@ -284,11 +273,11 @@ export default function ClientMessagesPage() {
           last_message_at: new Date().toISOString(),
           last_message_id: newMsg.id,
           status: 'awaiting_admin',
-          updated_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
         })
         .eq('id', selectedConversation.id)
 
-      setMessages(prev => [...prev, { ...newMsg, attachments: [] }])
+      setMessages(prev => [...prev, newMsg])
       setNewMessage('')
       setAttachment(null)
       if (fileInputRef.current) fileInputRef.current.value = ''
@@ -323,16 +312,12 @@ export default function ClientMessagesPage() {
           priority: 'normal',
           client_id: user.id,
           created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
         })
         .select()
         .single()
 
-      if (conversationError) {
-        console.error('Conversation error:', conversationError)
-        alert('Failed to create conversation: ' + conversationError.message)
-        return
-      }
+      if (conversationError) throw conversationError
 
       const { data: firstMessage, error: messageError } = await supabase
         .from('messages')
@@ -343,23 +328,19 @@ export default function ClientMessagesPage() {
           message_type: 'text',
           content: newMessageText.trim(),
           visibility: 'client',
-          created_at: new Date().toISOString(),
+          created_at: new Date().toISOString()
         })
         .select()
         .single()
 
-      if (messageError) {
-        console.error('Message error:', messageError)
-        alert('Failed to send message: ' + messageError.message)
-        return
-      }
+      if (messageError) throw messageError
 
       await supabase
         .from('conversations')
         .update({
           last_message_at: new Date().toISOString(),
           last_message_id: firstMessage.id,
-          updated_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
         })
         .eq('id', newConversation.id)
 
@@ -368,14 +349,12 @@ export default function ClientMessagesPage() {
       setNewMessageText('')
 
       await fetchConversations()
-
       setSelectedConversation({
         ...newConversation,
         project_name: null,
         last_message: newMessageText,
-        unread_count: 0,
+        unread_count: 0
       })
-
       await fetchMessages(newConversation.id)
     } catch (err: any) {
       console.error('Create conversation error:', err)
@@ -391,10 +370,6 @@ export default function ClientMessagesPage() {
 
   function formatTime(date: string) {
     return new Date(date).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
-  }
-
-  function formatDate(date: string) {
-    return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
   }
 
   if (loading) {
@@ -443,8 +418,8 @@ export default function ClientMessagesPage() {
                   { id: 'all', label: 'All' },
                   { id: 'unread', label: 'Unread' },
                   { id: 'projects', label: 'Projects' },
-                  { id: 'support', label: 'Support' },
-                ].map(f => (
+                  { id: 'support', label: 'Support' }
+                ].map((f) => (
                   <button
                     key={f.id}
                     onClick={() => setFilter(f.id)}
@@ -471,7 +446,7 @@ export default function ClientMessagesPage() {
                   </button>
                 </div>
               ) : (
-                filteredConversations.map(conv => (
+                filteredConversations.map((conv) => (
                   <button
                     key={conv.id}
                     onClick={() => handleSelectConversation(conv)}
@@ -518,17 +493,18 @@ export default function ClientMessagesPage() {
             ) : (
               <>
                 <div className="p-4 border-b border-gray-200">
-                  <h2 className="font-semibold text-gray-900">
-                    {selectedConversation.subject || 'Conversation'}
-                  </h2>
+                  <h2 className="font-semibold text-gray-900">{selectedConversation.subject || 'Conversation'}</h2>
                   {selectedConversation.project_name && (
                     <p className="text-sm text-gray-500">Project: {selectedConversation.project_name}</p>
                   )}
                   <span className={`inline-block mt-1 px-2 py-0.5 text-xs rounded-full ${
-                    selectedConversation.status === 'awaiting_admin' ? 'bg-amber-100 text-amber-800' :
-                    selectedConversation.status === 'awaiting_client' ? 'bg-blue-100 text-blue-800' :
-                    selectedConversation.status === 'resolved' ? 'bg-green-100 text-green-800' :
-                    'bg-gray-100 text-gray-800'
+                    selectedConversation.status === 'awaiting_admin'
+                      ? 'bg-amber-100 text-amber-800'
+                      : selectedConversation.status === 'awaiting_client'
+                        ? 'bg-blue-100 text-blue-800'
+                        : selectedConversation.status === 'resolved'
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-gray-100 text-gray-800'
                   }`}>
                     {selectedConversation.status}
                   </span>
@@ -545,7 +521,7 @@ export default function ClientMessagesPage() {
                       <p className="text-gray-500 text-sm">No messages yet. Say hello!</p>
                     </div>
                   ) : (
-                    messages.map(msg => (
+                    messages.map((msg) => (
                       <div
                         key={msg.id}
                         className={`flex ${msg.sender_type === 'client' ? 'justify-end' : 'justify-start'}`}
@@ -558,23 +534,6 @@ export default function ClientMessagesPage() {
                           }`}
                         >
                           <p className="text-sm whitespace-pre-line">{msg.content}</p>
-                          {msg.attachments && msg.attachments.length > 0 && (
-                            <div className="mt-2 space-y-1">
-                              {msg.attachments.map(att => (
-                                <a
-                                  key={att.id}
-                                  href={att.storage_path}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className={`block text-xs ${
-                                    msg.sender_type === 'client' ? 'text-blue-200' : 'text-blue-600'
-                                  } hover:underline`}
-                                >
-                                  📎 {att.file_name}
-                                </a>
-                              ))}
-                            </div>
-                          )}
                           <span className={`text-xs mt-1 block ${
                             msg.sender_type === 'client' ? 'text-blue-200' : 'text-gray-400'
                           }`}>

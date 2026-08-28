@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import Link from 'next/link'
 
 interface Conversation {
   id: number
@@ -16,9 +15,11 @@ interface Conversation {
   project_id: number | null
   invoice_id: number | null
   project_request_id: number | null
+  assigned_admin_id: string | null
   last_message_at: string | null
   last_message: string | null
   unread_count: number
+  client_name?: string
   project_name?: string
 }
 
@@ -31,17 +32,9 @@ interface Message {
   content: string
   visibility: string
   created_at: string
-  sender_name?: string
-  attachments?: {
-    id: number
-    file_name: string
-    storage_path: string
-    mime_type: string
-    file_size: number
-  }[]
 }
 
-export default function ClientMessagesPage() {
+export default function AdminMessagesPage() {
   const router = useRouter()
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [filteredConversations, setFilteredConversations] = useState<Conversation[]>([])
@@ -51,18 +44,14 @@ export default function ClientMessagesPage() {
   const [loadingMessages, setLoadingMessages] = useState(false)
   const [sending, setSending] = useState(false)
   const [newMessage, setNewMessage] = useState('')
+  const [isInternalNote, setIsInternalNote] = useState(false)
   const [attachment, setAttachment] = useState<File | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [filter, setFilter] = useState('all')
-  const [showNewConversation, setShowNewConversation] = useState(false)
-  const [newSubject, setNewSubject] = useState('')
-  const [newMessageText, setNewMessageText] = useState('')
-  const [error, setError] = useState('')
-  const [isTyping, setIsTyping] = useState(false)
-  const [typingUser, setTypingUser] = useState('')
+  const [priorityFilter, setPriorityFilter] = useState('all')
+  const [statusFilter, setStatusFilter] = useState('all')
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
     fetchConversations()
@@ -70,23 +59,25 @@ export default function ClientMessagesPage() {
 
   useEffect(() => {
     applyFilters()
-  }, [searchTerm, filter, conversations])
+  }, [searchTerm, filter, priorityFilter, statusFilter, conversations])
 
   useEffect(() => {
     if (selectedConversation) {
       fetchMessages(selectedConversation.id)
-
-      // Subscribe to realtime messages
       const channel = supabase
-        .channel(`client-conversation-${selectedConversation.id}`)
-        .on('postgres_changes',
-          { event: 'INSERT', schema: 'public', table: 'messages', filter: `conversation_id=eq.${selectedConversation.id}` },
+        .channel(`admin-conv-${selectedConversation.id}`)
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'messages',
+            filter: `conversation_id=eq.${selectedConversation.id}`
+          },
           (payload) => {
             const newMsg = payload.new as Message
-            if (newMsg.visibility === 'client') {
-              setMessages(prev => [...prev, newMsg])
-              scrollToBottom()
-            }
+            setMessages((prev) => [...prev, newMsg])
+            scrollToBottom()
           }
         )
         .subscribe()
@@ -99,66 +90,56 @@ export default function ClientMessagesPage() {
 
   const fetchConversations = useCallback(async () => {
     setLoading(true)
-    setError('')
     try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
-        router.push('/portal/login')
-        return
-      }
-
-      const { data: conversationsData, error: conversationsError } = await supabase
+      const { data: conversationsData, error } = await supabase
         .from('conversations')
         .select('*')
-        .eq('client_id', user.id)
-        .order('last_message_at', { ascending: false })
+        .order('last_message_at', { ascending: false, nullsFirst: false })
 
-      if (conversationsError) throw conversationsError
+      if (error) throw error
 
       const conversationsWithDetails = await Promise.all(
         (conversationsData || []).map(async (conv) => {
+          let clientName = 'Unknown'
           let projectName = null
+          if (conv.client_id) {
+            const { data: client } = await supabase
+              .from('clients')
+              .select('full_name, company')
+              .eq('id', conv.client_id)
+              .single()
+            clientName = client?.full_name || client?.company || 'Unknown'
+          }
           if (conv.project_id) {
-            try {
-              const { data: project } = await supabase
-                .from('projects')
-                .select('name')
-                .eq('id', conv.project_id)
-                .single()
-              projectName = project?.name || null
-            } catch {}
+            const { data: project } = await supabase
+              .from('projects')
+              .select('name')
+              .eq('id', conv.project_id)
+              .single()
+            projectName = project?.name || null
           }
 
-          // Get last message
-          let lastMessage = null
-          try {
-            const { data: lastMsgData } = await supabase
-              .from('messages')
-              .select('content')
-              .eq('conversation_id', conv.id)
-              .eq('visibility', 'client')
-              .order('created_at', { ascending: false })
-              .limit(1)
-            lastMessage = lastMsgData?.[0]?.content || null
-          } catch {}
+          const { data: lastMsgData } = await supabase
+            .from('messages')
+            .select('content, sender_type')
+            .eq('conversation_id', conv.id)
+            .order('created_at', { ascending: false })
+            .limit(1)
 
-          // Count unread admin messages
-          let unreadCount = 0
-          try {
-            const { count } = await supabase
-              .from('messages')
-              .select('id', { count: 'exact', head: true })
-              .eq('conversation_id', conv.id)
-              .eq('sender_type', 'admin')
-              .eq('visibility', 'client')
-            unreadCount = count || 0
-          } catch {}
+          // Count unread messages from client
+          const { count: unreadCount } = await supabase
+            .from('messages')
+            .select('id', { count: 'exact', head: true })
+            .eq('conversation_id', conv.id)
+            .eq('sender_type', 'client')
+            .eq('visibility', 'client')
 
           return {
             ...conv,
+            client_name: clientName,
             project_name: projectName,
-            last_message: lastMessage,
-            unread_count: unreadCount,
+            last_message: lastMsgData?.[0]?.content || null,
+            unread_count: unreadCount || 0,
           }
         })
       )
@@ -167,33 +148,28 @@ export default function ClientMessagesPage() {
       setLoading(false)
     } catch (err: any) {
       console.error('Fetch conversations error:', err)
-      setError(err?.message || 'Failed to load conversations')
       setLoading(false)
     }
-  }, [router])
+  }, [])
 
-  const fetchMessages = async (conversationId: number) => {
+  const fetchMessages = useCallback(async (conversationId: number) => {
     setLoadingMessages(true)
     try {
       const { data: messagesData, error } = await supabase
         .from('messages')
-        .select(`
-          *,
-          message_attachments (*)
-        `)
+        .select('*')
         .eq('conversation_id', conversationId)
-        .eq('visibility', 'client')
         .order('created_at', { ascending: true })
 
       if (error) throw error
       setMessages(messagesData || [])
       scrollToBottom()
-      setLoadingMessages(false)
-    } catch (err) {
+    } catch (err: any) {
       console.error('Fetch messages error:', err)
+    } finally {
       setLoadingMessages(false)
     }
-  }
+  }, [])
 
   function applyFilters() {
     let filtered = [...conversations]
@@ -203,18 +179,19 @@ export default function ClientMessagesPage() {
       filtered = filtered.filter(
         (conv) =>
           conv.subject?.toLowerCase().includes(term) ||
+          conv.client_name?.toLowerCase().includes(term) ||
           conv.last_message?.toLowerCase().includes(term) ||
           conv.project_name?.toLowerCase().includes(term)
       )
     }
 
-    if (filter === 'unread') {
-      filtered = filtered.filter(conv => conv.unread_count > 0)
-    } else if (filter === 'projects') {
-      filtered = filtered.filter(conv => conv.project_id !== null)
-    } else if (filter === 'support') {
-      filtered = filtered.filter(conv => conv.category === 'support')
-    }
+    if (filter === 'unread') filtered = filtered.filter((c) => c.unread_count > 0)
+    if (filter === 'project') filtered = filtered.filter((c) => c.project_id !== null)
+    if (filter === 'support') filtered = filtered.filter((c) => c.category === 'support')
+    if (filter === 'billing') filtered = filtered.filter((c) => c.category === 'billing')
+
+    if (priorityFilter !== 'all') filtered = filtered.filter((c) => c.priority === priorityFilter)
+    if (statusFilter !== 'all') filtered = filtered.filter((c) => c.status === statusFilter)
 
     setFilteredConversations(filtered)
   }
@@ -235,7 +212,6 @@ export default function ClientMessagesPage() {
       let attachmentType = null
       let attachmentSize = null
 
-      // Upload attachment if present
       if (attachment) {
         const fileName = `${Date.now()}-${attachment.name}`
         const { error: uploadError } = await supabase.storage
@@ -258,24 +234,22 @@ export default function ClientMessagesPage() {
         attachmentSize = attachment.size
       }
 
-      // Insert message
       const { data: newMsg, error: messageError } = await supabase
         .from('messages')
         .insert({
           conversation_id: selectedConversation.id,
           sender_id: user.id,
-          sender_type: 'client',
-          message_type: 'text',
+          sender_type: 'admin',
+          message_type: attachment ? 'file' : 'text',
           content: newMessage.trim(),
-          visibility: 'client',
-          created_at: new Date().toISOString(),
+          visibility: isInternalNote ? 'internal' : 'client',
+          created_at: new Date().toISOString()
         })
         .select()
         .single()
 
       if (messageError) throw messageError
 
-      // Insert attachment metadata
       if (attachmentUrl && newMsg) {
         await supabase.from('message_attachments').insert({
           message_id: newMsg.id,
@@ -283,24 +257,24 @@ export default function ClientMessagesPage() {
           storage_path: attachmentUrl,
           mime_type: attachmentType,
           file_size: attachmentSize,
-          created_by: user.id,
+          created_by: user.id
         })
       }
 
-      // Update conversation
       await supabase
         .from('conversations')
         .update({
           last_message_at: new Date().toISOString(),
           last_message_id: newMsg.id,
-          status: 'awaiting_admin',
+          status: isInternalNote ? selectedConversation.status : 'awaiting_client',
+          updated_at: new Date().toISOString()
         })
         .eq('id', selectedConversation.id)
 
-      // Add local message
-      setMessages(prev => [...prev, { ...newMsg, attachments: [] }])
+      setMessages((prev) => [...prev, newMsg])
       setNewMessage('')
       setAttachment(null)
+      setIsInternalNote(false)
       if (fileInputRef.current) fileInputRef.current.value = ''
       scrollToBottom()
       fetchConversations()
@@ -312,56 +286,21 @@ export default function ClientMessagesPage() {
     }
   }
 
-  const handleCreateConversation = async () => {
-    if (!newSubject.trim() || !newMessageText.trim()) {
-      alert('Please enter a subject and message')
-      return
-    }
+  const handleStatusChange = async (conversationId: number, status: string) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-
-      const conversationNumber = `CONV-${Date.now()}`
-
-      const { data: newConversation, error: conversationError } = await supabase
-        .from('conversations')
-        .insert({
-          conversation_number: conversationNumber,
-          subject: newSubject,
-          category: 'general',
-          status: 'awaiting_admin',
-          priority: 'normal',
-          client_id: user.id,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        })
-        .select()
-        .single()
-
-      if (conversationError) throw conversationError
-
-      await supabase.from('messages').insert({
-        conversation_id: newConversation.id,
-        sender_id: user.id,
-        sender_type: 'client',
-        message_type: 'text',
-        content: newMessageText.trim(),
-        visibility: 'client',
-        created_at: new Date().toISOString(),
-      })
-
-      await supabase
-        .from('conversations')
-        .update({ last_message_at: new Date().toISOString() })
-        .eq('id', newConversation.id)
-
-      setShowNewConversation(false)
-      setNewSubject('')
-      setNewMessageText('')
+      await supabase.from('conversations').update({ status }).eq('id', conversationId)
       fetchConversations()
-    } catch (err: any) {
-      console.error('Create conversation error:', err)
-      alert('Failed to create: ' + err.message)
+    } catch (err) {
+      console.error('Status change error:', err)
+    }
+  }
+
+  const handlePriorityChange = async (conversationId: number, priority: string) => {
+    try {
+      await supabase.from('conversations').update({ priority }).eq('id', conversationId)
+      fetchConversations()
+    } catch (err) {
+      console.error('Priority change error:', err)
     }
   }
 
@@ -375,8 +314,15 @@ export default function ClientMessagesPage() {
     return new Date(date).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
   }
 
-  function formatDate(date: string) {
-    return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  function getStatusColor(status: string) {
+    const map: Record<string, string> = {
+      open: 'bg-green-500/20 text-green-300',
+      awaiting_client: 'bg-amber-500/20 text-amber-300',
+      awaiting_admin: 'bg-blue-500/20 text-blue-300',
+      resolved: 'bg-emerald-500/20 text-emerald-300',
+      archived: 'bg-gray-500/20 text-gray-300'
+    }
+    return map[status] || 'bg-gray-500/20 text-gray-300'
   }
 
   if (loading) {
@@ -388,294 +334,266 @@ export default function ClientMessagesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-950">
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-2xl font-bold text-white">Messages</h1>
-            <p className="text-sm text-gray-300 mt-1">Your conversations with the Omnix Lab team</p>
-          </div>
-          <button
-            onClick={() => setShowNewConversation(true)}
-            className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg"
-          >
-            + New Message
-          </button>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-white">Messages</h1>
+        <p className="text-sm text-gray-400 mt-1">Client communication center</p>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-gray-900 border border-white/10 rounded-xl p-4">
+          <p className="text-sm text-gray-400">Total Conversations</p>
+          <p className="text-2xl font-bold text-white">{conversations.length}</p>
         </div>
+        <div className="bg-gray-900 border border-white/10 rounded-xl p-4">
+          <p className="text-sm text-gray-400">Unread</p>
+          <p className="text-2xl font-bold text-blue-400">
+            {conversations.filter((c) => c.unread_count > 0).length}
+          </p>
+        </div>
+        <div className="bg-gray-900 border border-white/10 rounded-xl p-4">
+          <p className="text-sm text-gray-400">Awaiting Admin</p>
+          <p className="text-2xl font-bold text-amber-400">
+            {conversations.filter((c) => c.status === 'awaiting_admin').length}
+          </p>
+        </div>
+        <div className="bg-gray-900 border border-white/10 rounded-xl p-4">
+          <p className="text-sm text-gray-400">Resolved</p>
+          <p className="text-2xl font-bold text-green-400">
+            {conversations.filter((c) => c.status === 'resolved').length}
+          </p>
+        </div>
+      </div>
 
-        {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
-            <p className="text-sm text-red-600">{error}</p>
-          </div>
-        )}
+      {/* Filters */}
+      <div className="flex flex-col sm:flex-row gap-4">
+        <input
+          type="text"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          placeholder="Search client, project, message..."
+          className="flex-1 px-4 py-2.5 bg-gray-900 border border-white/10 text-white rounded-lg text-sm placeholder-gray-500 focus:border-blue-500 outline-none"
+        />
+        <select
+          value={priorityFilter}
+          onChange={(e) => setPriorityFilter(e.target.value)}
+          className="px-4 py-2.5 bg-gray-900 border border-white/10 text-white rounded-lg text-sm focus:border-blue-500 outline-none"
+        >
+          <option value="all" className="bg-gray-900">All Priorities</option>
+          <option value="normal" className="bg-gray-900">Normal</option>
+          <option value="high" className="bg-gray-900">High</option>
+          <option value="urgent" className="bg-gray-900">Urgent</option>
+        </select>
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          className="px-4 py-2.5 bg-gray-900 border border-white/10 text-white rounded-lg text-sm focus:border-blue-500 outline-none"
+        >
+          <option value="all" className="bg-gray-900">All Statuses</option>
+          <option value="open" className="bg-gray-900">Open</option>
+          <option value="awaiting_client" className="bg-gray-900">Awaiting Client</option>
+          <option value="awaiting_admin" className="bg-gray-900">Awaiting Admin</option>
+          <option value="resolved" className="bg-gray-900">Resolved</option>
+          <option value="archived" className="bg-gray-900">Archived</option>
+        </select>
+      </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Conversation List */}
-          <div className="lg:col-span-1 bg-gray-900 border border-white/10 rounded-xl overflow-hidden">
-            <div className="p-4 border-b border-white/10">
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Search messages..."
-                className="w-full px-3 py-2 border border-white/10 rounded-lg text-sm"
-              />
-              <div className="flex gap-2 mt-3 flex-wrap">
-                {[
-                  { id: 'all', label: 'All' },
-                  { id: 'unread', label: 'Unread' },
-                  { id: 'projects', label: 'Projects' },
-                  { id: 'support', label: 'Support' },
-                ].map(f => (
-                  <button
-                    key={f.id}
-                    onClick={() => setFilter(f.id)}
-                    className={`px-3 py-1 text-xs font-medium rounded-lg ${
-                      filter === f.id ? 'bg-blue-100 text-blue-700' : 'bg-white/10 text-gray-300'
-                    }`}
-                  >
-                    {f.label}
-                  </button>
-                ))}
-              </div>
+      {/* Messages Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Conversation List */}
+        <div className="lg:col-span-1 bg-gray-900 border border-white/10 rounded-xl overflow-hidden">
+          <div className="p-4 border-b border-white/10">
+            <div className="flex gap-2 flex-wrap">
+              {['all', 'unread', 'project', 'support', 'billing'].map((f) => (
+                <button
+                  key={f}
+                  onClick={() => setFilter(f)}
+                  className={`px-3 py-1 text-xs font-medium rounded-lg ${
+                    filter === f ? 'bg-blue-600 text-white' : 'bg-white/10 text-gray-300'
+                  }`}
+                >
+                  {f.charAt(0).toUpperCase() + f.slice(1)}
+                </button>
+              ))}
             </div>
-
-            <div className="overflow-y-auto max-h-[500px]">
-              {filteredConversations.length === 0 ? (
-                <div className="p-8 text-center">
-                  <div className="text-4xl mb-3">💬</div>
-                  <p className="text-gray-400 text-sm">No conversations found</p>
-                  <button
-                    onClick={() => setShowNewConversation(true)}
-                    className="text-blue-600 text-sm hover:underline mt-2"
-                  >
-                    Start a conversation
-                  </button>
-                </div>
-              ) : (
-                filteredConversations.map(conv => (
-                  <button
-                    key={conv.id}
-                    onClick={() => handleSelectConversation(conv)}
-                    className={`w-full text-left p-4 border-b border-white/5 hover:bg-white/5 transition-colors ${
-                      selectedConversation?.id === conv.id ? 'bg-blue-50' : ''
-                    }`}
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <p className="font-medium text-white truncate">
-                            {conv.subject || 'General Conversation'}
-                          </p>
-                          {conv.unread_count > 0 && (
-                            <span className="bg-blue-600 text-white text-xs rounded-full px-2 py-0.5 shrink-0">
-                              {conv.unread_count}
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-sm text-gray-300 truncate mt-0.5">{conv.last_message || 'No messages yet'}</p>
-                        {conv.project_name && (
-                          <p className="text-xs text-gray-400 mt-1">Project: {conv.project_name}</p>
-                        )}
-                      </div>
+          </div>
+          <div className="overflow-y-auto max-h-[500px]">
+            {filteredConversations.length === 0 ? (
+              <div className="p-8 text-center text-gray-500">No conversations</div>
+            ) : (
+              filteredConversations.map((conv) => (
+                <button
+                  key={conv.id}
+                  onClick={() => handleSelectConversation(conv)}
+                  className={`w-full text-left p-4 border-b border-white/5 hover:bg-white/5 ${
+                    selectedConversation?.id === conv.id ? 'bg-blue-500/10' : ''
+                  }`}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-white font-medium truncate">{conv.client_name}</p>
+                      <p className="text-sm text-gray-400 truncate">{conv.subject}</p>
+                      <p className="text-xs text-gray-500 truncate mt-1">{conv.last_message}</p>
+                    </div>
+                    <div className="flex flex-col items-end ml-2">
                       {conv.last_message_at && (
-                        <span className="text-xs text-gray-400 shrink-0 ml-2">{formatTime(conv.last_message_at)}</span>
+                        <span className="text-xs text-gray-500">{formatTime(conv.last_message_at)}</span>
+                      )}
+                      {conv.unread_count > 0 && (
+                        <span className="bg-blue-600 text-white text-xs rounded-full px-2 py-0.5 mt-1">
+                          {conv.unread_count}
+                        </span>
                       )}
                     </div>
-                  </button>
-                ))
-              )}
-            </div>
+                  </div>
+                  <div className="flex items-center gap-2 mt-2">
+                    <span className={`px-2 py-0.5 text-xs rounded-full ${getStatusColor(conv.status)}`}>
+                      {conv.status}
+                    </span>
+                    <span className="text-xs text-gray-500">{conv.priority}</span>
+                  </div>
+                </button>
+              ))
+            )}
           </div>
+        </div>
 
-          {/* Conversation View */}
-          <div className="lg:col-span-2 bg-gray-900 border border-white/10 rounded-xl flex flex-col">
-            {!selectedConversation ? (
-              <div className="flex-1 flex items-center justify-center p-8">
-                <div className="text-center">
-                  <div className="text-4xl mb-3">💬</div>
-                  <p className="text-gray-400">Select a conversation to view messages</p>
-                </div>
-              </div>
-            ) : (
-              <>
-                {/* Header */}
-                <div className="p-4 border-b border-white/10">
+        {/* Conversation */}
+        <div className="lg:col-span-2 bg-gray-900 border border-white/10 rounded-xl flex flex-col">
+          {!selectedConversation ? (
+            <div className="flex-1 flex items-center justify-center p-8">
+              <p className="text-gray-500">Select a conversation</p>
+            </div>
+          ) : (
+            <>
+              {/* Header */}
+              <div className="p-4 border-b border-white/10 flex items-center justify-between">
+                <div>
                   <h2 className="font-semibold text-white">
-                    {selectedConversation.subject || 'Conversation'}
+                    {selectedConversation.client_name} - {selectedConversation.subject}
                   </h2>
                   {selectedConversation.project_name && (
                     <p className="text-sm text-gray-400">Project: {selectedConversation.project_name}</p>
                   )}
-                  <span className={`inline-block mt-1 px-2 py-0.5 text-xs rounded-full ${
-                    selectedConversation.status === 'awaiting_admin' ? 'bg-amber-100 text-amber-800' :
-                    selectedConversation.status === 'awaiting_client' ? 'bg-blue-100 text-blue-800' :
-                    selectedConversation.status === 'resolved' ? 'bg-green-100 text-green-800' :
-                    'bg-white/10 text-gray-800'
-                  }`}>
-                    {selectedConversation.status}
-                  </span>
                 </div>
+                <div className="flex gap-2">
+                  <select
+                    value={selectedConversation.priority}
+                    onChange={(e) => handlePriorityChange(selectedConversation.id, e.target.value)}
+                    className="bg-gray-800 border border-white/10 text-white rounded px-2 py-1 text-xs"
+                  >
+                    <option value="normal" className="bg-gray-900">Normal</option>
+                    <option value="high" className="bg-gray-900">High</option>
+                    <option value="urgent" className="bg-gray-900">Urgent</option>
+                  </select>
+                  <select
+                    value={selectedConversation.status}
+                    onChange={(e) => handleStatusChange(selectedConversation.id, e.target.value)}
+                    className="bg-gray-800 border border-white/10 text-white rounded px-2 py-1 text-xs"
+                  >
+                    <option value="open" className="bg-gray-900">Open</option>
+                    <option value="awaiting_client" className="bg-gray-900">Awaiting Client</option>
+                    <option value="awaiting_admin" className="bg-gray-900">Awaiting Admin</option>
+                    <option value="resolved" className="bg-gray-900">Resolved</option>
+                    <option value="archived" className="bg-gray-900">Archived</option>
+                  </select>
+                </div>
+              </div>
 
-                {/* Messages */}
-                <div className="flex-1 overflow-y-auto p-4 space-y-4 max-h-[400px]">
-                  {loadingMessages ? (
-                    <div className="text-center py-8">
-                      <div className="animate-spin h-6 w-6 border-4 border-blue-500 border-t-transparent rounded-full mx-auto"></div>
-                      <p className="text-gray-400 text-sm mt-2">Loading messages...</p>
-                    </div>
-                  ) : messages.length === 0 ? (
-                    <div className="text-center py-8">
-                      <p className="text-gray-400 text-sm">No messages yet. Say hello!</p>
-                    </div>
-                  ) : (
-                    messages.map(msg => (
+              {/* Messages */}
+              <div className="flex-1 overflow-y-auto p-4 space-y-4 max-h-[400px]">
+                {loadingMessages ? (
+                  <div className="text-center py-8 text-gray-500">Loading messages...</div>
+                ) : messages.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">No messages</div>
+                ) : (
+                  messages.map((msg) => (
+                    <div key={msg.id} className={`flex ${msg.sender_type === 'admin' ? 'justify-end' : 'justify-start'}`}>
                       <div
-                        key={msg.id}
-                        className={`flex ${msg.sender_type === 'client' ? 'justify-end' : 'justify-start'}`}
-                      >
-                        <div
-                          className={`max-w-[75%] rounded-lg p-3 ${
-                            msg.sender_type === 'client'
+                        className={`max-w-[75%] rounded-lg p-3 ${
+                          msg.visibility === 'internal'
+                            ? 'bg-yellow-500/10 border border-yellow-500/30'
+                            : msg.sender_type === 'admin'
                               ? 'bg-blue-600 text-white'
-                              : 'bg-white/10 text-white'
-                          }`}
-                        >
-                          <p className="text-sm whitespace-pre-line">{msg.content}</p>
-                          {msg.attachments && msg.attachments.length > 0 && (
-                            <div className="mt-2 space-y-1">
-                              {msg.attachments.map(att => (
-                                <a
-                                  key={att.id}
-                                  href={att.storage_path}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className={`block text-xs ${
-                                    msg.sender_type === 'client' ? 'text-blue-200' : 'text-blue-600'
-                                  } hover:underline`}
-                                >
-                                  📎 {att.file_name}
-                                </a>
-                              ))}
-                            </div>
-                          )}
-                          <span className={`text-xs mt-1 block ${
-                            msg.sender_type === 'client' ? 'text-blue-200' : 'text-gray-400'
-                          }`}>
-                            {formatTime(msg.created_at)}
-                          </span>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                  {isTyping && (
-                    <div className="flex justify-start">
-                      <div className="bg-white/10 rounded-lg p-3">
-                        <p className="text-xs text-gray-400">Omnix Lab is typing...</p>
+                              : 'bg-gray-700 text-white'
+                        }`}
+                      >
+                        {msg.visibility === 'internal' && (
+                          <span className="text-xs text-yellow-400 block mb-1">🔒 Internal Note</span>
+                        )}
+                        <p className="text-sm">{msg.content}</p>
+                        <span className="text-xs opacity-70">{formatTime(msg.created_at)}</span>
                       </div>
                     </div>
-                  )}
-                  <div ref={messagesEndRef} />
-                </div>
+                  ))
+                )}
+                <div ref={messagesEndRef} />
+              </div>
 
-                {/* Composer */}
-                <div className="p-4 border-t border-white/10">
-                  <div className="flex items-end gap-2">
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      onChange={(e) => setAttachment(e.target.files?.[0] || null)}
-                      className="hidden"
-                      accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.zip"
-                    />
+              {/* Composer */}
+              <div className="p-4 border-t border-white/10">
+                <div className="flex items-end gap-2">
+                  <button
+                    onClick={() => setIsInternalNote(!isInternalNote)}
+                    className={`px-3 py-2 rounded-lg text-sm ${
+                      isInternalNote ? 'bg-yellow-600 text-white' : 'bg-white/10 text-gray-300'
+                    }`}
+                  >
+                    🔒
+                  </button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    onChange={(e) => setAttachment(e.target.files?.[0] || null)}
+                    className="hidden"
+                  />
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="px-3 py-2 bg-white/10 text-gray-300 rounded-lg text-sm"
+                  >
+                    📎
+                  </button>
+                  <textarea
+                    value={newMessage}
+                    onChange={(e) => setNewMessage(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault()
+                        handleSendMessage()
+                      }
+                    }}
+                    placeholder={isInternalNote ? 'Internal note...' : 'Write a message...'}
+                    rows={1}
+                    className="flex-1 px-4 py-2 bg-gray-800 border border-white/10 text-white rounded-lg text-sm resize-none focus:border-blue-500 outline-none"
+                  />
+                  <button
+                    onClick={handleSendMessage}
+                    disabled={sending || (!newMessage.trim() && !attachment)}
+                    className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg disabled:opacity-50"
+                  >
+                    {sending ? 'Sending...' : 'Send'}
+                  </button>
+                </div>
+                {attachment && (
+                  <div className="flex items-center gap-2 mt-2">
+                    <span className="text-xs text-gray-400">📎 {attachment.name}</span>
                     <button
-                      onClick={() => fileInputRef.current?.click()}
-                      className="px-3 py-2 bg-white/10 text-gray-300 rounded-lg text-sm hover:bg-gray-200"
-                      title="Attach file"
-                    >
-                      📎
-                    </button>
-                    <textarea
-                      value={newMessage}
-                      onChange={(e) => setNewMessage(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && !e.shiftKey) {
-                          e.preventDefault()
-                          handleSendMessage()
-                        }
+                      onClick={() => {
+                        setAttachment(null)
+                        if (fileInputRef.current) fileInputRef.current.value = ''
                       }}
-                      placeholder="Write a message..."
-                      rows={1}
-                      className="flex-1 px-4 py-2 border border-white/10 rounded-lg text-sm resize-none focus:border-blue-500 outline-none"
-                    />
-                    <button
-                      onClick={handleSendMessage}
-                      disabled={sending || (!newMessage.trim() && !attachment)}
-                      className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg disabled:opacity-50"
+                      className="text-xs text-red-400"
                     >
-                      {sending ? 'Sending...' : 'Send'}
+                      Remove
                     </button>
                   </div>
-                  {attachment && (
-                    <div className="flex items-center gap-2 mt-2">
-                      <span className="text-xs text-gray-400">📎 {attachment.name}</span>
-                      <button
-                        onClick={() => {
-                          setAttachment(null)
-                          if (fileInputRef.current) fileInputRef.current.value = ''
-                        }}
-                        className="text-xs text-red-500 hover:text-red-600"
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </>
-            )}
-          </div>
+                )}
+              </div>
+            </>
+          )}
         </div>
       </div>
-
-      {/* New Conversation Modal */}
-      {showNewConversation && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-bold text-white">New Conversation</h2>
-              <button onClick={() => setShowNewConversation(false)} className="text-gray-400 hover:text-gray-300">X</button>
-            </div>
-            <div className="space-y-3">
-              <div>
-                <label className="block text-sm font-medium text-gray-200 mb-1">Subject *</label>
-                <input
-                  type="text"
-                  value={newSubject}
-                  onChange={(e) => setNewSubject(e.target.value)}
-                  className="w-full px-4 py-2.5 border border-white/10 rounded-lg text-sm text-white focus:border-blue-500 outline-none"
-                  placeholder="e.g., Question about my project"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-200 mb-1">Message *</label>
-                <textarea
-                  value={newMessageText}
-                  onChange={(e) => setNewMessageText(e.target.value)}
-                  rows={4}
-                  className="w-full px-4 py-2.5 border border-white/10 rounded-lg text-sm text-white focus:border-blue-500 outline-none"
-                  placeholder="Type your message..."
-                />
-              </div>
-              <button
-                onClick={handleCreateConversation}
-                className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg"
-              >
-                Send Message
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
