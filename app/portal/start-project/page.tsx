@@ -153,7 +153,10 @@ export default function StartProjectPage() {
     setForm(prev => ({ ...prev, [key]: value }))
   }
 
-  const toggleArrayItem = (key: string, item: string) => {
+  const toggleArrayItem = (
+    key: 'existingSystemActions' | 'features' | 'targetUsers' | 'platforms' | 'integrations',
+    item: string,
+  ) => {
     setForm(prev => {
       const current = prev[key] as string[]
       if (current.includes(item)) {
