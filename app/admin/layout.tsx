@@ -10,6 +10,7 @@ const adminNav = [
   { href: '/admin/clients', label: 'Clients', icon: '👥' },
   { href: '/admin/leads', label: 'Leads', icon: '🎯' },
   { href: '/admin/projects', label: 'Projects', icon: '📁' },
+  { href: '/admin/project-requests', label: 'Requests', icon: '[R]' },
   { href: '/admin/requirements', label: 'Requirements', icon: '📋' },
   { href: '/admin/milestones', label: 'Milestones', icon: '🎯' },
   { href: '/admin/files', label: 'Files', icon: '📄' },

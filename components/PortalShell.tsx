@@ -73,15 +73,16 @@ export default function PortalShell({ children }: PortalShellProps) {
     return <>{children}</>
   }
 
-  const navItems = [
-    { href: '/portal/dashboard', label: 'Dashboard', icon: '🏠' },
-    { href: '/portal/projects', label: 'Projects', icon: '📁' },
-    { href: '/portal/messages', label: 'Messages', icon: '💬' },
-    { href: '/portal/files', label: 'Files', icon: '📄' },
-    { href: '/portal/ideas', label: 'Ideas', icon: '💡' },
-    { href: '/portal/invoices', label: 'Invoices', icon: '🧾' },
-    { href: '/portal/payments', label: 'Payments', icon: '💳' },
-    { href: '/portal/start-project', label: 'Start a Project', icon: '🚀' },
+    const navItems = [
+    { href: '/portal/dashboard', label: 'Dashboard', icon: '[D]' },
+    { href: '/portal/projects', label: 'Projects', icon: '[P]' },
+    { href: '/portal/project-requests', label: 'Requests', icon: '[R]' },
+    { href: '/portal/messages', label: 'Messages', icon: '[M]' },
+    { href: '/portal/files', label: 'Files', icon: '[F]' },
+    { href: '/portal/ideas', label: 'Ideas', icon: '[I]' },
+    { href: '/portal/invoices', label: 'Invoices', icon: '[V]' },
+    { href: '/portal/payments', label: 'Payments', icon: '[S]' },
+    { href: '/portal/start-project', label: 'Start a Project', icon: '[+]' },
   ]
 
   const secondaryNavItems = [
@@ -90,10 +91,15 @@ export default function PortalShell({ children }: PortalShellProps) {
   ]
 
   const mobileBottomItems = [
-    { href: '/portal/dashboard', label: 'Home', icon: '🏠' },
-    { href: '/portal/projects', label: 'Projects', icon: '📁' },
-    { href: '/portal/messages', label: 'Messages', icon: '💬' },
-    { href: '/portal/invoices', label: 'Invoices', icon: '🧾' },
+    { href: '/portal/dashboard', label: 'Dashboard', icon: '[D]' },
+    { href: '/portal/projects', label: 'Projects', icon: '[P]' },
+    { href: '/portal/project-requests', label: 'Requests', icon: '[R]' },
+    { href: '/portal/messages', label: 'Messages', icon: '[M]' },
+    { href: '/portal/files', label: 'Files', icon: '[F]' },
+    { href: '/portal/ideas', label: 'Ideas', icon: '[I]' },
+    { href: '/portal/invoices', label: 'Invoices', icon: '[V]' },
+    { href: '/portal/payments', label: 'Payments', icon: '[S]' },
+    { href: '/portal/start-project', label: 'Start a Project', icon: '[+]' },
   ]
 
   const sidebarContent = (
