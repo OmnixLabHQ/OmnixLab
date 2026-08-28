@@ -381,19 +381,19 @@ export default function ClientMessagesPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
         <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full"></div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-950">
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Messages</h1>
-            <p className="text-sm text-gray-600 mt-1">Your conversations with the Omnix Lab team</p>
+            <h1 className="text-2xl font-bold text-white">Messages</h1>
+            <p className="text-sm text-gray-300 mt-1">Your conversations with the Omnix Lab team</p>
           </div>
           <button
             onClick={() => setShowNewConversation(true)}
@@ -411,14 +411,14 @@ export default function ClientMessagesPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Conversation List */}
-          <div className="lg:col-span-1 bg-white border border-gray-200 rounded-xl overflow-hidden">
-            <div className="p-4 border-b border-gray-200">
+          <div className="lg:col-span-1 bg-gray-900 border border-white/10 rounded-xl overflow-hidden">
+            <div className="p-4 border-b border-white/10">
               <input
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Search messages..."
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
+                className="w-full px-3 py-2 border border-white/10 rounded-lg text-sm"
               />
               <div className="flex gap-2 mt-3 flex-wrap">
                 {[
@@ -431,7 +431,7 @@ export default function ClientMessagesPage() {
                     key={f.id}
                     onClick={() => setFilter(f.id)}
                     className={`px-3 py-1 text-xs font-medium rounded-lg ${
-                      filter === f.id ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'
+                      filter === f.id ? 'bg-blue-100 text-blue-700' : 'bg-white/10 text-gray-300'
                     }`}
                   >
                     {f.label}
@@ -444,7 +444,7 @@ export default function ClientMessagesPage() {
               {filteredConversations.length === 0 ? (
                 <div className="p-8 text-center">
                   <div className="text-4xl mb-3">💬</div>
-                  <p className="text-gray-500 text-sm">No conversations found</p>
+                  <p className="text-gray-400 text-sm">No conversations found</p>
                   <button
                     onClick={() => setShowNewConversation(true)}
                     className="text-blue-600 text-sm hover:underline mt-2"
@@ -457,14 +457,14 @@ export default function ClientMessagesPage() {
                   <button
                     key={conv.id}
                     onClick={() => handleSelectConversation(conv)}
-                    className={`w-full text-left p-4 border-b border-gray-100 hover:bg-gray-50 transition-colors ${
+                    className={`w-full text-left p-4 border-b border-white/5 hover:bg-white/5 transition-colors ${
                       selectedConversation?.id === conv.id ? 'bg-blue-50' : ''
                     }`}
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <p className="font-medium text-gray-900 truncate">
+                          <p className="font-medium text-white truncate">
                             {conv.subject || 'General Conversation'}
                           </p>
                           {conv.unread_count > 0 && (
@@ -473,7 +473,7 @@ export default function ClientMessagesPage() {
                             </span>
                           )}
                         </div>
-                        <p className="text-sm text-gray-600 truncate mt-0.5">{conv.last_message || 'No messages yet'}</p>
+                        <p className="text-sm text-gray-300 truncate mt-0.5">{conv.last_message || 'No messages yet'}</p>
                         {conv.project_name && (
                           <p className="text-xs text-gray-400 mt-1">Project: {conv.project_name}</p>
                         )}
@@ -489,29 +489,29 @@ export default function ClientMessagesPage() {
           </div>
 
           {/* Conversation View */}
-          <div className="lg:col-span-2 bg-white border border-gray-200 rounded-xl flex flex-col">
+          <div className="lg:col-span-2 bg-gray-900 border border-white/10 rounded-xl flex flex-col">
             {!selectedConversation ? (
               <div className="flex-1 flex items-center justify-center p-8">
                 <div className="text-center">
                   <div className="text-4xl mb-3">💬</div>
-                  <p className="text-gray-500">Select a conversation to view messages</p>
+                  <p className="text-gray-400">Select a conversation to view messages</p>
                 </div>
               </div>
             ) : (
               <>
                 {/* Header */}
-                <div className="p-4 border-b border-gray-200">
-                  <h2 className="font-semibold text-gray-900">
+                <div className="p-4 border-b border-white/10">
+                  <h2 className="font-semibold text-white">
                     {selectedConversation.subject || 'Conversation'}
                   </h2>
                   {selectedConversation.project_name && (
-                    <p className="text-sm text-gray-500">Project: {selectedConversation.project_name}</p>
+                    <p className="text-sm text-gray-400">Project: {selectedConversation.project_name}</p>
                   )}
                   <span className={`inline-block mt-1 px-2 py-0.5 text-xs rounded-full ${
                     selectedConversation.status === 'awaiting_admin' ? 'bg-amber-100 text-amber-800' :
                     selectedConversation.status === 'awaiting_client' ? 'bg-blue-100 text-blue-800' :
                     selectedConversation.status === 'resolved' ? 'bg-green-100 text-green-800' :
-                    'bg-gray-100 text-gray-800'
+                    'bg-white/10 text-gray-800'
                   }`}>
                     {selectedConversation.status}
                   </span>
@@ -522,11 +522,11 @@ export default function ClientMessagesPage() {
                   {loadingMessages ? (
                     <div className="text-center py-8">
                       <div className="animate-spin h-6 w-6 border-4 border-blue-500 border-t-transparent rounded-full mx-auto"></div>
-                      <p className="text-gray-500 text-sm mt-2">Loading messages...</p>
+                      <p className="text-gray-400 text-sm mt-2">Loading messages...</p>
                     </div>
                   ) : messages.length === 0 ? (
                     <div className="text-center py-8">
-                      <p className="text-gray-500 text-sm">No messages yet. Say hello!</p>
+                      <p className="text-gray-400 text-sm">No messages yet. Say hello!</p>
                     </div>
                   ) : (
                     messages.map(msg => (
@@ -538,7 +538,7 @@ export default function ClientMessagesPage() {
                           className={`max-w-[75%] rounded-lg p-3 ${
                             msg.sender_type === 'client'
                               ? 'bg-blue-600 text-white'
-                              : 'bg-gray-100 text-gray-900'
+                              : 'bg-white/10 text-white'
                           }`}
                         >
                           <p className="text-sm whitespace-pre-line">{msg.content}</p>
@@ -570,8 +570,8 @@ export default function ClientMessagesPage() {
                   )}
                   {isTyping && (
                     <div className="flex justify-start">
-                      <div className="bg-gray-100 rounded-lg p-3">
-                        <p className="text-xs text-gray-500">Omnix Lab is typing...</p>
+                      <div className="bg-white/10 rounded-lg p-3">
+                        <p className="text-xs text-gray-400">Omnix Lab is typing...</p>
                       </div>
                     </div>
                   )}
@@ -579,7 +579,7 @@ export default function ClientMessagesPage() {
                 </div>
 
                 {/* Composer */}
-                <div className="p-4 border-t border-gray-200">
+                <div className="p-4 border-t border-white/10">
                   <div className="flex items-end gap-2">
                     <input
                       ref={fileInputRef}
@@ -590,7 +590,7 @@ export default function ClientMessagesPage() {
                     />
                     <button
                       onClick={() => fileInputRef.current?.click()}
-                      className="px-3 py-2 bg-gray-100 text-gray-600 rounded-lg text-sm hover:bg-gray-200"
+                      className="px-3 py-2 bg-white/10 text-gray-300 rounded-lg text-sm hover:bg-gray-200"
                       title="Attach file"
                     >
                       📎
@@ -606,7 +606,7 @@ export default function ClientMessagesPage() {
                       }}
                       placeholder="Write a message..."
                       rows={1}
-                      className="flex-1 px-4 py-2 border border-gray-200 rounded-lg text-sm resize-none focus:border-blue-500 outline-none"
+                      className="flex-1 px-4 py-2 border border-white/10 rounded-lg text-sm resize-none focus:border-blue-500 outline-none"
                     />
                     <button
                       onClick={handleSendMessage}
@@ -618,7 +618,7 @@ export default function ClientMessagesPage() {
                   </div>
                   {attachment && (
                     <div className="flex items-center gap-2 mt-2">
-                      <span className="text-xs text-gray-500">📎 {attachment.name}</span>
+                      <span className="text-xs text-gray-400">📎 {attachment.name}</span>
                       <button
                         onClick={() => {
                           setAttachment(null)
@@ -642,27 +642,27 @@ export default function ClientMessagesPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
           <div className="bg-white rounded-2xl max-w-md w-full p-6">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-bold text-gray-900">New Conversation</h2>
-              <button onClick={() => setShowNewConversation(false)} className="text-gray-400 hover:text-gray-600">X</button>
+              <h2 className="text-lg font-bold text-white">New Conversation</h2>
+              <button onClick={() => setShowNewConversation(false)} className="text-gray-400 hover:text-gray-300">X</button>
             </div>
             <div className="space-y-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Subject *</label>
+                <label className="block text-sm font-medium text-gray-200 mb-1">Subject *</label>
                 <input
                   type="text"
                   value={newSubject}
                   onChange={(e) => setNewSubject(e.target.value)}
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-900 focus:border-blue-500 outline-none"
+                  className="w-full px-4 py-2.5 border border-white/10 rounded-lg text-sm text-white focus:border-blue-500 outline-none"
                   placeholder="e.g., Question about my project"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Message *</label>
+                <label className="block text-sm font-medium text-gray-200 mb-1">Message *</label>
                 <textarea
                   value={newMessageText}
                   onChange={(e) => setNewMessageText(e.target.value)}
                   rows={4}
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-900 focus:border-blue-500 outline-none"
+                  className="w-full px-4 py-2.5 border border-white/10 rounded-lg text-sm text-white focus:border-blue-500 outline-none"
                   placeholder="Type your message..."
                 />
               </div>
