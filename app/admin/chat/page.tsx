@@ -188,7 +188,7 @@ export default function AdminChatPage() {
         }
       }
 
-      const { data: newMessage, error } = await supabase
+      const { data: insertedMessage, error } = await supabase
         .from('messages')
         .insert({
           conversation_id: selectedConversation.id,
@@ -203,9 +203,9 @@ export default function AdminChatPage() {
 
       if (error) throw error
 
-      if (attachmentUrl && newMessage) {
+      if (attachmentUrl && insertedMessage && attachment) {
         await supabase.from('message_attachments').insert({
-          message_id: newMessage.id,
+          message_id: insertedMessage.id,
           file_name: attachment.name,
           storage_path: attachmentUrl,
           mime_type: attachment.type,
@@ -216,7 +216,7 @@ export default function AdminChatPage() {
 
       await supabase
         .from('conversations')
-        .update({ last_message_at: new Date().toISOString(), last_message_id: newMessage.id })
+        .update({ last_message_at: new Date().toISOString(), last_message_id: insertedMessage.id })
         .eq('id', selectedConversation.id)
 
       setNewMessage('')
