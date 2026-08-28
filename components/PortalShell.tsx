@@ -73,7 +73,7 @@ export default function PortalShell({ children }: PortalShellProps) {
     return <>{children}</>
   }
 
-      const navItems = [
+        const navItems = [
     { href: '/portal/dashboard', label: 'Dashboard', icon: '🏠' },
     { href: '/portal/projects', label: 'Projects', icon: '📁' },
     { href: '/portal/project-requests', label: 'Requests', icon: '📋' },
@@ -90,16 +90,12 @@ export default function PortalShell({ children }: PortalShellProps) {
     { href: '/portal/support', label: 'Help & Support', icon: '❓' },
   ]
 
-  const mobileBottomItems = [
+   const mobileBottomItems = [
     { href: '/portal/dashboard', label: 'Dashboard', icon: '🏠' },
     { href: '/portal/projects', label: 'Projects', icon: '📁' },
-    { href: '/portal/project-requests', label: 'Requests', icon: '📋' },
     { href: '/portal/messages', label: 'Messages', icon: '💬' },
     { href: '/portal/files', label: 'Files', icon: '📄' },
-    { href: '/portal/ideas', label: 'Ideas', icon: '💡' },
     { href: '/portal/invoices', label: 'Invoices', icon: '🧾' },
-    { href: '/portal/payments', label: 'Payments', icon: '💳' },
-    { href: '/portal/start-project', label: 'Start a Project', icon: '🚀' },
   ]
 
   const sidebarContent = (
