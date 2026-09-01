@@ -23,7 +23,7 @@ export async function POST(request: Request) {
           </div>
           <p style="color: #374151;">If this was you, no action is needed.</p>
           <p style="color: #DC2626;">If this wasn't you, please secure your account immediately.</p>
-          <a href="https://omnixlab-production.up.railway.app/portal/settings/security" style="display: inline-block; padding: 12px 24px; background: #4F46E5; color: white; text-decoration: none; border-radius: 8px; font-weight: 600; margin: 20px 0;">
+          <a href="https://omnixlabssupport.com/portal/settings/security" style="display: inline-block; padding: 12px 24px; background: #4F46E5; color: white; text-decoration: none; border-radius: 8px; font-weight: 600; margin: 20px 0;">
             Review Security
           </a>
         </div>

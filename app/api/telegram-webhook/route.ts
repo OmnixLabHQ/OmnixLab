@@ -68,7 +68,7 @@ export async function POST(request: Request) {
 
         // Send welcome email
         try {
-          await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'https://omnixlab-production.up.railway.app'}/api/onboarding/send-welcome`, {
+          await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'https://omnixlabssupport.com'}/api/onboarding/send-welcome`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ clientId: userId }),

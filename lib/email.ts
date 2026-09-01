@@ -60,14 +60,14 @@ export async function sendWelcomeEmail(email: string, fullName: string) {
             <div class="quick-start">
               <h2>Quick Start Guide</h2>
               <ol style="line-height: 1.8;">
-                <li><strong>Access your portal:</strong> <a href="https://omnixlab-production.up.railway.app/portal/dashboard" style="color: #4F46E5;">Go to your dashboard</a></li>
+                <li><strong>Access your portal:</strong> <a href="https://omnixlabssupport.com/portal/dashboard" style="color: #4F46E5;">Go to your dashboard</a></li>
                 <li><strong>Complete your profile:</strong> Add your company details</li>
                 <li><strong>Upload requirements:</strong> Share documents in the Files section</li>
                 <li><strong>Book a consultation:</strong> <a href="https://calendly.com/helloafrica-omnixlabsupport/30min" style="color: #4F46E5;">Schedule a call</a></li>
               </ol>
             </div>
             
-            <a href="https://omnixlab-production.up.railway.app/portal/dashboard" class="button">Access Your Portal</a>
+            <a href="https://omnixlabssupport.com/portal/dashboard" class="button">Access Your Portal</a>
             
             <p style="font-size: 16px;">
               If you have any questions, reply to this email or reach us on WhatsApp at +234 703 370 2874.

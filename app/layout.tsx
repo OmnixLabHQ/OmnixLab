@@ -54,7 +54,7 @@ export const metadata: Metadata = {
     title: 'Omnix Lab | Global Software Development & Trading Bot Company',
     description:
       'Omnix Lab builds trading bots, web apps, SaaS, and AI solutions for businesses worldwide. 50+ projects delivered, 99% client satisfaction.',
-    url: 'https://omnixlab-production.up.railway.app',
+    url: 'https://omnixlabssupport.com',
     siteName: 'Omnix Lab',
     locale: 'en_US',
     type: 'website',

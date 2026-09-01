@@ -29,7 +29,7 @@ Key benefits of {keyword}:
 
 Ready to build your own {keyword}? Contact Omnix Lab today.
 
-🌐 https://omnixlab-production.up.railway.app
+🌐 https://omnixlabssupport.com
 📧 helloafrica@omnixlab-production.up.railway.app
 💬 +234 703 370 2874
 
@@ -57,7 +57,7 @@ What makes Omnix Lab different:
 
 Ready to upgrade your online presence? Let's build something extraordinary.
 
-🌐 https://omnixlab-production.up.railway.app
+🌐 https://omnixlabssupport.com
 📧 helloafrica@omnixlab-production.up.railway.app
 💬 +234 703 370 2874
 
@@ -85,7 +85,7 @@ At Omnix Lab, we build custom AI solutions tailored to your specific business ne
 
 Don't get left behind in the AI revolution. Contact us today.
 
-🌐 https://omnixlab-production.up.railway.app
+🌐 https://omnixlabssupport.com
 📧 helloafrica@omnixlab-production.up.railway.app
 💬 +234 703 370 2874
 
@@ -114,7 +114,7 @@ Our SaaS development includes:
 
 Ready to launch your SaaS platform? Let's discuss your idea.
 
-🌐 https://omnixlab-production.up.railway.app
+🌐 https://omnixlabssupport.com
 📧 helloafrica@omnixlab-production.up.railway.app
 💬 +234 703 370 2874
 

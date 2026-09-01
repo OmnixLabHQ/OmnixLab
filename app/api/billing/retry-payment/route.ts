@@ -6,7 +6,7 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey)
 
 const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY || ''
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://omnixlab-production.up.railway.app'
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://omnixlabssupport.com'
 
 export async function POST(request: Request) {
   try {

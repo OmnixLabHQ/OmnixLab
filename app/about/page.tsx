@@ -39,7 +39,7 @@ export default function AboutPage() {
             name: 'Omnix Lab',
             description:
               'Global software development company founded by Akomolafe Nathaniel. Building trading bots, web applications, SaaS platforms, and AI solutions for businesses worldwide.',
-            url: 'https://omnixlab-production.up.railway.app',
+            url: 'https://omnixlabssupport.com',
             logo: 'https://i.ibb.co/jXsT2ZB/image.jpg',
             foundingDate: '2022',
             founder: {
@@ -48,7 +48,7 @@ export default function AboutPage() {
               jobTitle: 'Founder & CEO',
               description:
                 'Akomolafe Nathaniel is the Founder and CEO of Omnix Lab, a global software development company. Expert in trading bot development, web development, and enterprise software development.',
-              url: 'https://omnixlab-production.up.railway.app/about',
+              url: 'https://omnixlabssupport.com/about',
               sameAs: [
                 'https://linkedin.com/in/akomolafe-nathaniel',
                 'https://github.com/OmnixLabHQ',

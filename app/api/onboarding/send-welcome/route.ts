@@ -41,7 +41,7 @@ export async function POST(request: Request) {
             You can now access your client portal and start managing your projects.
           </p>
           <div style="text-align: center; margin: 30px 0;">
-            <a href="https://omnixlab-production.up.railway.app/portal/dashboard" 
+            <a href="https://omnixlabssupport.com/portal/dashboard" 
                style="display: inline-block; padding: 14px 30px; background: #4F46E5; color: white; text-decoration: none; border-radius: 8px; font-weight: 600;">
               Access Your Portal
             </a>
