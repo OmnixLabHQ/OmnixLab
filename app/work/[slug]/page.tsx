@@ -118,7 +118,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
               {allProjects.filter(p => p.slug !== project.slug).slice(0, 3).map((related) => (
                 <Link key={related.slug} href={`/work/${related.slug}`} className="group bg-white/5 rounded-2xl overflow-hidden border border-white/10 hover:bg-white/10 transition-all">
                   {related.type === 'case-study' ? (
-                    <img src={related.heroImage} alt={related.title} className="w-full h-32 object-cover group-hover:scale-105 transition-transform duration-500" />
+                    <img src={related.heroImage} alt={related.title} className="w-full h-32 object-contain bg-black group-hover:scale-105 transition-transform duration-500" />
                   ) : (
                     <video
                       src={related.video}
@@ -127,7 +127,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
                       loop
                       playsInline
                       preload="metadata"
-                      className="w-full h-32 object-cover group-hover:scale-105 transition-transform duration-500"
+                      className="w-full h-32 object-contain bg-black group-hover:scale-105 transition-transform duration-500"
                     />
                   )}
                   <div className="p-4">
@@ -232,7 +232,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
             {allProjects.filter(p => p.slug !== project.slug).slice(0, 3).map((related) => (
               <Link key={related.slug} href={`/work/${related.slug}`} className="group bg-white/5 rounded-2xl overflow-hidden border border-white/10 hover:bg-white/10 transition-all">
                 {related.type === 'case-study' ? (
-                  <img src={related.heroImage} alt={related.title} className="w-full h-32 object-cover group-hover:scale-105 transition-transform duration-500" />
+                  <img src={related.heroImage} alt={related.title} className="w-full h-32 object-contain bg-black group-hover:scale-105 transition-transform duration-500" />
                 ) : (
                   <video
                     src={related.video}
@@ -241,7 +241,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
                     loop
                     playsInline
                     preload="metadata"
-                    className="w-full h-32 object-cover group-hover:scale-105 transition-transform duration-500"
+                    className="w-full h-32 object-contain bg-black group-hover:scale-105 transition-transform duration-500"
                   />
                 )}
                 <div className="p-4">
