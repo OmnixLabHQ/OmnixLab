@@ -112,7 +112,7 @@ export default function WorkPage() {
             <Link href={`/work/${featuredProject.slug}`} className="group block bg-white/5 border border-white/10 rounded-3xl overflow-hidden hover:bg-white/10 transition-all">
               <div className="grid lg:grid-cols-2">
                 <div className="relative overflow-hidden aspect-[4/3] lg:aspect-auto lg:min-h-[400px]">
-                  <img src={featuredProject.heroImage} alt={featuredProject.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                  <img src={featuredProject.heroImage} alt={featuredProject.title} className="w-full h-full object-contain bg-black group-hover:scale-105 transition-transform duration-500" />
                 </div>
                 <div className="p-8 lg:p-12">
                   <div className="flex items-center gap-3 mb-3">
@@ -190,7 +190,7 @@ export default function WorkPage() {
                   className="group rounded-2xl overflow-hidden bg-white/5 border border-white/10 hover:bg-white/10 hover:shadow-xl transition-all block"
                 >
                   <div className="aspect-[4/3] relative overflow-hidden">
-                    <img src={project.heroImage} alt={project.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                    <img src={project.heroImage} alt={project.title} className="w-full h-full object-contain bg-black group-hover:scale-105 transition-transform duration-500" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
                     <div className="absolute top-4 left-4">
                       <span className="px-3 py-1 bg-black/60 backdrop-blur-sm text-white text-xs font-medium rounded-full">{project.industry} • {project.category}</span>
