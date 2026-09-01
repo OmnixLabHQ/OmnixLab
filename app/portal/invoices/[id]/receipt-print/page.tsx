@@ -196,7 +196,7 @@ export default function ReceiptPrintPage() {
         <div className="text-center mb-8">
           <h1 className="text-2xl font-bold text-green-700">OMNIX LAB</h1>
           <p className="text-sm text-gray-600">Global Software Development Partner</p>
-          <p className="text-sm text-gray-600">helloafrica@omnixlab-production.up.railway.app</p>
+          <p className="text-sm text-gray-600">Hello@omnixlabssupport.com</p>
           <p className="text-sm text-gray-600">+234 703 370 2874</p>
         </div>
 
@@ -274,7 +274,7 @@ export default function ReceiptPrintPage() {
             This receipt confirms payment for services provided by Omnix Lab.
           </p>
           <p className="text-xs text-gray-400 mt-1">
-            Omnix Lab • Global Software Development • helloafrica@omnixlab-production.up.railway.app
+            Omnix Lab • Global Software Development • Hello@omnixlabssupport.com
           </p>
         </div>
       </div>

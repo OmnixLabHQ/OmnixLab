@@ -445,7 +445,7 @@ export default function InvoiceDetailPage() {
               <p className="text-xs text-gray-500 uppercase mb-1">From</p>
               <p className="font-medium text-gray-900">Omnix Lab</p>
               <p className="text-sm text-gray-600">Global Software Development</p>
-              <p className="text-sm text-gray-600">helloafrica@omnixlab-production.up.railway.app</p>
+              <p className="text-sm text-gray-600">Hello@omnixlabssupport.com</p>
             </div>
 
             <div>

@@ -73,7 +73,7 @@ async function postToX(title: string, hashtags: string) {
     return false
   }
 
-  const tweet = `${title}\n\n🌐 omnixlab-production.up.railway.app\n\n${hashtags}`
+  const tweet = `${title}\n\n🌐 omnixlabssupport.com\n\n${hashtags}`
   
   try {
     // Using v2 API

@@ -190,7 +190,7 @@ export default function PrintInvoicePage() {
           <div>
             <h1 className="text-2xl font-bold text-indigo-700">OMNIX LAB</h1>
             <p className="text-sm text-gray-600">Global Software Development Partner</p>
-            <p className="text-sm text-gray-600">helloafrica@omnixlab-production.up.railway.app</p>
+            <p className="text-sm text-gray-600">Hello@omnixlabssupport.com</p>
             <p className="text-sm text-gray-600">+234 703 370 2874</p>
           </div>
           <div className="text-right">
@@ -311,7 +311,7 @@ export default function PrintInvoicePage() {
             Thank you for choosing Omnix Lab as your software development partner.
           </p>
           <p className="text-xs text-gray-400">
-            Omnix Lab • Global Software Development • helloafrica@omnixlab-production.up.railway.app
+            Omnix Lab • Global Software Development • Hello@omnixlabssupport.com
           </p>
         </div>
       </div>

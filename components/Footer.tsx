@@ -84,7 +84,7 @@ export default function Footer() {
                 </a>
               </li>
               <li className="pt-2">
-                <a href="https://www.trustpilot.com/evaluate/omnixlab-production.up.railway.app" target="_blank" rel="noopener noreferrer" className="text-green-600 hover:text-green-700 transition-colors font-medium">
+                <a href="https://www.trustpilot.com/evaluate/omnixlabssupport.com" target="_blank" rel="noopener noreferrer" className="text-green-600 hover:text-green-700 transition-colors font-medium">
                   ⭐ Review us on Trustpilot
                 </a>
               </li>

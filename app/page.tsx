@@ -381,7 +381,7 @@ export default function Home() {
             <p className="text-lg text-gray-300 max-w-2xl mx-auto mb-8">Tell us what you're trying to build, improve or automate. We'll help turn the idea into a practical software solution.</p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="/contact" className="inline-flex px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl">Start a Project</Link>
-              <a href="mailto:helloafrica@omnixlab-production.up.railway.app" className="inline-flex px-8 py-4 bg-white/10 border border-white/20 text-white font-semibold rounded-xl hover:bg-white/20">Talk to Omnix Lab</a>
+              <a href="mailto:Hello@omnixlabssupport.com" className="inline-flex px-8 py-4 bg-white/10 border border-white/20 text-white font-semibold rounded-xl hover:bg-white/20">Talk to Omnix Lab</a>
             </div>
           </div>
         </section>

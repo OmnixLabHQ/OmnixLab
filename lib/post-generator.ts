@@ -17,8 +17,8 @@ Key benefits include 24/7 market coverage, backtested strategies, real-time risk
 
 Ready to automate your trading? Contact Omnix Lab today.
 
-🌐 omnixlab-production.up.railway.app
-📧 helloafrica@omnixlab-production.up.railway.app
+🌐 omnixlabssupport.com
+📧 Hello@omnixlabssupport.com
 💬 +234 703 370 2874
 
 #TradingBot #Crypto #Forex #FinTech #GlobalTech #OmnixLab`
@@ -33,8 +33,8 @@ Steps to get started: Define your strategy, choose your exchange, backtest thoro
 
 Don't leave money on the table. Start your trading bot journey today.
 
-🌐 omnixlab-production.up.railway.app
-📧 helloafrica@omnixlab-production.up.railway.app
+🌐 omnixlabssupport.com
+📧 Hello@omnixlabssupport.com
 
 #AutomatedTrading #CryptoTrading #GlobalInvestors #OmnixLab`
       },
@@ -54,8 +54,8 @@ We've delivered 50+ web projects with a 99% client satisfaction rate worldwide. 
 
 Ready to upgrade your online presence?
 
-🌐 omnixlab-production.up.railway.app
-📧 helloafrica@omnixlab-production.up.railway.app
+🌐 omnixlabssupport.com
+📧 Hello@omnixlabssupport.com
 
 #WebDevelopment #BusinessGrowth #NextJS #GlobalTech #OmnixLab`
       },
@@ -75,8 +75,8 @@ At Omnix Lab, we build custom AI solutions including intelligent chatbots, predi
 
 Don't get left behind in the AI revolution.
 
-🌐 omnixlab-production.up.railway.app
-📧 helloafrica@omnixlab-production.up.railway.app
+🌐 omnixlabssupport.com
+📧 Hello@omnixlabssupport.com
 
 #ArtificialIntelligence #BusinessAutomation #GlobalTech #OmnixLab`
       },
@@ -96,8 +96,8 @@ Features include multi-tenant architecture, subscription billing, admin dashboar
 
 Ready to build your platform? Let's discuss your idea.
 
-🌐 omnixlab-production.up.railway.app
-📧 helloafrica@omnixlab-production.up.railway.app
+🌐 omnixlabssupport.com
+📧 Hello@omnixlabssupport.com
 
 #SaaS #SoftwareDevelopment #GlobalStartup #OmnixLab`
       },
@@ -117,8 +117,8 @@ Features include push notifications, payment integration, offline support, and a
 
 Get your business in your customers' pockets.
 
-🌐 omnixlab-production.up.railway.app
-📧 helloafrica@omnixlab-production.up.railway.app
+🌐 omnixlabssupport.com
+📧 Hello@omnixlabssupport.com
 
 #MobileApp #AppDevelopment #GlobalBusiness #OmnixLab`
       },

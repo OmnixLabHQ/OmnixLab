@@ -23,7 +23,7 @@ export default function PrivacyPage() {
           
           <div className="bg-indigo-50 rounded-2xl p-6 border border-indigo-100">
             <p className="text-gray-700 leading-relaxed">
-              At <strong>Omnix Lab</strong>, accessible from <strong>omnixlab-production.up.railway.app</strong>, one of our main priorities is the privacy of our visitors. This Privacy Policy document contains types of information that is collected and recorded by Omnix Lab and how we use it.
+              At <strong>Omnix Lab</strong>, accessible from <strong>omnixlabssupport.com</strong>, one of our main priorities is the privacy of our visitors. This Privacy Policy document contains types of information that is collected and recorded by Omnix Lab and how we use it.
             </p>
           </div>
 
@@ -136,13 +136,13 @@ export default function PrivacyPage() {
                 <strong>Omnix Lab</strong>
               </p>
               <p className="text-gray-600">
-                📧 Email: helloafrica@omnixlab-production.up.railway.app
+                📧 Email: Hello@omnixlabssupport.com
               </p>
               <p className="text-gray-600">
                 💬 WhatsApp: +234 703 370 2874
               </p>
               <p className="text-gray-600">
-                🌐 Website: omnixlab-production.up.railway.app
+                🌐 Website: omnixlabssupport.com
               </p>
               <p className="text-gray-600">
                 📍 Location: Nigeria (Remote — Worldwide)

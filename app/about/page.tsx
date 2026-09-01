@@ -57,7 +57,7 @@ export default function AboutPage() {
             contactPoint: {
               '@type': 'ContactPoint',
               telephone: '+2347033702874',
-              email: 'helloafrica@omnixlab-production.up.railway.app',
+              email: 'Hello@omnixlabssupport.com',
               contactType: 'customer service',
               availableLanguage: ['English'],
             },

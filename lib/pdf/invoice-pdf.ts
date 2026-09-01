@@ -50,7 +50,7 @@ export function generateInvoicePDF(data: InvoicePDFData): void {
   doc.setFontSize(10)
   doc.setFont('helvetica', 'normal')
   doc.text('Global Software Development Partner', 14, 22)
-  doc.text('helloafrica@omnixlab-production.up.railway.app', 14, 28)
+  doc.text('Hello@omnixlabssupport.com', 14, 28)
 
   // Invoice Title
   doc.setFontSize(14)
@@ -200,7 +200,7 @@ export function generateInvoicePDF(data: InvoicePDFData): void {
   doc.setFont('helvetica', 'normal')
   doc.setTextColor(150, 150, 150)
   doc.text('Thank you for choosing Omnix Lab as your software development partner.', 105, 285, { align: 'center' })
-  doc.text('Omnix Lab • Global Software Development • helloafrica@omnixlab-production.up.railway.app', 105, 290, { align: 'center' })
+  doc.text('Omnix Lab • Global Software Development • Hello@omnixlabssupport.com', 105, 290, { align: 'center' })
 
   // Save PDF
   doc.save(`${data.invoiceNumber}.pdf`)
